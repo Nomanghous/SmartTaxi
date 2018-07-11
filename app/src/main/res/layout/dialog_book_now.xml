@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:padding="8dp"
+        >
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_back"
+        android:background="@null"
+        android:text="back"
+        android:padding="8dp"
+
+        android:gravity="center_vertical"
+        android:drawablePadding="8dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:id="@+id/btn_back"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawableRight="@drawable/ic_forward"
+        android:background="@drawable/bg_rounded_blue"
+        android:text="skip"
+        android:textColor="@color/white"
+        android:gravity="center_vertical"
+        android:drawablePadding="8dp"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:textStyle="bold"
+        android:layout_alignParentRight="true"
+        android:id="@+id/btn_skip"
+
+        />
+
+    </RelativeLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/grey"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        >
+        
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:editable="false"
+            android:hint="Destination"
+            android:singleLine="true"
+            android:id="@+id/et_dropoff"
+            android:padding="8dp"
+            android:drawableLeft="@drawable/bg_square_red"
+            />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/grey"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_action_name"
+            android:text="Tap Here to Select From Map"
+            android:gravity="center_vertical"
+            android:id="@+id/tv_open_location_picker"
+            />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/grey"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/btn_grad_orange"
+            android:text="Confirm Booking Now"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:id="@+id/btn_confirm"
+            />
+    </LinearLayout>
+
+
+</LinearLayout>
