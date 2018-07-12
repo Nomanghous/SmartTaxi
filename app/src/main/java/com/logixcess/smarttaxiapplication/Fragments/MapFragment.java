@@ -16,6 +16,11 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.AutocompleteFilter;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -74,6 +79,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
+    private PlaceAutocompleteFragment place_autocomplete_fragment;
 
     public MapFragment() {
         // Required empty public constructor
@@ -123,6 +129,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         new_order.setShared(false);
         new_order.setEstimated_cost("200.0");
         new_order.setTotal_kms("20");
+        place_autocomplete_fragment = (PlaceAutocompleteFragment)
+                getActivity().getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+        final View root = place_autocomplete_fragment.getView();
+
         new_order.setPickup_time(Calendar.getInstance().getTime().toString());
 //        new_order.setPickup_date(Calendar.getInstance().getTime().toString());
         cb_shared.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -131,6 +141,26 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 new_order.setShared(isChecked);
             }
         });
+
+
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
+                .setCountry("AR")
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_GEOCODE)
+                .build();
+        place_autocomplete_fragment.setFilter(typeFilter);
+        place_autocomplete_fragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i("Place", "An error occurred: " + status);
+            }
+        });
+
         return  view;
     }
 
@@ -257,10 +287,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
-        if(gps.canGetLocation()){
-            LatLng usa = new LatLng(gps.getLatitude(), gps.getLongitude());
-            gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
-        }
+//        if(gps.canGetLocation()){
+//            LatLng usa = new LatLng(gps.getLatitude(), gps.getLongitude());
+//            gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
+//        }
+        Double latitude = 7.873172;
+        Double longitude = 80.665608;
+        LatLng usa = new LatLng(latitude, longitude);
+        gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         // Add a marker in Sydney and move the camera
         gMap.setOnPolylineClickListener(this);
 
@@ -354,7 +388,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 List<HashMap<String, String>> path = routes.get(i);
                 String distance = route_details.get(i+1).split("--")[0];
                 String duration = route_details.get(i+1).split("--")[1];
-                new_order.setTotal_kms(String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344));
+                if(distance.contains("mi"))
+                    distance = String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344);
+                else
+                    distance = String.valueOf(Double.valueOf(distance.replace("km","")) * 1.609344);
+                new_order.setTotal_kms(distance);
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
 

@@ -28,6 +28,11 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.AutocompleteFilter;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -75,6 +80,7 @@ public class MainActivity extends AppCompatActivity
     NavigationView navigationView;
     private UserLocationManager gps;
     private DrawerLayout drawer;
+    private PlaceAutocompleteFragment place_autocomplete_fragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +100,7 @@ public class MainActivity extends AppCompatActivity
 
 
 
+
         //Ahmads
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -105,6 +112,11 @@ public class MainActivity extends AppCompatActivity
 
         navigationView.setNavigationItemSelectedListener(this);
         setUpNavigationView();
+
+
+
+
+
     }
 
     @Override
@@ -181,8 +193,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void openPickupActivity(View view) {
-        Double latitude = 37.62489;
-        Double longitude = -122.3708;
+        Double latitude = 7.873172;
+        Double longitude = 80.665608;
 //        if(gps.canGetLocation()){
 //            latitude = gps.getLatitude();
 //            longitude = gps.getLongitude();
