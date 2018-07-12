@@ -23,7 +23,7 @@
                                           <PersistentState>
                                             <option name="values">
                                               <map>
-                                                <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio3.1/plugins/android/lib/android.jar!/images/material_design_icons/maps/ic_directions_car_black_24dp.xml" />
+                                                <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio3.1/plugins/android/lib/android.jar!/images/material_design_icons/maps/ic_local_phone_black_24dp.xml" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -33,7 +33,7 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="outputName" value="ic_vehicle" />
+                                      <entry key="outputName" value="ic_phone" />
                                       <entry key="theme" value="CUSTOM" />
                                       <entry key="themeColor" value="2fcbe5" />
                                     </map>

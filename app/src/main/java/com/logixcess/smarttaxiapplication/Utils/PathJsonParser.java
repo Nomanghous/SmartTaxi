@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.MainActivity;
 
 
@@ -55,7 +56,7 @@ public class PathJsonParser {
                             path.add(hm);
                         }
                     }
-                    MainActivity.route_details.put(Counter,distance.concat("--").concat(duration));
+                    MapFragment.route_details.put(Counter,distance.concat("--").concat(duration));
                     distance = "";
                     routes.add(path);
                 }

@@ -5,9 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Address;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -34,6 +38,12 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
+import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
+import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
+import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
+import com.logixcess.smarttaxiapplication.Fragments.NotificationsFragment;
+import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
+import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
@@ -53,19 +63,18 @@ import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+         MapFragment.OnFragmentInteractionListener
+        ,FeedbackFragment.OnFragmentInteractionListener,FindUserFragment.OnFragmentInteractionListener,NotificationsFragment.OnFragmentInteractionListener
+        ,RideHistoryFragment.OnFragmentInteractionListener,UserProfileFragment.OnFragmentInteractionListener{
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
-    GoogleMap gMap;
-    private EditText et_drop_off,et_pickup;
-    private Order new_order;
-    CheckBox cb_shared;
-    public static HashMap<Integer,String> route_details;
-    private ArrayList<Polyline> polyLineList;
-    private UserLocationManager gps;
-    private GregorianCalendar SELECTED_DATE_TIME;
 
+    Handler mHandler;
+    NavigationView navigationView;
+    private UserLocationManager gps;
+    private DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,32 +83,28 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         gps = new UserLocationManager(this);
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-        new_order = new Order();
-        et_pickup = findViewById(R.id.et_pickup);
-        cb_shared = findViewById(R.id.cb_shared);
-        new_order.setShared(false);
-        new_order.setEstimated_cost("200.0");
-        new_order.setTotal_kms("20");
-        new_order.setPickup_time(Calendar.getInstance().getTime().toString());
-        new_order.setPickup_date(Calendar.getInstance().getTime().toString());
-        cb_shared.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                new_order.setShared(isChecked);
-            }
-        });
+
+
+        //Ahmads
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        // load toolbar titles from string resources
+        activityTitles = getResources().getStringArray(R.array.nav_item_activity_titles);
+
+        mHandler = new Handler();
+
+
+        navigationView.setNavigationItemSelectedListener(this);
+        setUpNavigationView();
     }
 
     @Override
@@ -140,36 +145,26 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
+//        if (id == R.id.nav_camera) {
+//            // Handle the camera action
+//        } else if (id == R.id.nav_gallery) {
+//
+//        } else if (id == R.id.nav_slideshow) {
+//
+//        } else if (id == R.id.nav_manage) {
+//
+//        } else if (id == R.id.nav_share) {
+//
+//        } else if (id == R.id.nav_send) {
+//
+//        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        gMap = googleMap;
-        if(gps.canGetLocation()){
-            LatLng usa = new LatLng(gps.getLatitude(), gps.getLongitude());
-            gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
-        }
-        // Add a marker in Sydney and move the camera
-        gMap.setOnPolylineClickListener(this);
 
-    }
 
     public void selectVehicle(View view) {
         findViewById(R.id.ct_address).setVisibility(View.VISIBLE);
@@ -207,53 +202,7 @@ public class MainActivity extends AppCompatActivity
         else
             startActivityForResult(intent, REQUEST_CODE_LOCATION_DROP_OFF);
     }
-    public void showDateTimePicker() {
-        // Initialize
-        SwitchDateTimeDialogFragment dateTimeFragment = SwitchDateTimeDialogFragment.newInstance(
-                "SELECT DATE TIME",
-                "OK",
-                "Cancel"
-        );
 
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-
-
-        // Assign values
-        dateTimeFragment.startAtCalendarView();
-        dateTimeFragment.set24HoursMode(true);
-        dateTimeFragment.setMinimumDateTime(new GregorianCalendar(2018, Calendar.JANUARY, 1).getTime());
-        dateTimeFragment.setMaximumDateTime(new GregorianCalendar(2025, Calendar.DECEMBER, 31).getTime());
-        if(SELECTED_DATE_TIME == null)
-            dateTimeFragment.setDefaultDateTime(new GregorianCalendar(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)).getTime());
-        else
-            dateTimeFragment.setDefaultDateTime(SELECTED_DATE_TIME.getTime());
-
-        try {
-            dateTimeFragment.setSimpleDateMonthAndDayFormat(new SimpleDateFormat("dd MMMM", Locale.getDefault()));
-        } catch (SwitchDateTimeDialogFragment.SimpleDateMonthAndDayFormatException e) {
-            Log.e("err", e.getMessage());
-        }
-
-        dateTimeFragment.setOnButtonClickListener(new SwitchDateTimeDialogFragment.OnButtonClickListener() {
-            @Override
-            public void onPositiveButtonClick(Date date) {
-                String d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date);
-                String time = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(date);
-                new_order.setPickup_time(time);
-                new_order.setPickup_date(d);
-                SELECTED_DATE_TIME = new GregorianCalendar();
-                SELECTED_DATE_TIME.setTime(date);
-            }
-
-            @Override
-            public void onNegativeButtonClick(Date date) {
-
-            }
-        });
-        dateTimeFragment.show(getSupportFragmentManager(), "dialog_time");
-    }
 
 
     @Override
@@ -271,10 +220,10 @@ public class MainActivity extends AppCompatActivity
                 Address fullAddress = data.getParcelableExtra(LocationPickerActivity.ADDRESS);
                 if(fullAddress != null) {
                     Log.d("FULL ADDRESS****", fullAddress.toString());
-                    et_pickup.setText(fullAddress.getAddressLine(0));
-                    new_order.setPickup(fullAddress.getAddressLine(0));
-                    new_order.setPickupLat(String.valueOf(latitude));
-                    new_order.setPickupLong(String.valueOf(longitude));
+                    MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
+                    MapFragment.new_order.setPickup(fullAddress.getAddressLine(0));
+                    MapFragment.new_order.setPickupLat(String.valueOf(latitude));
+                    MapFragment.new_order.setPickupLong(String.valueOf(longitude));
                 }
             }
             else if (resultCode == RESULT_CANCELED) {
@@ -295,26 +244,25 @@ public class MainActivity extends AppCompatActivity
                 Address fullAddress = data.getParcelableExtra(LocationPickerActivity.ADDRESS);
                 if(fullAddress != null) {
                     Log.d("FULL ADDRESS****", fullAddress.toString());
-                    et_drop_off.setText(fullAddress.getAddressLine(0));
-                    new_order.setDropoff(fullAddress.getAddressLine(0));
-                    new_order.setDropoffLat(String.valueOf(latitude));
-                    new_order.setDropoffLong(String.valueOf(longitude));
+                    MapFragment.et_drop_off.setText(fullAddress.getAddressLine(0));
+                    MapFragment.new_order.setDropoff(fullAddress.getAddressLine(0));
+                    MapFragment.new_order.setDropoffLat(String.valueOf(latitude));
+                    MapFragment.new_order.setDropoffLong(String.valueOf(longitude));
 
 
-                    if(!TextUtils.isEmpty(et_pickup.getText())){
+                    if(!TextUtils.isEmpty(MapFragment.et_pickup.getText())){
                         MarkerOptions options = new MarkerOptions();
-                        Double pickupLat = Double.valueOf(new_order.getPickupLat());
-                        Double pickupLng = Double.valueOf(new_order.getPickupLong());
+                        Double pickupLat = Double.valueOf(MapFragment.new_order.getPickupLat());
+                        Double pickupLng = Double.valueOf(MapFragment.new_order.getPickupLong());
                         options.position(new LatLng(pickupLat,pickupLng));
                         options.position(new LatLng(latitude,longitude));
-                        gMap.addMarker(options);
-                        String url = getMapsApiDirectionsUrl();
-                        ReadTask downloadTask = new ReadTask();
-                        downloadTask.execute(url);
+                        MapFragment.gMap.addMarker(options);
+                        String url = mapFragment.getMapsApiDirectionsUrl();
 
-                        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat,pickupLng),
+
+                        MapFragment.gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat,pickupLng),
                                 13));
-                        addMarkers();
+                        mapFragment.addMarkers();
                     }
 
                 }
@@ -325,14 +273,14 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
+    MapFragment mapFragment;
     public void openScheduleActivity(View view) {
-        showDateTimePicker();
+        mapFragment.showDateTimePicker();
     }
 
     public void openBookNowActivity(View view) {
-        et_drop_off = findViewById(R.id.et_dropoff);
-        et_drop_off.setVisibility(View.VISIBLE);
+        MapFragment.et_drop_off = findViewById(R.id.et_dropoff);
+        MapFragment.et_drop_off.setVisibility(View.VISIBLE);
 
 //        if(dialogClass == null) {
 //            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
@@ -365,147 +313,187 @@ public class MainActivity extends AppCompatActivity
 
 
 
+
     /*
     *
-    * MAP JOB
+    *
+    *
+    * AHMAD's PART
+    *
+    *
+    *
     *
     * */
 
-    private String getMapsApiDirectionsUrl() {
-        String addresses = "optimize:true&origin="
-                + new_order.getPickupLat().concat(",") + new_order.getPickupLong()
-                + "&destination=" + new_order.getDropoffLat()+ ","
-                + new_order.getDropoffLong();
 
-        String sensor = "sensor=false";
-        String params = addresses + "&" + sensor;
-        String output = "json";
-        String url = "https://maps.googleapis.com/maps/api/directions/"
-                + output + "?" + params +"&alternatives=true&key="+ getString(R.string.google_maps_api);
-        return url;
+
+    /***
+     * Returns respected fragment that user
+     * selected from navigation menu
+     */
+    private void loadHomeFragment() {
+        // selecting appropriate nav menu item
+        selectNavMenu();
+
+        // set toolbar title
+        setToolbarTitle();
+
+        // if user select the current navigation menu again, don't do anything
+        // just close the navigation drawer
+        if (getSupportFragmentManager().findFragmentByTag(CURRENT_TAG) != null) {
+            drawer.closeDrawers();
+
+            // show or hide the fab button
+            //toggleFab();
+            return;
+        }
+
+        // Sometimes, when fragment has huge data, screen seems hanging
+        // when switching between navigation menus
+        // So using runnable, the fragment is loaded with cross fade effect
+        // This effect can be seen in GMail app
+        Runnable mPendingRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // update the main content by replacing fragments
+                Fragment fragment = getHomeFragment();
+                FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.setCustomAnimations(android.R.anim.fade_in,
+                        android.R.anim.fade_out);
+                fragmentTransaction.replace(R.id.fragment_container, fragment, CURRENT_TAG);
+                fragmentTransaction.commitAllowingStateLoss();
+            }
+        };
+
+        // If mPendingRunnable is not null, then add to the message queue
+        if (mPendingRunnable != null) {
+            mHandler.post(mPendingRunnable);
+        }
+
+        // show or hide the fab button
+        // toggleFab();
+
+        //Closing drawer on item click
+        drawer.closeDrawers();
+
+        // refresh toolbar menu
+        invalidateOptionsMenu();
     }
+    // index to identify current nav menu item
+    public static int navItemIndex = 0;
 
-    private void addMarkers() {
-        if (gMap != null) {
-            Double pickupLat = Double.valueOf(new_order.getPickupLat());
-            Double pickupLng = Double.valueOf(new_order.getPickupLong());
-            Double dropOffLat = Double.valueOf(new_order.getDropoffLat());
-            Double dropOffLng = Double.valueOf(new_order.getDropoffLong());
-            gMap.addMarker(new MarkerOptions().position(new LatLng(pickupLat,pickupLng))
-                    .title("First Point"));
-            gMap.addMarker(new MarkerOptions().position(new LatLng(dropOffLat,dropOffLng))
-                    .title("Second Point"));
+    // tags used to attach the fragments
+    private static final String TAG_ADD_RIDE = "add_ride";
+    private static final String TAG_USER_PROFILE = "user_profile";
+    private static final String TAG_FEEDBACK = "feedback";
+    private static final String TAG_NOTIFICATIONS = "notifications";
+    private static final String TAG_FIND_USER = "find_user";
+    private static final String TAG_RIDE_HISTORY = "ride_history";
+    public static String CURRENT_TAG = TAG_ADD_RIDE;
+    private Fragment getHomeFragment() {
+        switch (navItemIndex) {
+            case 2:
+                // home user profile
+                UserProfileFragment homeFragment = new UserProfileFragment();
+                return homeFragment;
+            case 1:
+                // ride history
+                RideHistoryFragment rideHistoryFragment = new RideHistoryFragment();
+                return rideHistoryFragment;
+            case 0:
+                // add ride fragment
+                mapFragment = new MapFragment();
+                return mapFragment;
+            case 3:
+                // notifications fragment
+                NotificationsFragment notificationsFragment = new NotificationsFragment();
+                return notificationsFragment;
+
+            case 4:
+                // feedback fragment
+                FeedbackFragment feedbackFragment = new FeedbackFragment();
+                return feedbackFragment;
+            case 5:
+                // find user fragment
+                FindUserFragment findUserFragment = new FindUserFragment();
+                return findUserFragment;
+            default:
+                return mapFragment = new  MapFragment();
+            //return new UserProfileFragment();
         }
     }
+    // toolbar titles respected to selected nav menu item
+    private String[] activityTitles;
+    private void setToolbarTitle() {
+        getSupportActionBar().setTitle(activityTitles[navItemIndex]);
+    }
 
+    private void selectNavMenu() {
+        navigationView.getMenu().getItem(navItemIndex).setChecked(true);
+    }
     public void openOrderDetailsActivity(View view) {
-        Helper.CURRENT_ORDER = new_order;
+        Helper.CURRENT_ORDER = MapFragment.new_order;
         startActivity(new Intent(this, OrderDetailsActivity.class));
     }
+    private void setUpNavigationView() {
+        //Setting Navigation View Item Selected Listener to handle the item click of the navigation menu
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener()
+        {
 
+            // This method will trigger on item Click of navigation menu
+            @Override
+            public boolean onNavigationItemSelected(MenuItem menuItem) {
 
-    private class ReadTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... url) {
-            String data = "";
-            try {
-                HttpConnection http = new HttpConnection();
-                data = http.readUrl(url[0]);
-            } catch (Exception e) {
-                Log.d("Background Task", e.toString());
-            }
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            new ParserTask().execute(result);
-        }
-    }
-
-    private class ParserTask extends
-            AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
-        @Override
-        protected List<List<HashMap<String, String>>> doInBackground(
-                String... jsonData) {
-
-            JSONObject jObject;
-            List<List<HashMap<String, String>>> routes = null;
-
-            try {
-                jObject = new JSONObject(jsonData[0]);
-                route_details = new HashMap<>();
-                PathJsonParser parser = new PathJsonParser();
-                routes = parser.parse(jObject);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return routes;
-        }
-
-        @Override
-        protected void onPostExecute(List<List<HashMap<String, String>>> routes) {
-            if(routes == null)
-                return;
-            ArrayList<LatLng> points = null;
-            PolylineOptions polyLineOptions = null;
-
-            // traversing through routes
-            for (int i = 0; i < routes.size(); i++) {
-                points = new ArrayList<LatLng>();
-                polyLineOptions = new PolylineOptions();
-                List<HashMap<String, String>> path = routes.get(i);
-                String distance = route_details.get(i+1).split("--")[0];
-                String duration = route_details.get(i+1).split("--")[1];
-                new_order.setTotal_kms(String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344));
-                for (int j = 0; j < path.size(); j++) {
-                    HashMap<String, String> point = path.get(j);
-
-                    double lat = Double.parseDouble(point.get("lat"));
-                    double lng = Double.parseDouble(point.get("lng"));
-
-                    LatLng position = new LatLng(lat, lng);
-
-                    points.add(position);
+                //Check to see which item was being clicked and perform appropriate action
+                switch (menuItem.getItemId()) {
+                    //Replacing the main content with ContentFragment Which is our Inbox View;
+                    case R.id.nav_user_profile:
+                        navItemIndex = 0;
+                        CURRENT_TAG = TAG_USER_PROFILE;
+                        break;
+                    case R.id.nav_ride_history:
+                        navItemIndex = 1;
+                        CURRENT_TAG = TAG_RIDE_HISTORY;
+                        break;
+                    case R.id.nav_add_ride:
+                        navItemIndex = 2;
+                        CURRENT_TAG = TAG_ADD_RIDE;
+                        break;
+                    case R.id.nav_notifications:
+                        navItemIndex = 3;
+                        CURRENT_TAG = TAG_NOTIFICATIONS;
+                        break;
+                    case R.id.nav_feedback:
+                        navItemIndex = 4;
+                        CURRENT_TAG = TAG_FEEDBACK;
+                        break;
+                    case R.id.nav_find_user:
+                        navItemIndex = 5;
+                        CURRENT_TAG = TAG_FIND_USER;
+                        break;
+                    default:
+                        navItemIndex = 0;
                 }
 
-                polyLineOptions.addAll(points);
-                if(i == 0) {
-                    polyLineOptions.width(20);
-                    polyLineOptions.color(Color.BLUE);
-                }else {
-                    polyLineOptions.width(10);
-                    polyLineOptions.color(Color.DKGRAY);
+                //Checking if the item is in checked state or not, if not make it in checked state
+                if (menuItem.isChecked()) {
+                    menuItem.setChecked(false);
+                } else {
+                    menuItem.setChecked(true);
                 }
-                polyLineOptions.clickable(true);
-                if(polyLineList == null)
-                    polyLineList = new ArrayList<Polyline>();
-                Polyline polyline = gMap.addPolyline(polyLineOptions);
-                polyline.setTag(route_details.get(i+1));
-                polyLineList.add(polyline);
+                menuItem.setChecked(true);
+
+                loadHomeFragment();
+
+                return true;
             }
-
-
-        }
+        });
+        loadHomeFragment();
     }
+
 
     @Override
-    public void onPolylineClick(Polyline polyline) {
-        Log.i("POLYLINE",polyline.toString());
-        for (Polyline pline : polyLineList){
-            if(pline.getId().equals(polyline.getId())){
-                pline.setWidth(20);
-                pline.setColor(Color.BLUE);
-            }else{
-                pline.setWidth(10);
-                pline.setColor(Color.DKGRAY);
-            }
-        }
-        String[] value = ((String) polyline.getTag()).split("--");
-        Toast.makeText(this, "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
+    public void onFragmentInteraction(Uri uri) {
+
     }
-
-
 }

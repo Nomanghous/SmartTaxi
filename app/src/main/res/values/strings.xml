@@ -35,9 +35,9 @@
     <string name="custom_notification_text">Notification Description</string>
     <!-- Toolbar titles when navigation menu item is selected -->
     <string-array name="nav_item_activity_titles">
-        <item>Add Profile</item>
-        <item>Ride History</item>
         <item>Add Ride</item>
+        <item>Ride History</item>
+        <item>Add Profile</item>
         <item>Notifications</item>
         <item>Feedback</item>
         <item>Find User</item>
@@ -54,5 +54,15 @@
         <item>LogiXcess</item>
         <item>TxLabz</item>
     </string-array>
-
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Log in</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
 </resources>

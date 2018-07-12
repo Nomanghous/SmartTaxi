@@ -63,11 +63,21 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+
         <activity
             android:name=".Activities.ScheduleActivity"
             android:parentActivityName=".MainActivity" />
+
         <activity android:name=".Activities.OrderDetailsActivity"
             android:parentActivityName=".MainActivity"
+            />
+
+        <activity android:name=".Activities.Register_Next_Step"
+            android:parentActivityName=".Activities.RegisterActivity"
+            />
+        <activity android:name=".Activities.RegisterActivity"
+            />
+        <activity android:name=".Activities.LoginActivity"
             />
     </application>
 

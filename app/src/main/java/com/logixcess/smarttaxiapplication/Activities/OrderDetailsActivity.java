@@ -30,9 +30,10 @@ public class OrderDetailsActivity extends AppCompatActivity {
             tv_cost.setText(Helper.CURRENT_ORDER.getEstimated_cost());
             tv_vehicle.setText(Helper.CURRENT_ORDER.getVehicle_id());
             tv_shared.setText(Helper.CURRENT_ORDER.getShared() ? "Yes" : "No");
-            tv_time.setText(Helper.CURRENT_ORDER.getPickup_date().concat("-").concat(Helper.CURRENT_ORDER.getPickup_time()));
+            tv_time.setText(Helper.CURRENT_ORDER.getPickup_time());
         }else{
             Toast.makeText(this, "No Order Details Found", Toast.LENGTH_SHORT).show();
+            finish();
         }
 
     }
