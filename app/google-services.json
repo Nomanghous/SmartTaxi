@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "492165458017",
+    "firebase_url": "https://smarttaxi-c57c4.firebaseio.com",
+    "project_id": "smarttaxi-c57c4",
+    "storage_bucket": "smarttaxi-c57c4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492165458017:android:40d8e2ff8a05fbfa",
+        "android_client_info": {
+          "package_name": "com.logixcess.smarttaxiapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "492165458017-euff6caft8si3tjl4vk7b5gc20s3lvfk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjH6qP0_1PPWGYzqWHrhSnxxuMIZRZVM0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
