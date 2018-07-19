@@ -79,6 +79,9 @@
             />
         <activity android:name=".Activities.LoginActivity"
             />
+        <activity android:name=".Activities.MapsActivity"
+            android:parentActivityName=".MainActivity"
+            />
     </application>
 
 </manifest>

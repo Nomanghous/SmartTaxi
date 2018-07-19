@@ -4,13 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".fragments.RideHistoryFragment">
+    android:background="@color/white"
+    tools:context=".Fragments.RideHistoryFragment">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/itemListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ECE8EF"
+        android:background="#FFF"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:divider="@android:color/transparent"

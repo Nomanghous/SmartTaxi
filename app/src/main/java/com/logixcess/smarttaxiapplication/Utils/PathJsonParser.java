@@ -1,15 +1,17 @@
 package com.logixcess.smarttaxiapplication.Utils;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+
+import com.google.android.gms.maps.model.LatLng;
+import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
-import com.logixcess.smarttaxiapplication.MainActivity;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import static com.logixcess.smarttaxiapplication.Utils.Helper.polylinesSeparator;
 
 
 public class PathJsonParser {
@@ -21,6 +23,8 @@ public class PathJsonParser {
         JSONArray jSteps = null;
         String distance = "";
         String duration = "";
+        String polylines = "";
+
         int Counter = 0;
         try {
             jRoutes = jObject.getJSONArray("routes");
@@ -43,7 +47,7 @@ public class PathJsonParser {
 
                         polyline = (String) ((JSONObject) ((JSONObject) jSteps
                                 .get(k)).get("polyline")).get("points");
-
+                        polylines = polyline.concat(polylinesSeparator);
                         List<LatLng> list = decodePoly(polyline);
 
                         /** Traversing all points */
@@ -56,8 +60,9 @@ public class PathJsonParser {
                             path.add(hm);
                         }
                     }
-                    MapFragment.route_details.put(Counter,distance.concat("--").concat(duration));
+                    MapFragment.route_details.put(Counter,distance.concat("--").concat(duration).concat(polylinesSeparator).concat(polylines));
                     distance = "";
+                    polylines = "";
                     routes.add(path);
                 }
             }

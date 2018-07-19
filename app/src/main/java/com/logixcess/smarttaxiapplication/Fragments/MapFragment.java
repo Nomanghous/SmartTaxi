@@ -61,7 +61,7 @@ import java.util.Locale;
  * create an instance of this fragment.
  */
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
-    // TODO: Rename parameter arguments, choose names that match
+
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
@@ -93,7 +93,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
      * @param param2 Parameter 2.
      * @return A new instance of fragment MapFragment.
      */
-    // TODO: Rename and change types and number of parameters
+
     public static MapFragment newInstance(String param1, String param2) {
         MapFragment fragment = new MapFragment();
         Bundle args = new Bundle();
@@ -117,7 +117,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        MapsInitializer.initialize(getContext());
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         mapFragment = view.findViewById(R.id.map);
         mapFragment.onCreate(savedInstanceState);
@@ -164,7 +163,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         return  view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
+
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -224,7 +223,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
+
         void onFragmentInteraction(Uri uri);
     }
 
@@ -295,9 +294,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         Double longitude = 80.665608;
         LatLng usa = new LatLng(latitude, longitude);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
-        // Add a marker in Sydney and move the camera
         gMap.setOnPolylineClickListener(this);
-
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="

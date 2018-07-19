@@ -20,6 +20,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+
+
+
+
+
+
+
+
+
 }
 
 dependencies {
@@ -39,6 +49,7 @@ dependencies {
     implementation 'com.github.Kunzisoft:Android-SwitchDateTimePicker:1.9'
     implementation 'com.ramotion.foldingcell:folding-cell:1.2.2'
 
+    implementation 'com.github.jd-alexander:library:1.1.0'
 
 
 

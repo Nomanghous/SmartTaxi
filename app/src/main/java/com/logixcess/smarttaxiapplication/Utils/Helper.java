@@ -5,4 +5,5 @@ import com.logixcess.smarttaxiapplication.Models.Order;
 public class Helper {
 
     public static Order CURRENT_ORDER = null;
+    public static String polylinesSeparator = "___and___";
 }
