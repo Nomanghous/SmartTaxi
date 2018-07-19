@@ -365,7 +365,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 route_details = new HashMap<>();
                 PathJsonParser parser = new PathJsonParser();
                 routes = parser.parse(jObject);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
             return routes;

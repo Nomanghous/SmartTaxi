@@ -1,4 +1,5 @@
 package com.logixcess.smarttaxiapplication.Models;
 
-public class Driver {
+public class Driver
+{
 }
