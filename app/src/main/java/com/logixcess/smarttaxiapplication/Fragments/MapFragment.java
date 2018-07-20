@@ -79,7 +79,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
-    private PlaceAutocompleteFragment place_autocomplete_fragment;
+
 
     public MapFragment() {
         // Required empty public constructor
@@ -128,9 +128,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         new_order.setShared(false);
         new_order.setEstimated_cost("200.0");
         new_order.setTotal_kms("20");
-        place_autocomplete_fragment = (PlaceAutocompleteFragment)
-                getActivity().getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
-        final View root = place_autocomplete_fragment.getView();
+
 
         new_order.setPickup_time(Calendar.getInstance().getTime().toString());
 //        new_order.setPickup_date(Calendar.getInstance().getTime().toString());
@@ -142,23 +140,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         });
 
 
-        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
-                .setCountry("AR")
-                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
-                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_GEOCODE)
-                .build();
-        place_autocomplete_fragment.setFilter(typeFilter);
-        place_autocomplete_fragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-
-            }
-
-            @Override
-            public void onError(Status status) {
-                Log.i("Place", "An error occurred: " + status);
-            }
-        });
 
         return  view;
     }
@@ -386,10 +367,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 List<HashMap<String, String>> path = routes.get(i);
                 String distance = route_details.get(i+1).split("--")[0];
                 String duration = route_details.get(i+1).split("--")[1];
+
+                distance = distance.replaceAll("\\D+","");
                 if(distance.contains("mi"))
                     distance = String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344);
-                else
+                else if( distance.contains(("km")))
                     distance = String.valueOf(Double.valueOf(distance.replace("km","")) * 1.609344);
+                else if(distance.contains("m"))
+                    distance = String.valueOf(Double.valueOf(distance.replace("m","")) * 1.609344);
                 new_order.setTotal_kms(distance);
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);

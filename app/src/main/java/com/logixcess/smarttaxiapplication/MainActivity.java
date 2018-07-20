@@ -1,5 +1,6 @@
 package com.logixcess.smarttaxiapplication;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
@@ -22,9 +24,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -241,9 +246,40 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+AlertDialog builder;
+    public void user_selection_dialog()
+    {
+        Context mContext = MainActivity.this;
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(LAYOUT_INFLATER_SERVICE);
+        View layout = inflater.inflate(R.layout.dialog_shared_user_selection,
+                (ViewGroup) findViewById(R.id.rating_linear_layout));
+        EditText edt_user_numbers = layout.findViewById(R.id.edt_user_numbers);
+        Button btn_done = layout.findViewById(R.id.btn_done);
+        builder = new AlertDialog.Builder(mContext).create();
+        builder.setView(layout);
+        builder.show();
+        btn_done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                    if(TextUtils.isEmpty(edt_user_numbers.getText().toString()))
+                    {
+                        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                    }
+                    else {
+                        builder.dismiss();
+                    }
 
-
+            }
+        });
+    }
     public void selectVehicle(View view) {
+        CheckBox cb_shared = findViewById(R.id.cb_shared);
+        if(cb_shared.isChecked())
+        {
+            user_selection_dialog();
+        }
         findViewById(R.id.ct_address).setVisibility(View.VISIBLE);
         findViewById(R.id.ct_vehicles).setVisibility(View.GONE);
         findViewById(R.id.btn_confirm).setVisibility(View.VISIBLE);
