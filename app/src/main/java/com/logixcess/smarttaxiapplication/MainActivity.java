@@ -111,7 +111,6 @@ public class MainActivity extends AppCompatActivity
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         // load toolbar titles from string resources
         activityTitles = getResources().getStringArray(R.array.nav_item_activity_titles);
-
         mHandler = new Handler();
 
 
@@ -356,8 +355,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void openBookNowActivity(View view) {
-        MapFragment.et_drop_off = findViewById(R.id.et_dropoff);
-        MapFragment.et_drop_off.setVisibility(View.VISIBLE);
+
 
 //        if(dialogClass == null) {
 //            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
