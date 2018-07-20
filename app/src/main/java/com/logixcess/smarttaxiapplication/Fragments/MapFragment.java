@@ -124,6 +124,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         mapFragment.getMapAsync(this);
         new_order = new Order();
         et_pickup = view.findViewById(R.id.et_pickup);
+        et_drop_off = view.findViewById(R.id.et_dropoff);
         cb_shared = view.findViewById(R.id.cb_shared);
         new_order.setShared(false);
         new_order.setEstimated_cost("200.0");

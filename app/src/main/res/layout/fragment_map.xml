@@ -42,7 +42,6 @@
             android:background="@color/white"
             android:hint="Dropoff Location"
             android:paddingLeft="8dp"
-            android:visibility="gone"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
             android:editable="false"
