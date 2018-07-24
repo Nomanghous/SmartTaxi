@@ -23,6 +23,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <!-- Firebase Notifications -->
         <service android:name=".Services.MyFirebaseMessagingService">
             <intent-filter>
@@ -32,12 +33,13 @@
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
+        <service android:name=".Services.MyFirebaseInstanceIDService" />
 
-        <!--<service android:name=".Services.MyFirebaseInstanceIDService">-->
-            <!--<intent-filter>-->
-                <!--<action android:name="com.google.firebase.INSTANCE_ID_EVENT" />-->
-            <!--</intent-filter>-->
-        <!--</service>-->
+        <!-- <service android:name=".Services.MyFirebaseInstanceIDService"> -->
+        <!-- <intent-filter> -->
+        <!-- <action android:name="com.google.firebase.INSTANCE_ID_EVENT" /> -->
+        <!-- </intent-filter> -->
+        <!-- </service> -->
         <!-- ./Firebase Notifications -->
         <activity
             android:name=".MainActivity"
@@ -80,7 +82,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-
         <activity
             android:name=".Activities.ScheduleActivity"
             android:parentActivityName=".MainActivity" />
@@ -92,10 +93,12 @@
             android:parentActivityName=".Activities.RegisterActivity" />
         <activity android:name=".Activities.RegisterActivity" />
         <activity android:name=".Activities.LoginActivity" />
-
-        <activity android:name=".Activities.MapsActivity"
-            android:parentActivityName=".MainActivity"
-            />
+        <activity
+            android:name=".Activities.MapsActivity"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".DriverModule.MapsActivity"
+            android:label="@string/title_activity_maps"></activity>
     </application>
 
 </manifest>

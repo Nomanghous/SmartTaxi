@@ -1,27 +1,35 @@
 {
   "project_info": {
-    "project_number": "492165458017",
-    "firebase_url": "https://smarttaxi-c57c4.firebaseio.com",
-    "project_id": "smarttaxi-c57c4",
-    "storage_bucket": "smarttaxi-c57c4.appspot.com"
+    "project_number": "482394467383",
+    "firebase_url": "https://smarttaxi-507e4.firebaseio.com",
+    "project_id": "smarttaxi-507e4",
+    "storage_bucket": "smarttaxi-507e4.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:492165458017:android:40d8e2ff8a05fbfa",
+        "mobilesdk_app_id": "1:482394467383:android:81d6d4f50b4567c6",
         "android_client_info": {
-          "package_name": "com.logixcess.smarttaxiapplication"
+          "package_name": "com.agmohammed.smarttaxi"
         }
       },
       "oauth_client": [
         {
-          "client_id": "492165458017-euff6caft8si3tjl4vk7b5gc20s3lvfk.apps.googleusercontent.com",
+          "client_id": "482394467383-oqsg3tks6jfi65umbnvckce3no4e3ktr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.agmohammed.smarttaxi",
+            "certificate_hash": "e5dc4d5b3cd59ecf66cfdb38550c7d0d468c3451"
+          }
+        },
+        {
+          "client_id": "482394467383-bmfeg8o3iekrsp6ojiccvc4if7v8dt32.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCjH6qP0_1PPWGYzqWHrhSnxxuMIZRZVM0"
+          "current_key": "AIzaSyBNIq32Lptc9MRNXgfeiG8sygjUEWhcktA"
         }
       ],
       "services": {
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "482394467383-bmfeg8o3iekrsp6ojiccvc4if7v8dt32.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2

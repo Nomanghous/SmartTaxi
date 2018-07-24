@@ -1,6 +1,9 @@
 package com.logixcess.smarttaxiapplication.Models;
 
-public class User
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class User implements Parcelable
 {
     private String user_id ;
     private String name;
@@ -10,6 +13,34 @@ public class User
     private String join_date;
     private long priority_level;
     private String user_image_url;
+
+    public User(){
+
+    }
+
+    protected User(Parcel in) {
+        user_id = in.readString();
+        name = in.readString();
+        phone = in.readString();
+        Address = in.readString();
+        user_type = in.readString();
+        join_date = in.readString();
+        priority_level = in.readLong();
+        user_image_url = in.readString();
+    }
+
+    public static final Creator<User> CREATOR = new Creator<User>() {
+        @Override
+        public User createFromParcel(Parcel in) {
+            return new User(in);
+        }
+
+        @Override
+        public User[] newArray(int size) {
+            return new User[size];
+        }
+    };
+
     public String getUser_id() {
         return user_id;
     }
@@ -72,5 +103,22 @@ public class User
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(user_id);
+        dest.writeString(name);
+        dest.writeString(phone);
+        dest.writeString(Address);
+        dest.writeString(user_type);
+        dest.writeString(join_date);
+        dest.writeLong(priority_level);
+        dest.writeString(user_image_url);
     }
 }

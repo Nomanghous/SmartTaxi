@@ -3,12 +3,78 @@ package com.logixcess.smarttaxiapplication.Models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Order{
-    private String pickup, dropoff, pickupLat, pickupLong, dropoffLat, dropoffLong,
+public class Order implements Parcelable{
+    private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
-    private Boolean isScheduled, isShared;
 
+    private Boolean isScheduled, isShared,status;
+
+    private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
+
+    public Order() {
+    }
+
+    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, Boolean status) {
+        this.pickup = pickup;
+        this.dropoff = dropoff;
+        this.pickupLat = pickupLat;
+        this.pickupLong = pickupLong;
+        this.dropoffLat = dropoffLat;
+        this.dropoffLong = dropoffLong;
+        this.user_id = user_id;
+        this.user_name = user_name;
+        this.scheduled_time = scheduled_time;
+        this.driver_id = driver_id;
+        this.driver_name = driver_name;
+        this.vehicle_id = vehicle_id;
+        this.total_kms = total_kms;
+        this.waiting_time = waiting_time;
+        this.pickup_time = pickup_time;
+        this.pickup_date = pickup_date;
+        this.estimated_cost = estimated_cost;
+        this.isScheduled = isScheduled;
+        this.isShared = isShared;
+        this.status = status;
+    }
+
+    protected Order(Parcel in) {
+        pickup = in.readString();
+        dropoff = in.readString();
+        pickupLat = in.readDouble();
+        pickupLong = in.readDouble();
+        dropoffLat = in.readDouble();
+        dropoffLong = in.readDouble();
+        user_id = in.readString();
+        user_name = in.readString();
+        scheduled_time = in.readString();
+        driver_id = in.readString();
+        driver_name = in.readString();
+        vehicle_id = in.readString();
+        total_kms = in.readString();
+        waiting_time = in.readString();
+        pickup_time = in.readString();
+        pickup_date = in.readString();
+        estimated_cost = in.readString();
+        byte tmpIsScheduled = in.readByte();
+        isScheduled = tmpIsScheduled == 0 ? null : tmpIsScheduled == 1;
+        byte tmpIsShared = in.readByte();
+        isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
+        byte tmpStatus = in.readByte();
+        status = tmpStatus == 0 ? null : tmpStatus == 1;
+    }
+
+    public static final Creator<Order> CREATOR = new Creator<Order>() {
+        @Override
+        public Order createFromParcel(Parcel in) {
+            return new Order(in);
+        }
+
+        @Override
+        public Order[] newArray(int size) {
+            return new Order[size];
+        }
+    };
 
     public String getEstimated_cost() {
         return estimated_cost;
@@ -34,35 +100,35 @@ public class Order{
         this.dropoff = dropoff;
     }
 
-    public String getPickupLat() {
+    public Double getPickupLat() {
         return pickupLat;
     }
 
-    public void setPickupLat(String pickupLat) {
+    public void setPickupLat(Double pickupLat) {
         this.pickupLat = pickupLat;
     }
 
-    public String getPickupLong() {
+    public Double getPickupLong() {
         return pickupLong;
     }
 
-    public void setPickupLong(String pickupLong) {
+    public void setPickupLong(Double pickupLong) {
         this.pickupLong = pickupLong;
     }
 
-    public String getDropoffLat() {
+    public Double getDropoffLat() {
         return dropoffLat;
     }
 
-    public void setDropoffLat(String dropoffLat) {
+    public void setDropoffLat(Double dropoffLat) {
         this.dropoffLat = dropoffLat;
     }
 
-    public String getDropoffLong() {
+    public Double getDropoffLong() {
         return dropoffLong;
     }
 
-    public void setDropoffLong(String dropoffLong) {
+    public void setDropoffLong(Double dropoffLong) {
         this.dropoffLong = dropoffLong;
     }
 
@@ -162,6 +228,82 @@ public class Order{
     public void setScheduled(Boolean scheduled) {
         isScheduled = scheduled;
     }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(pickup);
+        dest.writeString(dropoff);
+        dest.writeDouble(pickupLat);
+        dest.writeDouble(pickupLong);
+        dest.writeDouble(dropoffLat);
+        dest.writeDouble(dropoffLong);
+        dest.writeString(user_id);
+        dest.writeString(user_name);
+        dest.writeString(scheduled_time);
+        dest.writeString(driver_id);
+        dest.writeString(driver_name);
+        dest.writeString(vehicle_id);
+        dest.writeString(total_kms);
+        dest.writeString(waiting_time);
+        dest.writeString(pickup_time);
+        dest.writeString(pickup_date);
+        dest.writeString(estimated_cost);
+        dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
+        dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
+        dest.writeByte((byte) (status == null ? 0 : status ? 1 : 2));
+    }
+
+    public class Cost{
+        String cost_id, trip_id;
+        float cost;
+        long datetime;
+
+        public String getCost_id() {
+            return cost_id;
+        }
+
+        public void setCost_id(String cost_id) {
+            this.cost_id = cost_id;
+        }
+
+        public String getTrip_id() {
+            return trip_id;
+        }
+
+        public void setTrip_id(String trip_id) {
+            this.trip_id = trip_id;
+        }
+
+        public float getCost() {
+            return cost;
+        }
+
+        public void setCost(float cost) {
+            this.cost = cost;
+        }
+
+        public long getDatetime() {
+            return datetime;
+        }
+
+        public void setDatetime(long datetime) {
+            this.datetime = datetime;
+        }
+    }
+
 
 
 }
