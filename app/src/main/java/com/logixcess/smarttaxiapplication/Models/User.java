@@ -41,6 +41,7 @@ public class User implements Parcelable
         }
     };
 
+    private String user_token;
     public String getUser_id() {
         return user_id;
     }
@@ -103,6 +104,14 @@ public class User implements Parcelable
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getUser_token() {
+        return user_token;
+    }
+
+    public void setUser_token(String user_token) {
+        this.user_token = user_token;
     }
 
     @Override

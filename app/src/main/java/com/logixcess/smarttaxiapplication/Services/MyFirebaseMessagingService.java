@@ -37,18 +37,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private NotificationUtils notificationUtils;
     @Override
-    public void onNewToken(String s) {
-        super.onNewToken(s);
-        Log.e("NEW_TOKEN",s);
+    public void onNewToken(String refresh_token) {
+        super.onNewToken(refresh_token);
+        Log.e("NEW_TOKEN",refresh_token);
         // Saving reg id to shared preferences
-        storeRegIdInPref(s);
+        storeRegIdInPref(refresh_token);
 
         // sending reg id to your server
-        sendRegistrationToServer(s);
+        sendRegistrationToServer(refresh_token);
 
         // Notify UI that registration has completed, so the progress indicator can be hidden.
         Intent registrationComplete = new Intent(Config.REGISTRATION_COMPLETE);
-        registrationComplete.putExtra("token", s);
+        registrationComplete.putExtra("token", refresh_token);
         LocalBroadcastManager.getInstance(this).sendBroadcast(registrationComplete);
     }
     private void sendRegistrationToServer(final String token) {
