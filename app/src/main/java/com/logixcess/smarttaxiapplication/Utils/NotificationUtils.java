@@ -7,7 +7,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -29,14 +28,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.R;
-import com.logixcess.smarttaxiapplication.Utils.Config;
 
 /**
  * Created by Ravi on 31/03/15.
  */
 public class NotificationUtils {
 
+    private static final String CHANNEL_ID_ORDER = "channel_order";
     private static String TAG = NotificationUtils.class.getSimpleName();
 
     private Context mContext;
@@ -212,4 +212,42 @@ public class NotificationUtils {
         }
         return 0;
     }
+
+
+    public static void showNotificationForOrderToDriver(Context context, String payload){
+        Intent acceptIntent = new Intent(context, MyNotificationManager.class);
+        acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        acceptIntent.putExtra("Data", payload);
+        acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        PendingIntent acceptPendingIntent =
+                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_ACCEPT_ORDER, acceptIntent, 0);
+
+        Intent rejectIntent = new Intent(context, MyNotificationManager.class);
+        rejectIntent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+        rejectIntent.putExtra("Data", payload);
+        rejectIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+
+        PendingIntent rejectPendingIntent =
+                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_REJECT_ORDER, rejectIntent, 0);
+
+        Intent viewIntent = new Intent(context, MyNotificationManager.class);
+        viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        viewIntent.putExtra("Data", payload);
+        viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        PendingIntent viewPendingIntent =
+                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_VIEW_ORDER, viewIntent, 0);
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
+                .setSmallIcon(R.drawable.ic_action_name)
+                .setContentTitle("Order Generated")
+                .setContentText("Do You want to accept it?")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(viewPendingIntent)
+                .addAction(R.drawable.ic_okay, "Accept",
+                        acceptPendingIntent)
+                .addAction(R.drawable.ic_no, "Reject",
+                        rejectPendingIntent);
+        mBuilder.notify();
+    }
+
 }
