@@ -13,7 +13,7 @@ public class User implements Parcelable
     private String join_date;
     private long priority_level;
     private String user_image_url;
-
+    private String password;
     public User(){
 
     }
@@ -27,6 +27,7 @@ public class User implements Parcelable
         join_date = in.readString();
         priority_level = in.readLong();
         user_image_url = in.readString();
+        password = in.readString();
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
@@ -129,5 +130,14 @@ public class User implements Parcelable
         dest.writeString(join_date);
         dest.writeLong(priority_level);
         dest.writeString(user_image_url);
+        dest.writeString(password);
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
