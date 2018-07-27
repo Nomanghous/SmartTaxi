@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "492165458017-7l5brs737sakddh6eh6d8ebe7chn5nu4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.logixcess.smarttaxiapplication",
+            "certificate_hash": "e5dc4d5b3cd59ecf66cfdb38550c7d0d468c3451"
+          }
+        },
+        {
           "client_id": "492165458017-euff6caft8si3tjl4vk7b5gc20s3lvfk.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "492165458017-euff6caft8si3tjl4vk7b5gc20s3lvfk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2

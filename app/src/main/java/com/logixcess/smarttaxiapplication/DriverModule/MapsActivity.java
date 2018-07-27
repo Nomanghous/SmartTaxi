@@ -58,13 +58,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         setupOrdersListener();
         everyTenSecondsTask();
-        LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER));
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_REJECT_ORDER));
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_VIEW_ORDER));
+        setupBroadcastReceivers();
     }
+
 
     private void everyTenSecondsTask() {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
@@ -76,7 +72,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             updateUserLocation();
         }
     }
-
 
     private void setupOrdersListener() {
         db_ref_order.addValueEventListener(new ValueEventListener() {
@@ -116,6 +111,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void setupOrderOnMap(){
+        if(CURRENT_ORDER != null){
+            MarkerOptions userMarker = new MarkerOptions();
+
+        }
+    }
 
     private void acceptOrder(String orderId, Order order){
         db_ref_order.child(orderId).setValue(order);
@@ -161,6 +162,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.d("receiver", "Got message: " + message);
         }
     };
+
+
+    private void setupBroadcastReceivers() {
+        LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,
+                new IntentFilter(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
+                new IntentFilter(MyNotificationManager.INTENT_FILTER_REJECT_ORDER));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
+                new IntentFilter(MyNotificationManager.INTENT_FILTER_VIEW_ORDER));
+    }
 
     @Override
     protected void onDestroy() {
