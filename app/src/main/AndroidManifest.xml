@@ -98,7 +98,10 @@
             android:parentActivityName=".MainActivity" />
         <activity
             android:name=".DriverModule.MapsActivity"
-            android:label="@string/title_activity_maps"></activity>
+            android:label="@string/title_activity_maps" />
+        <activity android:name=".Activities.MyNotificationManager"></activity>
+
+        <receiver android:name=".Activities.MyNotificationManager" />
     </application>
 
 </manifest>

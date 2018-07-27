@@ -280,7 +280,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
-                + new_order.getPickupLat().concat(",") + new_order.getPickupLong()
+                + new_order.getPickupLat().toString().concat(",") + new_order.getPickupLong()
                 + "&destination=" + new_order.getDropoffLat()+ ","
                 + new_order.getDropoffLong();
 

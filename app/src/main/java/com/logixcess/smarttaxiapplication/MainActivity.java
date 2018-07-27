@@ -6,10 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.location.Address;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
@@ -31,25 +29,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.places.AutocompleteFilter;
-import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
-import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
 import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
@@ -57,25 +44,11 @@ import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.Fragments.NotificationsFragment;
 import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
-import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
-import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
-import com.logixcess.smarttaxiapplication.Utils.PathJsonParser;
 import com.logixcess.smarttaxiapplication.Utils.UserLocationManager;
 import com.schibstedspain.leku.LocationPickerActivity;
-
-import org.json.JSONObject;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -334,8 +307,8 @@ AlertDialog builder;
                     Log.d("FULL ADDRESS****", fullAddress.toString());
                     MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
                     MapFragment.new_order.setPickup(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setPickupLat(String.valueOf(latitude));
-                    MapFragment.new_order.setPickupLong(String.valueOf(longitude));
+                    MapFragment.new_order.setPickupLat(latitude);
+                    MapFragment.new_order.setPickupLong(longitude);
                 }
             }
             else if (resultCode == RESULT_CANCELED) {
@@ -358,8 +331,8 @@ AlertDialog builder;
                     Log.d("FULL ADDRESS****", fullAddress.toString());
                     MapFragment.et_drop_off.setText(fullAddress.getAddressLine(0));
                     MapFragment.new_order.setDropoff(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setDropoffLat(String.valueOf(latitude));
-                    MapFragment.new_order.setDropoffLong(String.valueOf(longitude));
+                    MapFragment.new_order.setDropoffLat(latitude);
+                    MapFragment.new_order.setDropoffLong(longitude);
 
 
                     if(!TextUtils.isEmpty(MapFragment.et_pickup.getText())){
@@ -491,7 +464,7 @@ AlertDialog builder;
         invalidateOptionsMenu();
     }
     // index to identify current nav menu item
-    public static int navItemIndex = 0;
+    public int navItemIndex = 0;
 
     // tags used to attach the fragments
     private static final String TAG_ADD_RIDE = "add_ride";
