@@ -306,6 +306,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailView.setAdapter(adapter);
     }
 
+    public void openRegistrationActivity(View view) {
+        startActivity(new Intent(this, RegisterActivity.class));
+    }
+
 
     private interface ProfileQuery {
         String[] PROJECTION = {

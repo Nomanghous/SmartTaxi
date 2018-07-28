@@ -275,7 +275,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mapFragment.onDestroy();
+        if(mapFragment != null)
+            mapFragment.onDestroy();
     }
 
     @Override

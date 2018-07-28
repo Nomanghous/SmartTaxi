@@ -31,6 +31,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
@@ -80,7 +81,8 @@ public class RegisterActivity extends AppCompatActivity {
         btn_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!TextUtils.isEmpty(Constants.FilePathUri.toString()))
+
+                if(Constants.FilePathUri != null && !TextUtils.isEmpty(Constants.FilePathUri.toString()))
                     UploadImageFileToFirebaseStorage(Constants.FilePathUri);
                 if(!TextUtils.isEmpty(Constants.USER_TOKEN))
                     user.setUser_token(Constants.USER_TOKEN);
@@ -105,7 +107,7 @@ public class RegisterActivity extends AppCompatActivity {
                 else
                 {
                     //passenger
-                    intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
+                    intent = new Intent(RegisterActivity.this,MainActivity.class);
                 }
 
                 intent.putExtra("user_data",user);
