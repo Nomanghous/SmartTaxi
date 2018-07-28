@@ -28,7 +28,12 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.R;
 
@@ -46,7 +51,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
-
+    FirebaseAuth auth;
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
@@ -65,8 +70,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private View mProgressView;
     private View mLoginFormView;
     TextView message_view;
-    AutoCompleteTextView email;
-    EditText password;
+    AutoCompleteTextView et_email;
+    EditText et_password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,10 +80,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         Typeface typeFace=Typeface.createFromAsset(this.getAssets(),"MavenPro-Regular.ttf");
         Typeface typeFace2=Typeface.createFromAsset(this.getAssets(),"MavenPro-Bold.ttf");
         message_view = findViewById(R.id.message_view);
-        email = findViewById(R.id.email);
-        password = findViewById(R.id.password);
-        email.setTypeface(typeFace);
-        password.setTypeface(typeFace);
+        et_email = findViewById(R.id.email);
+        et_password = findViewById(R.id.password);
+        et_email.setTypeface(typeFace);
+        et_password.setTypeface(typeFace);
         message_view.setTypeface(typeFace2);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
@@ -89,8 +94,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                 if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
-                    attemptLogin();
-                    return true;
+                    //attemptLogin();
+                    if( !(TextUtils.isEmpty(et_email.getText().toString())) && !(TextUtils.isEmpty(et_password.getText().toString())) )
+                    {
+                        attemptLogin(et_email.getText().toString(),et_password.getText().toString());
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -100,7 +109,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                attemptLogin();
+                //attemptLogin();
+                if( !(TextUtils.isEmpty(et_email.getText().toString())) && !(TextUtils.isEmpty(et_password.getText().toString())) )
+                {
+                    attemptLogin(et_email.getText().toString(),et_password.getText().toString());
+                }
             }
         });
 
@@ -357,6 +370,49 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
         }
+    }
+    public void attemptLogin(String email , String password)
+    {
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(getApplicationContext(), "Enter email address!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (TextUtils.isEmpty(password)) {
+            Toast.makeText(getApplicationContext(), "Enter password!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //Get Firebase auth instance
+        auth = FirebaseAuth.getInstance();
+     //   progressBar.setVisibility(View.VISIBLE);
+        //authenticate user
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        //mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                        showProgress(true);
+                        //progressBar.setVisibility(View.GONE);
+                        if (!task.isSuccessful()) {
+                            // there was an error
+                            if (et_password.length() < 6) {
+                                et_password.setError(getString(R.string.minimum_password));
+                            } else {
+                                Toast.makeText(LoginActivity.this, getString(R.string.auth_failed), Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
+                    }
+                });
+
+        //Intent intent = new Intent(this,MainActivity.class);
+        //startActivity(intent);
     }
 }
 

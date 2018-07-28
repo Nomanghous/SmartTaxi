@@ -19,11 +19,11 @@ public class SmartTaxiApp extends Application
     @Override
     public void onCreate() {
         super.onCreate();
-      //  Fabric.with(this, new Answers(), new Crashlytics());
+        //  Fabric.with(this, new Answers(), new Crashlytics());
         Firebase.setAndroidContext(getApplicationContext());
         Firebase.getDefaultConfig().setPersistenceEnabled(false);
-        //firebase_instance = new Firebase("https://travel-application-c72cb.firebaseio.com/");
-        //mInstance = this;
+        firebase_instance = new Firebase(Constants.Database_Path);
+        mInstance = this;
     }
 
     @Override

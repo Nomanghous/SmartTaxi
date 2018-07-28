@@ -5,10 +5,24 @@ import android.os.Parcelable;
 
 public class Passenger  implements Parcelable
 {
+    private Boolean inOnline;
+    private double latitude;
+    private double longitude;
     private String fk_user_id;
     private Boolean is_working_student;
     private String orgnization_name;
+    private long priority_level;
+    public long getPriority_level() {
+        return priority_level;
+    }
 
+    public void setPriority_level(long priority_level) {
+        this.priority_level = priority_level;
+    }
+    public Passenger()
+    {
+
+    }
     protected Passenger(Parcel in) {
         fk_user_id = in.readString();
         byte tmpIs_working_student = in.readByte();

@@ -67,4 +67,9 @@
     </string>
     <string name="tv_label_selection">Please Select</string>
     <string name="tv_label_user_numbers">Number of users</string>
+    <string name="label_login">Login</string>
+    <string name="minimum_password">Password must be greater than 6</string>
+    <string name="auth_failed">Auth Failed</string>
+    <string name="additional_details">Additional Details :</string>
+
 </resources>

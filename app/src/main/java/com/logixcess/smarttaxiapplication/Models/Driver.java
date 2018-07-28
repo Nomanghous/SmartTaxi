@@ -5,17 +5,26 @@ import android.os.Parcelable;
 
 public class Driver implements Parcelable
 {
-    String driving_license_url, user_nic_url , fk_user_id, fk_vehicle_id, driving_issue,date, driving_expiry_date;
-
-
+    String driving_license_url,
+            user_nic_url ,
+            fk_user_id,
+            fk_vehicle_id,
+            driving_issue_date,
+            driving_expiry_date;
+    private Boolean inOnline;
+    private double latitude;
+    private double longitude;
+    public Driver()
+    {}
     protected Driver(Parcel in) {
         driving_license_url = in.readString();
         user_nic_url = in.readString();
         fk_user_id = in.readString();
         fk_vehicle_id = in.readString();
-        driving_issue = in.readString();
-        date = in.readString();
+        driving_issue_date = in.readString();
         driving_expiry_date = in.readString();
+        latitude = in.readDouble();
+        longitude = in.readDouble();
     }
 
     public static final Creator<Driver> CREATOR = new Creator<Driver>() {
@@ -62,22 +71,13 @@ public class Driver implements Parcelable
         this.fk_vehicle_id = fk_vehicle_id;
     }
 
-    public String getDriving_issue() {
-        return driving_issue;
+    public String getDriving_issue_date() {
+        return driving_issue_date;
     }
 
-    public void setDriving_issue(String driving_issue) {
-        this.driving_issue = driving_issue;
+    public void setDriving_issue(String driving_issue_date) {
+        this.driving_issue_date = driving_issue_date;
     }
-
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
     public String getDriving_expiry_date() {
         return driving_expiry_date;
     }
@@ -97,10 +97,34 @@ public class Driver implements Parcelable
         dest.writeString(user_nic_url);
         dest.writeString(fk_user_id);
         dest.writeString(fk_vehicle_id);
-        dest.writeString(driving_issue);
-        dest.writeString(date);
+        dest.writeString(driving_issue_date);
         dest.writeString(driving_expiry_date);
+        dest.writeDouble(latitude);
+        dest.writeDouble(longitude);
     }
 
 
+    public Boolean getInOnline() {
+        return inOnline;
+    }
+
+    public void setInOnline(Boolean inOnline) {
+        this.inOnline = inOnline;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 }

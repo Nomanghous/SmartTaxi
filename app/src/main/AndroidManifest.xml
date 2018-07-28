@@ -45,11 +45,13 @@
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
 
         <!--
@@ -91,7 +93,13 @@
         <activity
             android:name=".Activities.Register_Next_Step"
             android:parentActivityName=".Activities.RegisterActivity" />
-        <activity android:name=".Activities.RegisterActivity" />
+        <activity android:name=".Activities.RegisterActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity android:name=".Activities.LoginActivity" />
         <activity
             android:name=".Activities.MapsActivity"
@@ -101,6 +109,8 @@
             android:label="@string/title_activity_maps" />
 
         <receiver android:name=".Activities.MyNotificationManager" />
+
+        <activity android:name=".Activities.calendar_layout"></activity>
     </application>
 
 </manifest>

@@ -4,19 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:weightSum="10"
     android:orientation="vertical"
-    tools:context=".activities.RegisterActivity">
+    tools:context=".Activities.RegisterActivity">
     <com.mikhaellopez.circularimageview.CircularImageView
         android:id="@+id/profile_image"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_gravity="center"
         android:layout_marginTop="15dp"
-        android:src="@drawable/ic_profile" />
+        android:background="@drawable/ic_profile" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="9"
+        android:weightSum="7"
         android:orientation="vertical">
 
         <android.support.design.widget.TextInputLayout
@@ -30,7 +33,7 @@
             tools:ignore="RtlHardcoded">
 
             <EditText
-                android:id="@+id/ed_first_name"
+                android:id="@+id/et_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/first_name"
@@ -48,10 +51,11 @@
             android:layout_width="match_parent"
             android:textColorHint="@color/black"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginTop="10dp">
 
             <EditText
-                android:id="@+id/ed_email"
+                android:id="@+id/et_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/email"
@@ -68,17 +72,18 @@
             android:layout_width="match_parent"
             android:textColorHint="@color/black"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginTop="10dp">
 
             <EditText
-                android:id="@+id/ed_phone"
+                android:id="@+id/et_phone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/phone"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:singleLine="true"
                 android:maxLength="13"
-                android:textColorHint="@color/white"
+                android:textColorHint="@color/black"
                 android:inputType="number"
                 tools:ignore="TextFields" />
         </android.support.design.widget.TextInputLayout>
@@ -88,15 +93,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColorHint="@color/black"
+            android:layout_weight="1"
             android:layout_marginTop="10dp">
 
             <EditText
-                android:id="@+id/ed_password"
+                android:id="@+id/et_password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/password"
-                android:textColorHint="@color/white"
-                android:textColor="@color/white"
+                android:textColorHint="@color/black"
+                android:textColor="@color/black"
                 android:inputType="textWebPassword"
                 android:singleLine="true" />
         </android.support.design.widget.TextInputLayout>
@@ -124,21 +130,32 @@
 
         </android.support.design.widget.TextInputLayout>
         <Spinner
+            android:id="@+id/sp_user_types"
             android:layout_marginTop="10dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
+            android:layout_weight="1"
             android:entries="@array/user_types"
             >
 
         </Spinner>
         <Button
-            android:id="@+id/next"
+            android:layout_weight="1"
+            android:id="@+id/btn_next"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:background="@drawable/button_corner"
             android:text="@string/btn_next"
             android:textColor="@color/white" />
-
     </LinearLayout>
+    <Button
+        android:onClick="onLoginClick"
+        android:background="@color/colorOrangeDark"
+        android:layout_weight="1"
+        android:id="@+id/btn_login"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:text="@string/label_login"
+        android:textColor="@color/white" />
 </LinearLayout>

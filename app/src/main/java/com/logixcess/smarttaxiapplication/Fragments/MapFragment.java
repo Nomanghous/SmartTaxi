@@ -3,6 +3,7 @@ package com.logixcess.smarttaxiapplication.Fragments;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +17,10 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
@@ -28,17 +33,22 @@ import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
+import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
+import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
 import com.logixcess.smarttaxiapplication.Utils.PathJsonParser;
+import com.logixcess.smarttaxiapplication.Utils.PolyUtil;
 import com.logixcess.smarttaxiapplication.Utils.UserLocationManager;
 
 import org.json.JSONObject;
@@ -51,6 +61,11 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.USER_CURRENT_LOCATION;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -70,9 +85,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public static Order new_order;
     CheckBox cb_shared;
     public static HashMap<Integer,String> route_details;
+    public static HashMap<String,Marker> driver_in_map; // driver_id,
     private ArrayList<Polyline> polyLineList;
     private UserLocationManager gps;
     private GregorianCalendar SELECTED_DATE_TIME;
+    Firebase firebase_instance;
+    ValueEventListener valueEventListener;
+    ArrayList<Driver> driverList;
+    Location DRIVER_LOCATION;
+    Location MY_LOCATION;
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -118,9 +139,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_map, container, false);
+        firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
+        driverList = new ArrayList<>();
         mapFragment = view.findViewById(R.id.map);
         mapFragment.onCreate(savedInstanceState);
-
         mapFragment.getMapAsync(this);
         new_order = new Order();
         et_pickup = view.findViewById(R.id.et_pickup);
@@ -139,12 +161,80 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 new_order.setShared(isChecked);
             }
         });
-
-
+        //everyTenSecondsTask();
 
         return  view;
     }
+    private boolean checkWithinRadius(LatLng latLng) {
+        DRIVER_LOCATION = new Location("driver");
+        DRIVER_LOCATION.setLatitude(latLng.latitude);
+        DRIVER_LOCATION.setLongitude(latLng.longitude);
 
+        MY_LOCATION = new Location("me");
+        MY_LOCATION.setLatitude(USER_CURRENT_LOCATION.latitude);
+        MY_LOCATION.setLongitude(USER_CURRENT_LOCATION.longitude);
+
+        return MY_LOCATION.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
+
+    }
+    public void getDriverList()
+    {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())//check if user exist
+                {
+                    Driver driver = null;
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
+                    {
+                        //PolyUtil.isLocationOnEdge();
+                        driver = snapshot.getValue(Driver.class);
+                        LatLng latLng = new LatLng(driver.getLatitude(),driver.getLongitude());
+                        for (Polyline polyline: polyLineList)
+                        {
+                            //polyline.
+                            if(PolyUtil.isLocationOnEdge(latLng,polyline.getPoints(),true))
+                            {
+                                //means that driver location is inside that path/route
+                                LatLng driver_location = new LatLng(driver.getLatitude(),driver.getLongitude());
+                                Boolean within_radius = checkWithinRadius(driver_location);
+                                if(within_radius)
+                                    driverList.add(driver);
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                    }
+                    //now update the routes and remove markers if already present in it.
+                    for (Driver driver1:driverList)
+                    {
+                        if(driver_in_map.containsKey(driver1.getFk_user_id()))
+                        {
+                            Marker marker = driver_in_map.get(driver1.getFk_user_id());
+                            marker.remove();
+                        }
+                        if (gMap != null)
+                        gMap.addMarker(new MarkerOptions().position(new LatLng(driver1.getLatitude(),driver1.getLongitude()))
+                                .title("Driver: ".concat(driver1.getFk_user_id())));
+                    }
+
+                }
+                else
+                {
+                    Toast.makeText(getActivity(),"No Data Found !",Toast.LENGTH_SHORT).show();
+                }
+
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        };
+        firebase_instance.child(Helper.REF_DRIVERS).orderByChild("isOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
+    }
 
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
@@ -277,6 +367,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         LatLng usa = new LatLng(latitude, longitude);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         gMap.setOnPolylineClickListener(this);
+        getDriverList();
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
@@ -423,7 +514,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         String[] value = ((String) polyline.getTag()).split("--");
         Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
+    private void everyTenSecondsTask() {
+        new Timer().schedule(new TenSecondsTask(),5000,10000);
+    }
 
+    private class TenSecondsTask extends TimerTask {
+        @Override
+        public void run() {
+            // markers driver clear <driverId, marker>
+            // place markers again
+        }
+    }
 
 
 

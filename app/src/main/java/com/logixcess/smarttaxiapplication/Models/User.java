@@ -3,6 +3,7 @@ package com.logixcess.smarttaxiapplication.Models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+
 public class User implements Parcelable
 {
     private String user_id ;
@@ -11,9 +12,11 @@ public class User implements Parcelable
     private String Address;
     private String user_type;
     private String join_date;
-    private long priority_level;
     private String user_image_url;
+    private String user_token;
     private String password;
+    private String email;
+
     public User(){
 
     }
@@ -25,9 +28,12 @@ public class User implements Parcelable
         Address = in.readString();
         user_type = in.readString();
         join_date = in.readString();
-        priority_level = in.readLong();
         user_image_url = in.readString();
+        user_token = in.readString();
         password = in.readString();
+        email = in.readString();
+        //latitude = in.readDouble();
+        //longitude = in.readDouble();
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
@@ -42,7 +48,7 @@ public class User implements Parcelable
         }
     };
 
-    private String user_token;
+
     public String getUser_id() {
         return user_id;
     }
@@ -83,13 +89,6 @@ public class User implements Parcelable
         this.join_date = join_date;
     }
 
-    public long getPriority_level() {
-        return priority_level;
-    }
-
-    public void setPriority_level(long priority_level) {
-        this.priority_level = priority_level;
-    }
 
     public String getUser_image_url() {
         return user_image_url;
@@ -107,14 +106,6 @@ public class User implements Parcelable
         this.phone = phone;
     }
 
-    public String getUser_token() {
-        return user_token;
-    }
-
-    public void setUser_token(String user_token) {
-        this.user_token = user_token;
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -128,9 +119,19 @@ public class User implements Parcelable
         dest.writeString(Address);
         dest.writeString(user_type);
         dest.writeString(join_date);
-        dest.writeLong(priority_level);
         dest.writeString(user_image_url);
+        dest.writeString(user_token);
         dest.writeString(password);
+        dest.writeString(email);
+       // dest.writeDouble(latitude);
+       // dest.writeDouble(longitude);
+    }
+    public String getUser_token() {
+        return user_token;
+    }
+
+    public void setUser_token(String user_token) {
+        this.user_token = user_token;
     }
 
     public String getPassword() {
@@ -140,4 +141,36 @@ public class User implements Parcelable
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+//    public Boolean getInOnline() {
+//        return inOnline;
+//    }
+//
+//    public void setInOnline(Boolean inOnline) {
+//        this.inOnline = inOnline;
+//    }
+//
+//    public double getLatitude() {
+//        return latitude;
+//    }
+//
+//    public void setLatitude(double latitude) {
+//        this.latitude = latitude;
+//    }
+//
+//    public double getLongitude() {
+//        return longitude;
+//    }
+//
+//    public void setLongitude(double longitude) {
+//        this.longitude = longitude;
+//    }
 }
