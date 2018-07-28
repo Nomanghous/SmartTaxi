@@ -18,7 +18,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -32,11 +31,11 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
 import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
@@ -44,13 +43,18 @@ import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.Fragments.NotificationsFragment;
 import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
+import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Utils.Config;
+import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
-import com.logixcess.smarttaxiapplication.Utils.UserLocationManager;
 import com.schibstedspain.leku.LocationPickerActivity;
 
-public class MainActivity extends AppCompatActivity
+import java.util.List;
+
+import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
+
+public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener,
          MapFragment.OnFragmentInteractionListener
         ,FeedbackFragment.OnFragmentInteractionListener,FindUserFragment.OnFragmentInteractionListener,NotificationsFragment.OnFragmentInteractionListener
@@ -58,35 +62,30 @@ public class MainActivity extends AppCompatActivity
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
-
     Handler mHandler;
     NavigationView navigationView;
-    private UserLocationManager gps;
+
     private DrawerLayout drawer;
-    private PlaceAutocompleteFragment place_autocomplete_fragment;
     BroadcastReceiver mRegistrationBroadcastReceiver;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        gps = new UserLocationManager(this);
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
-
-
         //Ahmads
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        drawer = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
         // load toolbar titles from string resources
         activityTitles = getResources().getStringArray(R.array.nav_item_activity_titles);
         mHandler = new Handler();
@@ -120,6 +119,7 @@ public class MainActivity extends AppCompatActivity
         };
 
         displayFirebaseRegId();
+        new FetchDriversBasedOnRadius(this,mLastLocation,this);
     }
 
     // Fetches reg id from shared preferences
@@ -450,10 +450,7 @@ AlertDialog builder;
         };
 
         // If mPendingRunnable is not null, then add to the message queue
-        if (mPendingRunnable != null) {
-            mHandler.post(mPendingRunnable);
-        }
-
+        mHandler.post(mPendingRunnable);
         // show or hide the fab button
         // toggleFab();
 
@@ -560,13 +557,7 @@ AlertDialog builder;
                 }
 
                 //Checking if the item is in checked state or not, if not make it in checked state
-                if (menuItem.isChecked()) {
-                    menuItem.setChecked(false);
-                } else {
-                    menuItem.setChecked(true);
-                }
-                menuItem.setChecked(true);
-
+                menuItem.setChecked(!menuItem.isChecked());
                 loadHomeFragment();
 
                 return true;
@@ -578,5 +569,13 @@ AlertDialog builder;
     @Override
     public void onFragmentInteraction(Uri uri) {
 
+    }
+
+    public List<Driver> getDrivers(){
+        return this.DriversInRadius;
+    }
+
+    public void showCurrentOrder(View view) {
+        // show current order details
     }
 }

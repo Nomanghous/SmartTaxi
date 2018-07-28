@@ -388,11 +388,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     public void addMarkers() {
-        if (gMap != null) {
-            Double pickupLat = Double.valueOf(new_order.getPickupLat());
-            Double pickupLng = Double.valueOf(new_order.getPickupLong());
-            Double dropOffLat = Double.valueOf(new_order.getDropoffLat());
-            Double dropOffLng = Double.valueOf(new_order.getDropoffLong());
+        if (gMap != null) {;
+            Double pickupLat = new_order.getPickupLat();
+            Double pickupLng = new_order.getPickupLong();
+            Double dropOffLat = new_order.getDropoffLat();
+            Double dropOffLng =new_order.getDropoffLong();
             gMap.addMarker(new MarkerOptions().position(new LatLng(pickupLat,pickupLng))
                     .title("First Point"));
             gMap.addMarker(new MarkerOptions().position(new LatLng(dropOffLat,dropOffLng))

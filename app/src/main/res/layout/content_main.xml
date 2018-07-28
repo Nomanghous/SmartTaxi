@@ -8,14 +8,20 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_main">
 
-
-
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/fragment_container"
         />
-
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:src="@drawable/ic_remove_red_eye_black_24dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="16dp"
+            android:onClick="showCurrentOrder"
+            android:id="@+id/fab_show_current_order"
+            />
 
 </RelativeLayout>

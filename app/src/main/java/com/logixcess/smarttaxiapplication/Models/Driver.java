@@ -86,6 +86,19 @@ public class Driver implements Parcelable
         this.driving_expiry_date = driving_expiry_date;
     }
 
+
+
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
     @Override
     public int describeContents() {
         return 0;

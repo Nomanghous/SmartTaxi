@@ -8,6 +8,7 @@ import android.support.multidex.MultiDex;
 
 import com.firebase.client.Firebase;
 import com.google.firebase.FirebaseApp;
+import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
 
 public class SmartTaxiApp extends Application
@@ -19,11 +20,20 @@ public class SmartTaxiApp extends Application
     @Override
     public void onCreate() {
         super.onCreate();
-        //  Fabric.with(this, new Answers(), new Crashlytics());
+      //  Fabric.with(this, new Answers(), new Crashlytics());
         Firebase.setAndroidContext(getApplicationContext());
         Firebase.getDefaultConfig().setPersistenceEnabled(false);
+        //firebase_instance = new Firebase("https://travel-application-c72cb.firebaseio.com/");
+        //mInstance = this;
         firebase_instance = new Firebase(Constants.Database_Path);
         mInstance = this;
+        startLocationService();
+
+    }
+
+    private void startLocationService() {
+        startService(new Intent(this, LocationManagerService.class));
+
     }
 
     @Override

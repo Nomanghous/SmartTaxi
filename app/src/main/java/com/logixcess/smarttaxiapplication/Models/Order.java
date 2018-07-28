@@ -7,7 +7,7 @@ public class Order implements Parcelable{
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
-
+    String order_id;
     private Boolean isScheduled, isShared,status;
 
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
@@ -55,6 +55,7 @@ public class Order implements Parcelable{
         waiting_time = in.readString();
         pickup_time = in.readString();
         pickup_date = in.readString();
+        order_id = in.readString();
         estimated_cost = in.readString();
         byte tmpIsScheduled = in.readByte();
         isScheduled = tmpIsScheduled == 0 ? null : tmpIsScheduled == 1;
@@ -237,6 +238,15 @@ public class Order implements Parcelable{
         this.status = status;
     }
 
+
+    public String getOrder_id() {
+        return order_id;
+    }
+
+    public void setOrder_id(String order_id) {
+        this.order_id = order_id;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -261,6 +271,7 @@ public class Order implements Parcelable{
         dest.writeString(pickup_time);
         dest.writeString(pickup_date);
         dest.writeString(estimated_cost);
+        dest.writeString(order_id);
         dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
         dest.writeByte((byte) (status == null ? 0 : status ? 1 : 2));

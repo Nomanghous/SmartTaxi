@@ -4,7 +4,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.support.v4.app.NotificationCompat;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.logixcess.smarttaxiapplication.R;
 
@@ -17,6 +16,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+
 
 public class PushNotifictionHelper {
     public final static String AUTH_KEY_FCM = "AAAAcpdY6GE:APA91bH_ZNukpG-ADK06fZJX76BLpWXoyVgK0XkojQZNvIdCeSgiXY7_NGeWZyeOtvyAwGe7cSn3ln4Oa-s22qGTRKMTaGyts4QABrE9M1kgxbAvXTftx4S4FOz9gLKlZmU8hIWqlU7ssO2b5ps5wkqLeBZjrqUAJw";//"Your api key";

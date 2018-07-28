@@ -42,6 +42,7 @@ import java.util.TimerTask;
 @SuppressLint("MissingPermission")
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
+
     private GoogleMap mMap;
     private Marker mDriverMarker;
     private LatLng start, end;

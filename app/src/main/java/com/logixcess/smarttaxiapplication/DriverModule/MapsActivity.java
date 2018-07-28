@@ -10,6 +10,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -24,9 +25,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 
 import java.util.Timer;
@@ -42,7 +45,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private DatabaseReference db_ref_user;
     private FirebaseUser USER_ME;
     private Location MY_LOCATION = null;
-    private double SELECTED_RADIUS = 10 * 1.601;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,9 +58,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
         db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        MY_LOCATION = LocationManagerService.mLastLocation;
         setupOrdersListener();
         everyTenSecondsTask();
         setupBroadcastReceivers();
+
     }
 
 
@@ -80,7 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
                     Order order = snapshot.getValue(Order.class);
                     if(order != null){
-                        if(order.getStatus() && order.getDriver_id().equals(USER_ME.getUid()) && checkWithinRadius(new LatLng(order.getPickupLat(),order.getPickupLong()))){
+                        if(order.getStatus() && order.getDriver_id().equals(USER_ME.getUid()) && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
                             // order is within reach and it's not assigned yet.
 
                         }
@@ -95,12 +99,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private boolean checkWithinRadius(LatLng latLng) {
-        Location pickup = new Location("me");
-        pickup.setLatitude(latLng.latitude);
-        pickup.setLongitude(latLng.longitude);
-        return MY_LOCATION.distanceTo(pickup) < SELECTED_RADIUS;
-    }
+
 
     private void updateUserLocation(){
         if(MY_LOCATION != null && USER_ME != null){
@@ -120,8 +119,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void acceptOrder(String orderId, Order order){
         db_ref_order.child(orderId).setValue(order);
+        Toast.makeText(this, "Order Accepted", Toast.LENGTH_SHORT).show();
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -144,22 +143,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private BroadcastReceiver mAcceptOrderReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra("message");
-            Log.d("receiver", "Got message: " + message);
+            String data = intent.getExtras().getString("data");
+            CURRENT_ORDER = new Gson().fromJson(data,Order.class);
+            if(CURRENT_ORDER != null)
+                acceptOrder(CURRENT_ORDER.getOrder_id(), CURRENT_ORDER);
         }
     };
     private BroadcastReceiver mRejectOrderReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra("message");
-            Log.d("receiver", "Got message: " + message);
+
         }
     };
     private BroadcastReceiver mViewOrderReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra("message");
-            Log.d("receiver", "Got message: " + message);
+
         }
     };
 
