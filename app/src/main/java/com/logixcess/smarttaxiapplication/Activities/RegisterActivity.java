@@ -97,7 +97,7 @@ public class RegisterActivity extends AppCompatActivity {
                     user.setPassword(et_password.getText().toString());
                 if(!TextUtils.isEmpty(et_phone.getText().toString()))
                     user.setPhone(et_phone.getText().toString());
-                user.setUser_id("user-".concat(String.valueOf(System.currentTimeMillis())));
+
                 user.setUser_type(sp_user_types.getSelectedItem().toString());
                 Intent intent;
                 if(user.getUser_type().equals("Driver"))

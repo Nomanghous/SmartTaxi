@@ -536,7 +536,7 @@ AlertDialog builder;
 
                 //Check to see which item was being clicked and perform appropriate action
                 switch (menuItem.getItemId()) {
-                    //Replacing the main content with ContentFragment Which is our Inbox View;
+                    //Replacing the main content with ContentFragment Which is our Inbox View
                     case R.id.nav_user_profile:
                         navItemIndex = 0;
                         CURRENT_TAG = TAG_USER_PROFILE;

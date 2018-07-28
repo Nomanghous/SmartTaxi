@@ -209,6 +209,7 @@ public class Register_Next_Step extends AppCompatActivity {
                                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                         .setDisplayName(username).build();
                                 user.updateProfile(profileUpdates);
+                                user_data.setUser_id(user.getUid());
                                 firebaseHelper.pushUser(user_data,passenger);
                             }
                             //Successfull
