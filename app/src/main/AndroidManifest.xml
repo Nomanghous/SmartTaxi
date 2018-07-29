@@ -48,7 +48,7 @@
         <!-- </service> -->
         <!-- ./Firebase Notifications -->
         <activity
-            android:name=".MainActivity"
+            android:name=".Activities.LoginActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -100,7 +100,7 @@
         <activity
             android:name=".Activities.RegisterActivity"
             android:parentActivityName=".Activities.LoginActivity" />
-        <activity android:name=".Activities.LoginActivity" />
+        <activity android:name=".MainActivity" />
         <activity
             android:name=".Activities.MapsActivity"
             android:parentActivityName=".MainActivity" />
