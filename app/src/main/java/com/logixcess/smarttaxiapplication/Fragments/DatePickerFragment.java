@@ -21,13 +21,6 @@ public class DatePickerFragment extends DialogFragment
 {
 
     String selected_fragment="";
-        public void set_type(String type)
-        {
-            if(type.equals("flower"))
-            {
-                Toast.makeText(getActivity().getApplicationContext(),"Flowering Enter", Toast.LENGTH_SHORT).show();
-            }
-        }
     public static String getDate(long milliSeconds, String dateFormat)
     {
         // Create a DateFormatter object for displaying date in specified format.
@@ -44,7 +37,7 @@ public class DatePickerFragment extends DialogFragment
     {
 
         selected_fragment = getArguments().getString("fragment");
-        Toast.makeText(getActivity().getApplicationContext(),selected_fragment, Toast.LENGTH_LONG).show();
+        //Toast.makeText(getActivity().getApplicationContext(),selected_fragment, Toast.LENGTH_LONG).show();
         // Use the current date as the default date in the picker
         final Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);

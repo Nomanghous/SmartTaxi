@@ -25,8 +25,10 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
@@ -81,7 +83,6 @@ public class RegisterActivity extends AppCompatActivity {
         btn_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if(Constants.FilePathUri != null && !TextUtils.isEmpty(Constants.FilePathUri.toString()))
                     UploadImageFileToFirebaseStorage(Constants.FilePathUri);
                 if(!TextUtils.isEmpty(Constants.USER_TOKEN))
@@ -100,16 +101,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                 user.setUser_type(sp_user_types.getSelectedItem().toString());
                 Intent intent;
-                if(user.getUser_type().equals("Driver"))
-                {
-                    intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
-                }
-                else
-                {
-                    //passenger
-                    intent = new Intent(RegisterActivity.this,MainActivity.class);
-                }
-
+                intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
                 intent.putExtra("user_data",user);
                 startActivity(intent);
             }
@@ -149,7 +141,7 @@ public class RegisterActivity extends AppCompatActivity {
         Intent intent = new Intent();
         intent.setAction(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         //if (intent.resolveActivity(getContext().getPackageManager()) != null) {
-        startActivityForResult(intent, CAMERA_REQUEST);
+        startActivityForResult(intent, 1);//CAMERA_REQUEST);
         //}
         //else
         // {
@@ -289,6 +281,12 @@ public class RegisterActivity extends AppCompatActivity {
                             Toast.makeText(RegisterActivity.this, "Image Uploaded Successfully ", Toast.LENGTH_LONG).show();
                             //saveUserToFirebaseDatabase();
 
+                        }
+                    })
+                    .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            //Uri image_pa = task.getResult().getStorage().getDownloadUrl().getResult();
                         }
                     })
                     // If something goes wrong .

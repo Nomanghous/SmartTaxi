@@ -77,4 +77,28 @@ public class Passenger  implements Parcelable
         dest.writeByte((byte) (is_working_student == null ? 0 : is_working_student ? 1 : 2));
         dest.writeString(orgnization_name);
     }
+
+    public Boolean getInOnline() {
+        return inOnline;
+    }
+
+    public void setInOnline(Boolean inOnline) {
+        this.inOnline = inOnline;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 }

@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
@@ -117,9 +118,9 @@ public class Register_Next_Step extends AppCompatActivity {
                             String token = task.getResult().getToken();
                             user_data.setUser_token(token);
                             // Log and toast
-                            String msg = "message";
-                            Log.d("", msg);
-                            Toast.makeText(Register_Next_Step.this, msg, Toast.LENGTH_SHORT).show();
+                            //String msg = "message";
+                            //Log.d("", msg);
+                            //Toast.makeText(Register_Next_Step.this, msg, Toast.LENGTH_SHORT).show();
                         }
                     });
         }
@@ -158,6 +159,9 @@ public class Register_Next_Step extends AppCompatActivity {
                 passenger.setOrgnization_name(sp_intitution_name.getSelectedItem().toString());
             passenger.setFk_user_id(user_data.getUser_id());
             passenger.setPriority_level(100);
+            passenger.setInOnline(true);
+            passenger.setLatitude(0);
+            passenger.setLongitude(0);
             SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName());
             //firebaseHelper.pushUser(user_data,passenger);
         }
@@ -210,7 +214,17 @@ public class Register_Next_Step extends AppCompatActivity {
                                         .setDisplayName(username).build();
                                 user.updateProfile(profileUpdates);
                                 user_data.setUser_id(user.getUid());
-                                firebaseHelper.pushUser(user_data,passenger);
+                                if(user_data.getUser_type().equals("Passenger"))
+                                {
+                                    passenger.setFk_user_id(user_data.getUser_id());
+                                    firebaseHelper.pushUser(user_data,passenger);
+                                }
+                                else if(user_data.getUser_type().equals("Driver"))
+                                {
+                                    driver.setFk_user_id(user_data.getUser_id());
+                                    firebaseHelper.pushUser(user_data,driver);
+                                }
+
                             }
                             //Successfull
                             startActivity(new Intent(Register_Next_Step.this, MainActivity.class));
@@ -229,6 +243,8 @@ public class Register_Next_Step extends AppCompatActivity {
         date_bundle.putString("fragment","issue" );
         newFragment.setArguments(date_bundle);
         newFragment.show(getSupportFragmentManager(), "datePicker");
+        Button btn_issue = findViewById(R.id.btn_issue);
+        btn_issue.setText("DONE!");
     }
     Bundle date_bundle;
     public void CalendarDriveExpiryClick(View view)
@@ -238,6 +254,8 @@ public class Register_Next_Step extends AppCompatActivity {
         date_bundle.putString("fragment","expiry" );
         newFragment.setArguments(date_bundle);
         newFragment.show(getSupportFragmentManager(), "datePicker");
+        Button btn_expiry = findViewById(R.id.btn_expiry);
+        btn_expiry.setText("DONE!");
         //Intent intent = new Intent(Register_Next_Step.this,calendar_layout.class);
         //intent.putExtra("cal_view","expiry");
         //startActivity(intent);
@@ -379,7 +397,8 @@ public class Register_Next_Step extends AppCompatActivity {
     {
         if(user_data.getUser_type().equals("Driver"))
         {
-            driver.setFk_user_id(user_data.getUser_id());
+
+            //driver.setFk_user_id(user_data.getUser_id());
             driver.setInOnline(true);
             //driver.setDriving_issue();
             driver.setLongitude(0);
@@ -391,7 +410,8 @@ public class Register_Next_Step extends AppCompatActivity {
             // firebaseHelper.pushUser(user_data,driver);
             uploadNIC(Constants.FilePathUri);
             uploadLicence(Constants.FilePathUri2);
-            firebaseHelper.pushUser(user_data,driver);
+            SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName());
+            //firebaseHelper.pushUser(user_data,driver);
         }
     }
     //image upload code
@@ -423,12 +443,13 @@ public class Register_Next_Step extends AppCompatActivity {
         });
         builder.show();
     }
+
     private void cameraIntent()
     {
         Intent intent = new Intent();
         intent.setAction(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         //if (intent.resolveActivity(getContext().getPackageManager()) != null) {
-        startActivityForResult(intent, CAMERA_REQUEST2);
+        startActivityForResult(intent, 1);
         //}
         //else
         // {
@@ -449,14 +470,42 @@ public class Register_Next_Step extends AppCompatActivity {
         switch (requestCode)
         {
             case 0:
-                if(resultCode == RESULT_OK){
-                    FilePathUri = data.getData();
+                if(resultCode == RESULT_OK)
+                {
+
+                    if(isNIC)
+                    {
+                        FilePathUri = data.getData();
+                        isNIC = false;
+                        Button btn_nic = findViewById(R.id.btn_nic);
+                        btn_nic.setText("DONE!");
+                    }
+                    else if(isLicense)
+                    {
+                        isLicense =  false;
+                        Button btn_license = findViewById(R.id.btn_licence);
+                        btn_license.setText("DONE!");
+                        Constants.FilePathUri2 = data.getData();
+                    }
                     onSelectFromGalleryResult(data);
                 }
                 break;
             case 1:
                 if(resultCode == RESULT_OK){
-                    FilePathUri = data.getData();
+                    if(isNIC)
+                    {
+                        isNIC = false;
+                        Button btn_nic = findViewById(R.id.btn_nic);
+                        btn_nic.setText("DONE!");
+                        FilePathUri = data.getData();
+                    }
+                    else if(isLicense)
+                    {
+                        isLicense =  false;
+                        Button btn_license = findViewById(R.id.btn_licence);
+                        btn_license.setText("DONE!");
+                        Constants.FilePathUri2 = data.getData();
+                    }
                     onCaptureImageResult(data);
                 }
                 break;
@@ -464,8 +513,11 @@ public class Register_Next_Step extends AppCompatActivity {
                 if(resultCode == RESULT_OK)
                 {
                     //license
-                    Bitmap photo = (Bitmap) data.getExtras().get("data");
-                    Constants.FilePathUri2 = getImageUri(this,photo);
+                    //Bitmap photo = (Bitmap) data.getExtras().get("data");
+                    //Constants.FilePathUri2 = getImageUri(this,photo);
+                    FilePathUri = data.getData();
+                    Button btn_license = findViewById(R.id.btn_licence);
+                    btn_license.setText("DONE!");
                     //Constants.FilePathUri = data.getData();
                     onCaptureImageResult(data);
                 }
@@ -474,8 +526,11 @@ public class Register_Next_Step extends AppCompatActivity {
                 if(resultCode == RESULT_OK)
                 {
                     //nic
-                    Bitmap photo = (Bitmap) data.getExtras().get("data");
-                    FilePathUri = getImageUri(this,photo);
+                    //Bitmap photo = (Bitmap) data.getExtras().get("data");
+                    //FilePathUri = getImageUri(this,photo);
+                    FilePathUri = data.getData();
+                    Button btn_nic = findViewById(R.id.btn_nic);
+                    btn_nic.setText("DONE!");
                     //Constants.FilePathUri = data.getData();
                     onCaptureImageResult(data);
                 }
@@ -572,16 +627,17 @@ public class Register_Next_Step extends AppCompatActivity {
 //            }
 //        }
     }
-    public static int CAMERA_REQUEST2; //2888;
+    public static Boolean isLicense =  false ; //2888;
+    public static Boolean isNIC = false ; //2888;
     public void onUploadLicenseClick(View view)
     {
-        CAMERA_REQUEST2 = 2888;
         selectImage();
+        isLicense = true;
     }
 
     public void onUploadNICClick(View view)
     {
-        CAMERA_REQUEST2 = 3888;
         selectImage();
+        isNIC = true;
     }
 }

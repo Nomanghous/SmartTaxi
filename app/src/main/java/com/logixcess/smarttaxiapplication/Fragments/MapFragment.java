@@ -1,6 +1,7 @@
 package com.logixcess.smarttaxiapplication.Fragments;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
@@ -8,6 +9,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +41,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
+import com.logixcess.smarttaxiapplication.Activities.Register_Next_Step;
 import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
@@ -48,6 +51,7 @@ import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
 import com.logixcess.smarttaxiapplication.Utils.PathJsonParser;
+import com.logixcess.smarttaxiapplication.Utils.PermissionHandler;
 import com.logixcess.smarttaxiapplication.Utils.PolyUtil;
 import com.logixcess.smarttaxiapplication.Utils.UserLocationManager;
 
@@ -235,7 +239,29 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         };
         firebase_instance.child(Helper.REF_DRIVERS).orderByChild("isOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
     }
-
+    public void  show_driverDetail()
+    {
+        final CharSequence[] items = { "RIDE", "OPEN PROFILE",
+                "CANCEL" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Driver Detail");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                boolean result= PermissionHandler.checkPermission(getActivity());
+                if (items[item].equals("RIDE"))
+                {
+                }
+                else if (items[item].equals("OPEN PROFILE"))
+                {
+                }
+                else if (items[item].equals("CANCEL")) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.show();
+    }
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
