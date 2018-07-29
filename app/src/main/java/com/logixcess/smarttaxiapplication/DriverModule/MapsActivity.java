@@ -53,24 +53,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private FirebaseUser USER_ME;
     private Location MY_LOCATION = null;
     private LatLng dropoff, pickup;
+    private String CURRENT_ORDER_ID = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_driver_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-        firebase_db = FirebaseDatabase.getInstance();
-        db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-        db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
-        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
-        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
-        MY_LOCATION = LocationManagerService.mLastLocation;
-        setupOrdersListener();
 
-        setupBroadcastReceivers();
+        Bundle bundle = getIntent().getExtras();
+        if(bundle != null &&  bundle.containsKey(com.logixcess.smarttaxiapplication.Activities.MapsActivity.KEY_CURRENT_ORDER)){
+            CURRENT_ORDER_ID = bundle.getString(com.logixcess.smarttaxiapplication.Activities.MapsActivity.KEY_CURRENT_ORDER);
+            setContentView(R.layout.activity_driver_maps);
+            // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+            firebase_db = FirebaseDatabase.getInstance();
+            db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
+            db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
+            db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
+            USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+            setupOrdersListener();
+
+        }else {
+            Toast.makeText(this, "No Running Order Found", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
 
     }
 
@@ -88,25 +96,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setupOrdersListener() {
-        db_ref_order.addValueEventListener(new ValueEventListener() {
+
+        db_ref_order.child(CURRENT_ORDER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()){
-                    Order order = snapshot.getValue(Order.class);
-                    if(order != null){
-                        if(order.getStatus() == Order.OrderStatusInProgress &&
-                                order.getDriver_id().equals(USER_ME.getUid())
-                                && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
-                            // order is within reach and it's assigned.
-                            CURRENT_ORDER = order;
-                            IS_RIDE_SHARED = order.getShared();
-                            CUSTOMER_USER_ID = order.getUser_id();
-                            if(IS_RIDE_SHARED){
-                                fetchThatGroup();
-                            }else{
-                                fetchThatCustomer();
-                            }
-                            break;
+                if(!dataSnapshot.exists())
+                    return;
+                Order order = dataSnapshot.getValue(Order.class);
+                if(order != null){
+                    if(order.getStatus() == Order.OrderStatusInProgress &&
+                            order.getDriver_id().equals(USER_ME.getUid())
+                            && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
+                        // order is within reach and it's assigned.
+                        CURRENT_ORDER = order;
+                        IS_RIDE_SHARED = order.getShared();
+                        CUSTOMER_USER_ID = order.getUser_id();
+                        if(IS_RIDE_SHARED){
+                            fetchThatGroup();
+                        }else{
+                            fetchThatCustomer();
                         }
                     }
                 }
@@ -117,6 +125,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
+
     }
 
     private void fetchThatGroup() {
@@ -155,7 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void showDataOnMap() {
-        if(mMap != null){
+        if(mMap != null && CURRENT_USER != null){
             // show User
             pickup = new LatLng(CURRENT_ORDER.getPickupLat(), CURRENT_ORDER.getPickupLong());
             dropoff = new LatLng(CURRENT_ORDER.getDropoffLat(), CURRENT_ORDER.getDropoffLat());
@@ -165,13 +174,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             MarkerOptions options2 = new MarkerOptions();
             options2.title("Dropoff").position(dropoff).icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
             mMap.addMarker(options2);
-
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pickup, 12f));
             // show Driver
         }
     }
 
 
     private void updateUserLocation(){
+        MY_LOCATION = LocationManagerService.mLastLocation;
         if(MY_LOCATION != null && USER_ME != null){
             String latitude = "latitude";
             String longitude = "longitude";
@@ -187,10 +197,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void acceptOrder(String orderId, Order order){
-        db_ref_order.child(orderId).setValue(order);
-        Toast.makeText(this, "Order Accepted", Toast.LENGTH_SHORT).show();
-    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -207,46 +214,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        showDataOnMap();
     }
 
 
-    private BroadcastReceiver mAcceptOrderReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String data = intent.getExtras().getString("data");
-            CURRENT_ORDER = new Gson().fromJson(data,Order.class);
-            if(CURRENT_ORDER != null)
-                acceptOrder(CURRENT_ORDER.getOrder_id(), CURRENT_ORDER);
-        }
-    };
-    private BroadcastReceiver mRejectOrderReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
 
-        }
-    };
-    private BroadcastReceiver mViewOrderReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-        }
-    };
-
-
-    private void setupBroadcastReceivers() {
-        LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER));
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_REJECT_ORDER));
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRejectOrderReceiver,
-                new IntentFilter(MyNotificationManager.INTENT_FILTER_VIEW_ORDER));
-    }
-
-    @Override
-    protected void onDestroy() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mAcceptOrderReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRejectOrderReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mViewOrderReceiver);
-        super.onDestroy();
-    }
 }

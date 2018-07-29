@@ -2,7 +2,9 @@ package com.logixcess.smarttaxiapplication.Utils;
 
 import android.app.NotificationManager;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.support.v4.app.NotificationCompat;
+import android.widget.Toast;
 
 import com.google.gson.JsonObject;
 import com.logixcess.smarttaxiapplication.R;
@@ -19,10 +21,13 @@ import java.net.URL;
 
 
 
-public class PushNotifictionHelper {
+public class PushNotifictionHelper extends AsyncTask {
     public final static String AUTH_KEY_FCM = "AAAAcpdY6GE:APA91bH_ZNukpG-ADK06fZJX76BLpWXoyVgK0XkojQZNvIdCeSgiXY7_NGeWZyeOtvyAwGe7cSn3ln4Oa-s22qGTRKMTaGyts4QABrE9M1kgxbAvXTftx4S4FOz9gLKlZmU8hIWqlU7ssO2b5ps5wkqLeBZjrqUAJw";//"Your api key";
     public final static String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
-
+    private Context mContext;
+    public PushNotifictionHelper(Context context){
+        mContext = context;
+    }
     public static String sendPushNotification(String deviceToken, JSONObject jsonPayload)
             throws IOException {
         String result = "";
@@ -36,11 +41,10 @@ public class PushNotifictionHelper {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Authorization", "key=" + AUTH_KEY_FCM);
         conn.setRequestProperty("Content-Type", "application/json");
-
         JSONObject json = new JSONObject();
         try {
             json.put("to", deviceToken.trim());
-            json.put("notification", jsonPayload);
+            json.put("data", jsonPayload);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -79,5 +83,26 @@ public class PushNotifictionHelper {
         NotificationManager mNotificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(001, mBuilder.build());
+    }
+
+    @Override
+    protected Object doInBackground(Object[] objects) {
+        try {
+            sendPushNotification(objects[0].toString(),new JSONObject(objects[1].toString()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    @Override
+    protected void onPostExecute(Object o) {
+        if(o != null){
+            Toast.makeText(mContext, o.toString(), Toast.LENGTH_SHORT).show();
+        }
+        super.onPostExecute(o);
     }
 }

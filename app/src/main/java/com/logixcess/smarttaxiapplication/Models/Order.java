@@ -3,10 +3,14 @@ package com.logixcess.smarttaxiapplication.Models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.Exclude;
 
-public class Order implements Parcelable{
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
+public class Order implements Parcelable{
 
     @Exclude
     public static final int OrderStatusCompleted = 1, OrderStatusInProgress = 2, OrderStatusPending = 3,
@@ -15,15 +19,17 @@ public class Order implements Parcelable{
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
-    String order_id;
+    private String order_id;
     private Boolean isScheduled, isShared;
     private int status = 0; // nothing
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
+    private ArrayList SELECTED_ROUTE = new ArrayList<>();
 
     public Order() {
+
     }
 
-    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status) {
+    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList selectedRoute) {
         this.pickup = pickup;
         this.dropoff = dropoff;
         this.pickupLat = pickupLat;
@@ -44,6 +50,7 @@ public class Order implements Parcelable{
         this.isScheduled = isScheduled;
         this.isShared = isShared;
         this.status = status;
+        this.SELECTED_ROUTE = selectedRoute;
     }
 
     protected Order(Parcel in) {
@@ -69,8 +76,8 @@ public class Order implements Parcelable{
         isScheduled = tmpIsScheduled == 0 ? null : tmpIsScheduled == 1;
         byte tmpIsShared = in.readByte();
         isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
-        byte tmpStatus = in.readByte();
         status = in.readInt();
+        SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
     }
 
     public static final Creator<Order> CREATOR = new Creator<Order>() {
@@ -282,6 +289,14 @@ public class Order implements Parcelable{
         dest.writeInt(status);
         dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
+    }
+
+    public ArrayList<LatLng> getSELECTED_ROUTE() {
+        return SELECTED_ROUTE;
+    }
+
+    public void setSELECTED_ROUTE(ArrayList<LatLng> SELECTED_ROUTE) {
+        this.SELECTED_ROUTE = SELECTED_ROUTE;
     }
 
     public class Cost{

@@ -1,29 +1,20 @@
 package com.logixcess.smarttaxiapplication.Activities;
 
 import android.content.Intent;
-import android.location.Location;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.logixcess.smarttaxiapplication.Models.Driver;
-import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
@@ -33,16 +24,12 @@ import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import static android.content.ContentValues.TAG;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.USER_CURRENT_LOCATION;
+import java.util.HashMap;
+import java.util.List;
 
 public class OrderDetailsActivity extends AppCompatActivity {
     TextView tv_pickup, tv_destination, tv_shared, tv_distance, tv_cost, tv_time, tv_vehicle;
-
+    public static List<LatLng> SELECTED_ROUTE = null;
     ValueEventListener valueEventListener;
     Firebase firebase_instance;
     @Override
@@ -66,6 +53,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
             tv_vehicle.setText(Helper.CURRENT_ORDER.getVehicle_id());
             tv_shared.setText(Helper.CURRENT_ORDER.getShared() ? "Yes" : "No");
             tv_time.setText(Helper.CURRENT_ORDER.getPickup_time());
+
         }else{
             Toast.makeText(this, "No Order Details Found", Toast.LENGTH_SHORT).show();
             finish();
@@ -75,29 +63,24 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     public void goConfirmBooking(View view)
     {
+        saveOrderOnline();
         getNotificationToken(Helper.CURRENT_ORDER.getDriver_id());
-        //TODO: SHOW SEARCH DIALOG
-        // Driver search in the given radius
-
-        //TODO: Select Driver from list
-        //Select Driver from list
-
-        //TODO: GET DRIVER IDs
-        //get driver ids and send the notifications
-
-
-        //TODO: CHECK RESPONSE
-        // driver who accepts first , will only be entertained.
-
-
-        //TODO: SHOW DRIVER DETAILS
-        // show driver details and start map activity to see live process
-
-        //TODO: DISMISS SEARCH DIALOG
         Toast.makeText(this, "Order Placed Successfully", Toast.LENGTH_SHORT).show();
         startActivity(new Intent(this,MapsActivity.class));
         finish();
     }
+
+    private void saveOrderOnline() {
+        FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS)
+                .push().setValue(Helper.CURRENT_ORDER, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                Helper.CURRENT_ORDER.setOrder_id(databaseReference.getKey());
+            }
+        });
+    }
+
+
     public void getNotificationToken(String driver_id)
     {
         DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
@@ -107,20 +90,17 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     User driver = dataSnapshot.getValue(User.class);
                     String token = driver.getUser_token();
+                    JSONObject data = new JSONObject();
 
-// property removal
-                    ////jsonObject.remove("property");
-// serialization to String
-                    //String javaObjectString = jsonObject.toString();
-                    //String json = gson.toJson(driver);
                     try {
-                        JSONObject jsonObject = new JSONObject(new Gson().toJson(driver));
-                        PushNotifictionHelper.sendPushNotification(token,jsonObject);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }catch (JSONException e) {
+                        data.put("order_id", Helper.CURRENT_ORDER.getOrder_id());
+                        new PushNotifictionHelper(getApplicationContext()).execute(token,data);
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
+//                    String josn = new Gson().toJson(Helper.CURRENT_ORDER).replace("\"","'");
+
+
                 }
                 else
                 {

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Typeface;
@@ -45,6 +46,7 @@ import com.logixcess.smarttaxiapplication.DriverModule.DriverMainActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 
 import java.util.ArrayList;
@@ -444,6 +446,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 if(dataSnapshot.exists()){
                     User user = dataSnapshot.getValue(User.class);
                     if(user != null){
+                        if(!user.getUser_token().equalsIgnoreCase(getTokenSaved())){
+                            updateUserTokenToServer(user.getUser_id(),getTokenSaved());
+                        }
                         if(user.getUser_type().equals("Passenger")){
                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                             startActivity(intent);
@@ -462,6 +467,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             }
         });
+    }
+
+    private void updateUserTokenToServer(String userID,String user_token) {
+        FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS).child(userID).child("user_token").setValue(user_token);
+    }
+
+    private String getTokenSaved() {
+        SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.SHARED_PREF, 0);
+        return pref.getString("regId", "");
     }
 }
 

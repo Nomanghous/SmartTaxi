@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
+import com.logixcess.smarttaxiapplication.BuildConfig;
 import com.logixcess.smarttaxiapplication.R;
 
 /**
@@ -43,6 +44,10 @@ public class NotificationUtils {
 
     public NotificationUtils(Context mContext) {
         this.mContext = mContext;
+    }
+
+    public static int getUniqueInt() {
+        return (int) System.currentTimeMillis() / 2;
     }
 
     public void showNotificationMessage(String title, String message, String timeStamp, Intent intent) {
@@ -200,6 +205,7 @@ public class NotificationUtils {
     public static void clearNotifications(Context context) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancelAll();
+
     }
 
     public static long getTimeMilliSec(String timeStamp) {
@@ -217,37 +223,57 @@ public class NotificationUtils {
     public static void showNotificationForOrderToDriver(Context context, String payload){
         Intent acceptIntent = new Intent(context, MyNotificationManager.class);
         acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
-        acceptIntent.putExtra("Data", payload);
+        acceptIntent.putExtra("data", payload);
         acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
         PendingIntent acceptPendingIntent =
-                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_ACCEPT_ORDER, acceptIntent, 0);
+                PendingIntent.getBroadcast(context,getUniqueInt(), acceptIntent, 0);
 
         Intent rejectIntent = new Intent(context, MyNotificationManager.class);
         rejectIntent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
-        rejectIntent.putExtra("Data", payload);
+        rejectIntent.putExtra("data", payload);
         rejectIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
 
         PendingIntent rejectPendingIntent =
-                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_REJECT_ORDER, rejectIntent, 0);
+                PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
 
         Intent viewIntent = new Intent(context, MyNotificationManager.class);
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
-        viewIntent.putExtra("Data", payload);
+        viewIntent.putExtra("data", payload);
         viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         PendingIntent viewPendingIntent =
-                PendingIntent.getBroadcast(context, MyNotificationManager.REQUEST_CODE_VIEW_ORDER, viewIntent, 0);
+                PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
-                .setSmallIcon(R.drawable.ic_action_name)
-                .setContentTitle("Order Generated")
-                .setContentText("Do You want to accept it?")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(viewPendingIntent)
-                .addAction(R.drawable.ic_okay, "Accept",
-                        acceptPendingIntent)
-                .addAction(R.drawable.ic_no, "Reject",
-                        rejectPendingIntent);
-        mBuilder.notify();
+        if (Build.VERSION.SDK_INT >= 27) {
+            // Call some material design APIs here
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
+                    .setSmallIcon(R.drawable.ic_action_name)
+                    .setContentTitle("Order Generated")
+                    .setContentText("Do You want to accept it?")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setContentIntent(viewPendingIntent)
+                    .addAction(R.drawable.ic_okay, "Accept",
+                            acceptPendingIntent)
+                    .addAction(R.drawable.ic_no, "Reject",
+                            rejectPendingIntent);
+            mBuilder.notify();
+        } else {
+            // Implement this feature without material design
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+                    .setSmallIcon(R.drawable.ic_action_name)
+                    .setContentTitle("Order Generated")
+                    .setContentText("Do You want to accept it?")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setContentIntent(viewPendingIntent)
+                    .addAction(R.drawable.ic_okay, "Accept",
+                            acceptPendingIntent)
+                    .addAction(R.drawable.ic_no, "Reject",
+                            rejectPendingIntent);
+            NotificationManager mNotificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(123, mBuilder.build());
+        }
     }
 
 }

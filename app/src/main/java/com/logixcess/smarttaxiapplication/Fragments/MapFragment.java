@@ -535,6 +535,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if(i == 0) {
                     polyLineOptions.width(20);
                     polyLineOptions.color(Color.BLUE);
+
                 }else {
                     polyLineOptions.width(10);
                     polyLineOptions.color(Color.DKGRAY);
@@ -544,6 +545,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     polyLineList = new ArrayList<Polyline>();
                 Polyline polyline = gMap.addPolyline(polyLineOptions);
                 polyline.setTag(route_details.get(i+1));
+                if(i == 0){
+                    new_order.setSELECTED_ROUTE(polyline.getPoints());
+                }
                 polyLineList.add(polyline);
                 getDriverList();
             }
@@ -562,6 +566,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 pline.setColor(Color.DKGRAY);
             }
         }
+        OrderDetailsActivity.SELECTED_ROUTE = polyline.getPoints();
         String[] value = ((String) polyline.getTag()).split("--");
         Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
