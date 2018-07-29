@@ -29,7 +29,7 @@ public class DriverMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_driver_main);
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-        db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
+        db_ref_user = firebase_db.getReference().child(Helper.REF_DRIVERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
 
