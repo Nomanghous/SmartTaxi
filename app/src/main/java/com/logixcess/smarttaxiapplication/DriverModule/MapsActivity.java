@@ -69,7 +69,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         MY_LOCATION = LocationManagerService.mLastLocation;
         setupOrdersListener();
-        everyTenSecondsTask();
+
         setupBroadcastReceivers();
 
     }
