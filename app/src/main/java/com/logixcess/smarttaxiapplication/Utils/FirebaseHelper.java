@@ -179,7 +179,36 @@ public class FirebaseHelper
         };
         firebase_instance.child("User").child(user.getUser_id()).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
 
+    }
+    public void getNotificationToken(String driver_id)
+    {
+        Log.d(TAG, "`````` In Push User...");
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())//check if user exist
+                {
+                    User driver = null;
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
+                    {
+                        driver = snapshot.getValue(User.class);
+                        driver.getUser_token();
+                    }
+                    //Toast.makeText(my_context,"Profile Updated Successfully",Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Toast.makeText(my_context,"You are Registered Successfully",Toast.LENGTH_SHORT).show();
+                }
 
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        };
+        firebase_instance.child("User").child(driver_id).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
 
     }
 }

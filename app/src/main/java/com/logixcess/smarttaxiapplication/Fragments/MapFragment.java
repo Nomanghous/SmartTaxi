@@ -79,7 +79,7 @@ import static com.logixcess.smarttaxiapplication.Utils.Constants.USER_CURRENT_LO
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
+public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -89,7 +89,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public static Order new_order;
     CheckBox cb_shared;
     public static HashMap<Integer,String> route_details;
-    public static HashMap<String,Marker> driver_in_map; // driver_id,
+    public static HashMap<String,Marker> driver_in_map = new HashMap<>(); // driver_id,
     private ArrayList<Polyline> polyLineList;
     private UserLocationManager gps;
     private GregorianCalendar SELECTED_DATE_TIME;
@@ -175,8 +175,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         DRIVER_LOCATION.setLongitude(latLng.longitude);
 
         MY_LOCATION = new Location("me");
-        MY_LOCATION.setLatitude(USER_CURRENT_LOCATION.latitude);
-        MY_LOCATION.setLongitude(USER_CURRENT_LOCATION.longitude);
+        MY_LOCATION.setLatitude(31.54010467);//USER_CURRENT_LOCATION.latitude);
+        MY_LOCATION.setLongitude(74.31660785);//USER_CURRENT_LOCATION.longitude);
 
         return MY_LOCATION.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
 
@@ -194,35 +194,32 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     {
                         //PolyUtil.isLocationOnEdge();
                         driver = snapshot.getValue(Driver.class);
-                        LatLng latLng = new LatLng(driver.getLatitude(),driver.getLongitude());
-                        for (Polyline polyline: polyLineList)
-                        {
-                            //polyline.
-                            if(PolyUtil.isLocationOnEdge(latLng,polyline.getPoints(),true))
-                            {
-                                //means that driver location is inside that path/route
-                                LatLng driver_location = new LatLng(driver.getLatitude(),driver.getLongitude());
-                                Boolean within_radius = checkWithinRadius(driver_location);
-                                if(within_radius)
-                                    driverList.add(driver);
-                            }
-                            else
-                            {
 
+                        LatLng driver_location = new LatLng(driver.getLatitude(), driver.getLongitude());
+                        if(new_order != null && new_order.getShared()) {
+                            for (Polyline polyline : polyLineList) {
+
+                                //polyline.
+                                if (PolyUtil.isLocationOnEdge(driver_location, polyline.getPoints(), true)) {
+                                    //means that driver location is inside that path/route
+
+                                    Boolean within_radius = checkWithinRadius(driver_location);
+                                    if (within_radius) {
+                                        driverList.add(driver);
+                                        addDriverMarker(driver);
+                                    }
+                                } else {
+
+                                }
                             }
+                        }else{
+                            Boolean within_radius = checkWithinRadius(driver_location);
+                            if(within_radius){
+                                driverList.add(driver);
+                                addDriverMarker(driver);
+                            }
+
                         }
-                    }
-                    //now update the routes and remove markers if already present in it.
-                    for (Driver driver1:driverList)
-                    {
-                        if(driver_in_map.containsKey(driver1.getFk_user_id()))
-                        {
-                            Marker marker = driver_in_map.get(driver1.getFk_user_id());
-                            marker.remove();
-                        }
-                        if (gMap != null)
-                        gMap.addMarker(new MarkerOptions().position(new LatLng(driver1.getLatitude(),driver1.getLongitude()))
-                                .title("Driver: ".concat(driver1.getFk_user_id())));
                     }
 
                 }
@@ -230,18 +227,32 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 {
                     Toast.makeText(getActivity(),"No Data Found !",Toast.LENGTH_SHORT).show();
                 }
-
             }
 
             @Override
             public void onCancelled(FirebaseError firebaseError) {
             }
         };
-        firebase_instance.child(Helper.REF_DRIVERS).orderByChild("isOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
+        firebase_instance.child(Helper.REF_DRIVERS).orderByChild("inOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
     }
-    public void  show_driverDetail()
+    public void addDriverMarker(Driver driver1)
     {
-        final CharSequence[] items = { "RIDE", "OPEN PROFILE",
+        //now update the routes and remove markers if already present in it.
+            if(driver_in_map.containsKey(driver1.getFk_user_id()))
+            {
+                Marker marker = driver_in_map.get(driver1.getFk_user_id());
+                marker.remove();
+            }
+            if (gMap != null) {
+                Marker marker = gMap.addMarker(new MarkerOptions().position(new LatLng(driver1.getLatitude(), driver1.getLongitude()))
+                        .title("Driver: ".concat(driver1.getFk_user_id())));
+                marker.setTag(driver1.getFk_user_id());
+            }
+
+    }
+    public void  show_driverDetail(String driverId)
+    {
+        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
                 "CANCEL" };
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
@@ -249,8 +260,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onClick(DialogInterface dialog, int item) {
                 boolean result= PermissionHandler.checkPermission(getActivity());
-                if (items[item].equals("RIDE"))
+                if (items[item].equals("SELECT"))
                 {
+                    new_order.setDriver_id(driverId);
+
                 }
                 else if (items[item].equals("OPEN PROFILE"))
                 {
@@ -309,6 +322,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void onLowMemory() {
         super.onLowMemory();
         mapFragment.onLowMemory();
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        String driverId = (String) marker.getTag();
+        if(driverId != null &&  !driverId.isEmpty()){
+            // do whatever with driver id.
+            show_driverDetail(driverId);
+            return  true;
+        }else
+            return false;
     }
 
     /**
@@ -394,7 +418,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         LatLng usa = new LatLng(latitude, longitude);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         gMap.setOnPolylineClickListener(this);
-        getDriverList();
+        gMap.setOnMarkerClickListener(this);
+        //getDriverList();
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
@@ -520,9 +545,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 Polyline polyline = gMap.addPolyline(polyLineOptions);
                 polyline.setTag(route_details.get(i+1));
                 polyLineList.add(polyline);
+                getDriverList();
             }
-
-
         }
     }
 

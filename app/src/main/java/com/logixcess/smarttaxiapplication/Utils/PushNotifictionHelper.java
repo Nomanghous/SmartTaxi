@@ -23,7 +23,7 @@ public class PushNotifictionHelper {
     public final static String AUTH_KEY_FCM = "AAAAcpdY6GE:APA91bH_ZNukpG-ADK06fZJX76BLpWXoyVgK0XkojQZNvIdCeSgiXY7_NGeWZyeOtvyAwGe7cSn3ln4Oa-s22qGTRKMTaGyts4QABrE9M1kgxbAvXTftx4S4FOz9gLKlZmU8hIWqlU7ssO2b5ps5wkqLeBZjrqUAJw";//"Your api key";
     public final static String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
 
-    public static String sendPushNotification(String deviceToken, JsonObject jsonPayload)
+    public static String sendPushNotification(String deviceToken, JSONObject jsonPayload)
             throws IOException {
         String result = "";
         URL url = new URL(API_URL_FCM);

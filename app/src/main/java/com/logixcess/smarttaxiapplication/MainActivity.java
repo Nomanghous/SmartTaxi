@@ -55,6 +55,7 @@ import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
@@ -284,8 +285,8 @@ AlertDialog builder;
     }
 
     public void openPickupActivity(View view) {
-        Double latitude = 7.873172;
-        Double longitude = 80.665608;
+        Double latitude = LocationManagerService.mLastLocation.getLatitude();
+        Double longitude = LocationManagerService.mLastLocation.getLongitude();
 //        if(gps.canGetLocation()){
 //            latitude = gps.getLatitude();
 //            longitude = gps.getLongitude();

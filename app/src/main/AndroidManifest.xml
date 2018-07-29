@@ -100,7 +100,8 @@
         <activity
             android:name=".Activities.RegisterActivity"
             android:parentActivityName=".Activities.LoginActivity" />
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".Activities.MapsActivity"
             android:parentActivityName=".MainActivity" />

@@ -91,15 +91,7 @@ public class Driver implements Parcelable
 
 
 
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
 
-
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
-    }
 
     @Override
     public int describeContents() {
