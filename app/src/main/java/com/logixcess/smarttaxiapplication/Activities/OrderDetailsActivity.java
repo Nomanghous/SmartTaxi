@@ -64,10 +64,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
     public void goConfirmBooking(View view)
     {
         saveOrderOnline();
-        getNotificationToken(Helper.CURRENT_ORDER.getDriver_id());
-        Toast.makeText(this, "Order Placed Successfully", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(this,MapsActivity.class));
-        finish();
+
     }
 
     private void saveOrderOnline() {
@@ -76,6 +73,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
             @Override
             public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 Helper.CURRENT_ORDER.setOrder_id(databaseReference.getKey());
+                getNotificationToken(Helper.CURRENT_ORDER.getDriver_id());
+
             }
         });
     }
@@ -98,9 +97,9 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-//                    String josn = new Gson().toJson(Helper.CURRENT_ORDER).replace("\"","'");
-
-
+                    Toast.makeText(OrderDetailsActivity.this, "Order Placed Successfully", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(OrderDetailsActivity.this, MapsActivity.class));
+                    finish();
                 }
                 else
                 {

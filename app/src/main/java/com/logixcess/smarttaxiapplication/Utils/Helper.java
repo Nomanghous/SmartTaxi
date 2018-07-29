@@ -1,7 +1,6 @@
 package com.logixcess.smarttaxiapplication.Utils;
 
 import android.location.Location;
-
 import com.google.android.gms.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Models.Order;
 
@@ -12,6 +11,9 @@ public class Helper {
     public static final String REF_GROUPS = "Group";
     public static final String REF_PASSENGERS = "Passenger";
     public static final String REF_DRIVERS = "Driver";
+    public static final String REF_SINGLE_ORDER = "SingleOrder";
+    public static final String REF_GROUP_ORDER = "GroupOrder";
+    public static final String REF_ORDER_TO_DRIVER = "OrderToDriver";
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
     public static Order CURRENT_ORDER = null;
     public static String polylinesSeparator = "___and___";

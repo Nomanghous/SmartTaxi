@@ -46,6 +46,7 @@ import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
@@ -546,12 +547,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 Polyline polyline = gMap.addPolyline(polyLineOptions);
                 polyline.setTag(route_details.get(i+1));
                 if(i == 0){
-                    new_order.setSELECTED_ROUTE(polyline.getPoints());
+                    addSelectedRoute(polyline);
                 }
                 polyLineList.add(polyline);
                 getDriverList();
             }
         }
+    }
+
+    private void addSelectedRoute(Polyline polyline) {
+        ArrayList<RoutePoints> pointsList = new ArrayList<>();
+        for(LatLng latLng : polyline.getPoints()){
+            pointsList.add(new RoutePoints(latLng.latitude,latLng.longitude));
+        }
+        new_order.setSELECTED_ROUTE(pointsList);
     }
 
     @Override
@@ -566,7 +575,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 pline.setColor(Color.DKGRAY);
             }
         }
-        OrderDetailsActivity.SELECTED_ROUTE = polyline.getPoints();
+        addSelectedRoute(polyline);
         String[] value = ((String) polyline.getTag()).split("--");
         Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }

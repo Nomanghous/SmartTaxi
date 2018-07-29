@@ -58,6 +58,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        firebase_db = FirebaseDatabase.getInstance();
+        db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
+        db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
+        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
+        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null &&  bundle.containsKey(com.logixcess.smarttaxiapplication.Activities.MapsActivity.KEY_CURRENT_ORDER)){
@@ -67,21 +72,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
-            firebase_db = FirebaseDatabase.getInstance();
-            db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-            db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
-            db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
-            USER_ME = FirebaseAuth.getInstance().getCurrentUser();
             setupOrdersListener();
-
         }else {
             Toast.makeText(this, "No Running Order Found", Toast.LENGTH_SHORT).show();
             finish();
         }
-
-
     }
 
+
+    private void init(){
+
+    }
 
     private void everyTenSecondsTask() {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
@@ -90,13 +91,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private class TenSecondsTask extends TimerTask{
         @Override
         public void run() {
-
             updateUserLocation();
         }
     }
 
     private void setupOrdersListener() {
-
         db_ref_order.child(CURRENT_ORDER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -106,7 +105,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if(order != null){
                     if(order.getStatus() == Order.OrderStatusInProgress &&
                             order.getDriver_id().equals(USER_ME.getUid())
-                            && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
+                            && Helper.checkWithinRadius(MY_LOCATION, new LatLng(order.getPickupLat(),order.getPickupLong()))){
                         // order is within reach and it's assigned.
                         CURRENT_ORDER = order;
                         IS_RIDE_SHARED = order.getShared();

@@ -23,13 +23,13 @@ public class Order implements Parcelable{
     private Boolean isScheduled, isShared;
     private int status = 0; // nothing
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
-    private ArrayList SELECTED_ROUTE = new ArrayList<>();
+    private ArrayList<RoutePoints> SELECTED_ROUTE;
 
     public Order() {
 
     }
 
-    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList selectedRoute) {
+    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList<RoutePoints> selectedRoute) {
         this.pickup = pickup;
         this.dropoff = dropoff;
         this.pickupLat = pickupLat;
@@ -287,15 +287,16 @@ public class Order implements Parcelable{
         dest.writeString(estimated_cost);
         dest.writeString(order_id);
         dest.writeInt(status);
+        dest.writeList(SELECTED_ROUTE);
         dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
     }
 
-    public ArrayList<LatLng> getSELECTED_ROUTE() {
+    public ArrayList<RoutePoints> getSELECTED_ROUTE() {
         return SELECTED_ROUTE;
     }
 
-    public void setSELECTED_ROUTE(ArrayList<LatLng> SELECTED_ROUTE) {
+    public void setSELECTED_ROUTE(ArrayList<RoutePoints> SELECTED_ROUTE) {
         this.SELECTED_ROUTE = SELECTED_ROUTE;
     }
 
