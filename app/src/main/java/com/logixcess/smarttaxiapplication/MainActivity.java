@@ -10,6 +10,7 @@ import android.location.Address;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
@@ -35,7 +36,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
 import com.logixcess.smarttaxiapplication.Activities.LoginActivity;
@@ -47,6 +54,7 @@ import com.logixcess.smarttaxiapplication.Fragments.NotificationsFragment;
 import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
 import com.logixcess.smarttaxiapplication.Models.Driver;
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
@@ -65,12 +73,17 @@ public class MainActivity extends BaseActivity
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
+
+
+
     Handler mHandler;
     NavigationView navigationView;
 
     private DrawerLayout drawer;
     BroadcastReceiver mRegistrationBroadcastReceiver;
-
+    private FirebaseUser mFirebaseUser;
+    private int CURRENT_ORDER_STATUS = 0;
+    private String CURRENT_ORDER_ID = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,8 +124,8 @@ public class MainActivity extends BaseActivity
                 if (intent.getAction().equals(Config.REGISTRATION_COMPLETE)) {
                     // gcm successfully registered
                     // now subscribe to `global` topic to receive app wide notifications
-                    FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_GLOBAL);
 
+                    FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_GLOBAL);
                     displayFirebaseRegId();
 
                 } else if (intent.getAction().equals(Config.PUSH_NOTIFICATION)) {
@@ -126,7 +139,7 @@ public class MainActivity extends BaseActivity
                 }
             }
         };
-
+        mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         displayFirebaseRegId();
         new FetchDriversBasedOnRadius(this, mLastLocation,this);
     }
@@ -584,7 +597,40 @@ AlertDialog builder;
         return this.DriversInRadius;
     }
 
-    public void showCurrentOrder(View view) {
-        // show current order details
+    public void showCurrentOrder() {
+        DatabaseReference db_ref, db_ref_order;
+        db_ref = FirebaseDatabase.getInstance().getReference();
+        db_ref_order = db_ref.child(Helper.REF_ORDERS).child("fk_user_id");
+        db_ref_order.equalTo(mFirebaseUser.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Order order = dataSnapshot.getValue(Order.class);
+                    if(order != null){
+                        if(order.getStatus() == Order.OrderStatusInProgress) {
+                            // order is in progress
+                            CURRENT_ORDER_STATUS = Order.OrderStatusInProgress;
+                        }else if(order.getStatus() == Order.OrderStatusPending){
+                            // order is not assigned yet
+                            CURRENT_ORDER_STATUS = Order.OrderStatusPending;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
+
+    public int getCurrentOrderStatus(){
+        return CURRENT_ORDER_STATUS;
+    }
+
+    public String getCurrentOrderId(){
+        return CURRENT_ORDER_ID;
+    }
+
 }

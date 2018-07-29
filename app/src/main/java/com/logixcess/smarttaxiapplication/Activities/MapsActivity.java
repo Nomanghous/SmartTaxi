@@ -17,8 +17,10 @@ import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
 
+import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
+import com.directions.route.Routing;
 import com.directions.route.RoutingListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -32,7 +34,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.logixcess.smarttaxiapplication.Models.Driver;
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Utils.Helper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,31 +53,82 @@ import java.util.TimerTask;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
 
+    public static final String KEY_DRIVER_ID = "driver_id";
+    public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
     private Marker mDriverMarker;
     private LatLng start, end;
     private ArrayList<Polyline> polylines;
+    private Order CURRENT_ORDER = null;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
     private double totalDistance = 100, totalTime = 120; // total time in minutes
     private double distanceRemaining = 90;
     private List<LatLng> waypoints;
+    private DatabaseReference db_ref, db_ref_driver;
+    private String selectedDriverId;
+    private Driver SELECTED_DRIVER;
+    private LatLng pickup = null;
+    private LatLng driver = null;
+    private Marker driverMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle bundle = getIntent().getExtras();
+        if(bundle != null && bundle.containsKey(KEY_DRIVER_ID) && bundle.containsKey(KEY_CURRENT_ORDER)){
+            selectedDriverId = bundle.getString(KEY_DRIVER_ID);
+            CURRENT_ORDER = bundle.getParcelable(KEY_CURRENT_ORDER);
 
+            askLocationPermission();
+            setContentView(R.layout.activity_maps);
+            // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+            db_ref = FirebaseDatabase.getInstance().getReference();
+            db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(selectedDriverId);
+            db_ref_driver.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.exists()){
+                        SELECTED_DRIVER = dataSnapshot.getValue(Driver.class);
+                        if(SELECTED_DRIVER != null){
+                            requestNewRoute();
+                        }
+                    }
+                }
 
-        askLocationPermission();
-        setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-        sendNotification("Get Ready","New Order is assigned to You");
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+            sendNotification("Get Ready","New Order is assigned to You");
+        }else{
+            // driver id not provided
+            finish();
+        }
+
     }
 
-  /**
+    private void requestNewRoute() {
+        driver = new LatLng(SELECTED_DRIVER.getLatitude(), SELECTED_DRIVER.getLongitude());
+        if(pickup == null)
+            pickup = new LatLng(CURRENT_ORDER.getPickupLat(),CURRENT_ORDER.getPickupLong());
+        List<LatLng> points = new ArrayList<>();
+        points.add(driver);
+        points.add(pickup);
+        Routing routing = new Routing.Builder()
+                .travelMode(AbstractRouting.TravelMode.DRIVING)
+                .withListener(this)
+                .alternativeRoutes(true)
+                .waypoints(points)
+                .build();
+        routing.execute();
+    }
+
+    /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
      * This is where we can add markers or lines, add listeners or move the camera. In this case,
@@ -93,18 +154,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         addRoute();
-        new Timer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        changeVehicleColorByDistance(totalDistance,  distanceRemaining = distanceRemaining - 10,mDriverMarker);
-                    }
-                });
 
-            }
-        },5000, 5000);
+
+
+
+//        new Timer().scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//
+//
+//                        changeVehicleColorByDistance(totalDistance,  distanceRemaining = distanceRemaining - 10,mDriverMarker);
+//                    }
+//                });
+//
+//            }
+//        },5000, 5000);
     }
 
     private void askLocationPermission() {
@@ -114,22 +181,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    private void changeVehicleColorByDistance(double totalDistance,double distanceRemaining, Marker driverMarker){
+    private void changeVehicleColorByDistance(){
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance* 100);
         LatLng markerPosition = driverMarker.getPosition();
         String title = driverMarker.getTitle();
         driverMarker.remove();
         if(percentageLeft < 25){
-            mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_RED,start,title));
+            mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_RED,driver,title));
             sendNotification("Congratulations","You have reached your destination.");
         }else if(percentageLeft < 50){
-            markerPosition = waypoints.get((int)( waypoints.size() * .40));
             mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_BLUE,markerPosition,title));
         }else if(percentageLeft < 75){
-            markerPosition = waypoints.get((int)( waypoints.size() * .70));
             mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_ROSE,markerPosition,title));
         }else if(percentageLeft < 100){
-            markerPosition = waypoints.get((int)( waypoints.size() * .90));
             mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_YELLOW,markerPosition,title));
         }
     }
@@ -225,13 +289,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         waypoints = decodePoly("}syl@qqwiNQk@EQOg@a@oAGSo@gBs@uBOc@i@aB{@gCuA}DK_@]kAI]Mq@WyAOs@Mk@Oq@Ou@Q{@[yAUcAMe@Mg@Y}@Uo@M_@[w@OYEKGIa@m@Ya@GKi@s@GGU]IOMSKSQ_@O_@Yq@Si@Uo@Ww@CIKWk@kBg@sAy@eBqBcEs@uA[m@Yi@KQOUKSSYMQ]e@]]o@m@{AsA{@u@a@_@w@s@e@c@[YSS_@_@]]MOiAsAiAsAgAsAKMIKKOKSMWOa@EKc@iAM]IWQg@Wq@O[EMEKGMIMQUOQYYc@][Wa@Wg@[IEa@Q[KQEWI_AQe@Ia@IoAQ}@MeAK{@Mo@Ia@G_@GUIs@Uq@Ua@O]Ka@IMAKAc@AWAWCYEc@GUESKc@[cAy@CAaAw@k@e@iBeBwBsBYYWYKMKOOWQ[IUGKISIQKQIOMMMKUMUIWIk@SYIOGMGUM[W}@k@c@]g@[s@g@uByAe@[_As@s@g@uAkAiA_Ai@c@i@c@u@g@YS[Q{A{@qAu@qBaAsB}@mB{@QIqAi@e@U]Qu@c@WQKIAAc@[WUUUYYU[Q[O[M[Ma@Uu@e@aBe@cBU}@YkAOi@Qk@KYISWm@Yg@m@_Am@aAq@gAe@m@[_@SWOQ]_@[Wa@[WQm@_@k@_@m@]eAg@{@Yg@Q]MYKWMQIWOMKMMKOIMGIIIIIOOGCACICYKgA[QGSIGCIEQIWO_@Uk@_@wAaAqA{@aBeAyA}@iBiAaBeA_Ak@oAw@mAw@qBqAeBkAqCeBuCkB}@k@s@g@k@]o@c@e@YqA}@mC}A_By@uAq@eAg@uAm@eBw@w@_@uAs@mBcAi@[g@]qA}@y@m@e@[i@WyAw@iAk@gAg@uAo@i@Ui@Wi@Wy@_@g@WgAi@u@_@g@Ym@[WO[SYSMKIKSSMQMS]m@m@cAa@o@GIMSKMIKKKOOOMOK]U_@QYOQI}Aq@qAi@}B}@iBs@aA_@e@Qc@Me@Ma@I_@EeAQyAU}@Mu@Mm@Oq@ScA[y@Yu@UaA[k@SyAc@_@O]M[K}@_@q@[}BgAWKm@[y@c@g@[g@]QMQM_@]m@k@o@k@y@u@mBcBgBaBaBwAaBwAy@s@c@]y@o@cAw@QMmA{@g@_@i@a@k@c@WQ[U_@Ye@[YUe@]_Aq@u@i@q@e@aAo@oAw@y@i@a@W}@s@a@]YUc@]c@]g@_@e@]_As@c@[g@_@{@o@u@i@u@c@s@g@u@e@iBgAgAo@eAk@g@W[OYO_@Om@S[K[Is@OoAYiBa@eBc@}Cu@i@Mc@Mu@QgAUoAUcAOo@Mo@I}@Os@Kk@KeAOs@Kw@Ki@GmAIyAMsAIaGe@_Fa@_E[kCUy@K}@K]Eo@GyAOs@Gg@GsAQ{ASaAOkAQmAS}@OOC}@Mg@Ge@Ie@Iu@OqAUkASi@Ke@Kc@KaB[gCc@e@Ic@I_@I_@Ie@M]I_@Ie@Ok@OWG_@KA?g@S_A[q@SsAc@e@QOEKGYMSKSMw@e@{@i@OI}A_AsAu@k@[s@a@iAq@kBcAa@Wm@[YOyAu@q@[]O]Qe@So@Ye@UeAi@oAo@iAo@c@W[UUOYSg@a@USkAgAy@w@u@s@c@c@sAoAeAcAcB_BiAgAoBqBgBgBgBgBc@a@_@a@UW[_@U]o@aAaAyAsAoB_AsAsAkBy@kAy@gA[_@k@s@e@e@]a@]]g@k@]a@c@i@a@e@_@a@s@{@e@i@m@k@{@y@g@a@o@i@iA{@kByAw@k@_@[G?GCECiA_AuAkA_Au@qBeBiAcAgByAaAw@a@]CAGGeAw@cAu@sA_A_Am@MKOIqGsEiBmA}B{AaBeAkDwBOIcAq@UOMGgBeAq@m@eAo@oBiAqAu@kAm@c@UWKa@Si@WYMYOw@g@cAo@sA{@QKMKSMKKIIIIMQMWQ_@M[M]KYGQIOU[GGKKu@}@w@y@_AcAUUe@e@[YiAcA{@u@y@s@_A{@m@m@m@m@i@k@i@m@cAkAaAkAq@{@c@g@k@o@g@m@m@o@k@o@uA}AaAeAmAsAk@m@UUWUc@_@o@k@e@]s@g@mAw@aC_BmBoAyAaAkAs@eAi@WMgAk@i@[[QUQSMMKKMII_@c@[a@SSUM]OSIoASs@KwLgBkJsBoOgDqHmBmCq@_CeAwCiBmBkA[OYM[QKGOI]Q[Og@Ya@Ug@Y]Q_@UYSOKMKSQUSMMoBuBu@{@oAqAkAoAk@o@UWSWS[QYIMEKEGIKIIGGKIc@WSIWEa@Og@Oi@Wc@Ue@Yk@]WSIE]UOIOGOEOG_@I_@E]EMA[C[CKA]E_@ImAS{A]m@Oq@QUIm@OQGMCMEQIQKm@[QIICGEMM]_@k@m@c@e@[_@?AIIGIGIMKKIKGIEIEIAGAI?I?C?C?E@GBUHKDMDMBEBE?E@G@G?I?I?MASCIAKAEAKEQEOEMEOISMQMQMSOUS[WMMOQOSMOIKIGKKSMOKKGQIQIOEIEIEOKOKc@_@o@g@m@c@MIQIQIQIa@M_@KYEWE]Ca@GUESG[Me@OSESE[GQCOCa@E]Ac@Am@AcAIm@G_@EUEYCSCSCG?G?K?K?O?I?Q@Q@K@O@O?i@AQ?]?Q?O@O@OBQBQDODOBM@O@M?OAOCMCQGOIQISISGQESCMCMAU?Y?O@K@KBK@e@J]Fa@D]D_@Dc@B[@]@S?Q?M@IAK?MAOEOGMGOKIIKKGKGGIGIEICCAYEyAG{@Kk@Ou@YYKQKWQ]WSQQUOSOYGUCQCICIEIKKIIKEKC_@M]OUMQIe@Ws@_@e@[WQOMMMSUQWSYMSO[MWIUGWCOEUIc@W{@O[IOUWQQSOUM_@Qc@Qk@[WMWMUIYISGUEQEUEOCWGYGWGi@Mg@Kq@OeAWqAYw@Qm@Oc@M}Bo@w@WoA_@AA{GgC[MUIe@OgAYWI_@G]Ic@IaCa@uAWqBYmBUw@KC?m@GiAEy@CiAAC?aCEoACkA?mB?_A@c@?_@B]@g@D{ANK@cAJ_AFo@Dw@BQ@aA@aCJsBJ_@@mADoADcBDiDB}CL_BD_ABqA?{@?_ACk@Cc@Cm@Go@GcAMi@GeAKu@Gg@CqAK{@Iq@GuAKiEc@oD_@_BOoBUYEKAOEm@Mq@Qm@Q_@Mi@UQKSKWSOOOSSWW_@mA_BU]s@_Am@o@a@c@UWWUQQk@e@UUm@e@s@k@q@e@aAq@u@i@e@[}B}AqCiBe@W_@Uy@g@IEu@c@_@OWMMGsAm@u@_@eAg@cAi@eAi@y@c@oAs@cAk@u@e@aAo@s@e@WUUSo@o@UUUY_@c@SY]i@e@q@_@i@e@o@i@s@_@e@a@e@[[QSSQOM[Sc@Yk@[s@_@cAi@OCKCUKyGaDMIQGMISKOIOKQOMMy@aA[a@Y[a@c@s@q@o@o@a@_@KKKI][_@]a@a@e@a@a@_@a@_@e@_@a@c@[UEG_BwA_BuA[WWWQSWWOOOOEGEK?AEIEICIAGCGAMAIEIEKGMIIGG?AMGIEG?C?E?CAYK[M[MWMAAICIECAIGKGMKQO][YUc@_@MOc@_@GEQOUUOMe@c@SO?AQOCCECUQQOKIMKKIYY{@u@]YKIg@c@k@g@mC{BQOCGCG_@]cAy@]Wa@[SQYQSMYO]Om@YcAc@y@a@mB}@QGOIKGOIMMKMMQMOAASWKOSQY[m@m@c@c@a@_@qAoAqAoA_A_AQOIKUUKIIGQMu@_@]QCAaAi@c@Wu@e@YS_@Uw@i@gAq@sAu@wBoAi@YGCGCEAQG_@S]QKIMIWWOSOSOQ[]a@g@k@k@o@k@{@u@}@u@}@u@wB}A_BkAaAq@yAaAyA}@u@c@c@WoBqAoCgBkBkAWOSOQMSQWUm@u@mBuBaBiB{AaBaB_BmBkBoAmAc@a@][a@Y[S_@SuBkAmBeAoC}AgCyAu@a@_CwA_B_AmBmAkBiAaBcA_Ak@m@_@e@Ya@WUMSOg@a@YWUSi@m@]a@U]e@s@aBgCk@_AgAkBw@oAu@mAo@cAc@s@Yi@a@s@o@qAMWMQQW[]US]YgA{@_Aq@kE{C}@q@gBoAmA{@uA}@UQgBiAiC{A_BaAgC}A_CyAsBmA}BwAkGwDuBuAkBgA_BaAq@c@m@a@kA{@o@g@a@]QKYSy@g@q@c@}@q@aAw@iA{@mA}@iA_Au@i@uCiBmBmAu@a@uAs@cAe@uB_AcAa@c@QMGAA}B_AyBcAoCqA]Qa@QcAc@]O_@Qo@Wo@Wk@YYKuAe@kBm@iAa@gAc@cCgAQIy@_@[Mw@a@}@c@y@a@u@]_Ac@kEoB{@c@}@c@w@e@q@_@g@]}AcAuA}@e@Y_B_Ag@Y_@WUOc@Y{@k@w@i@w@i@}AgA[QYQq@e@}B}AqBsAuByAuBwAsByAi@c@WSk@i@OQMMQUMOMUSYm@{@e@u@c@k@QQKKKMGGg@]YQc@Yo@[e@Uq@[m@WSIOIQIOIUOWQm@a@}@o@y@q@iAcAgBgBk@i@WU][m@g@k@c@USWQe@Y[QOIQKQIYKYKu@Su@SsAWw@M_BSgBQ{@GeCUWEUEICOEWKSIeCaAaC_AiB{@_CiAy@a@kAk@sBaAk@UYMUGiBc@mCq@sBg@IAm@Oc@Ks@MWCe@G_@CcAGc@AaBIq@EYE]G_@MUIYQaAi@aAg@uA}@iAy@ECgAq@mA{@_As@g@c@i@[SMQI_@MqAWk@IuAIiAGeAEiAG}@Gq@Is@Mk@Mm@Qo@Su@[I?KCKG_BcA{BeB_@[[[u@cAYa@U[W][]w@}@[[]]_BoAu@e@{@k@w@a@a@W_@QWMy@YoCaAq@WiAe@w@]_@S_@Uk@[]W[U}@q@MIqB}AmCmB]YSO{AiAwG{Em@c@qA}@mC}AsEgCkDoBy@c@uEeCa@YEE");
         start = waypoints.get(0);
         end = waypoints.get(waypoints.size() - 1);
-        /*
-        * University Hall Flag Poles:33.968443, -118.421046
-        Lawton Plaza:33.970336, -118.417874
-        Brickyard Campus:33.981565, -118.406479
-        Village Drive:33.976626, -118.415080
 
-        * */
         CameraUpdate center = CameraUpdateFactory.newLatLngZoom(start,12);
         mMap.animateCamera(center);
 
@@ -273,44 +331,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
-        CameraUpdate center = CameraUpdateFactory.newLatLng(start);
-        CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
-
-        mMap.moveCamera(center);
-
-
-        if(polylines.size()>0) {
-
-        }
 
 //        polylines = new ArrayList<>();
-//        //add route(s) to the map.
-//        for (int i = 0; i <route.size(); i++) {
-//
-//            //In case of more than 5 alternative routes
-//            int colorIndex = i % COLORS.length;
-//
-//            PolylineOptions polyOptions = new PolylineOptions();
-//            polyOptions.color(getResources().getColor(COLORS[colorIndex]));
-//            polyOptions.width(10 + i * 3);
-//            polyOptions.addAll(route.get(i).getPoints());
-//            Polyline polyline = mMap.addPolyline(polyOptions);
-//            polylines.add(polyline);
-//
-//            Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
-//        }
-
-        // Start marker
+        //add route(s) to the map.
+        Route shortestRoute = route.get(shortestRouteIndex);
+//        int colorIndex = shortestRouteIndex % COLORS.length;
+//        PolylineOptions polyOptions = new PolylineOptions();
+//        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
+//        polyOptions.width(10 + shortestRouteIndex * 3);
+//        polyOptions.addAll(shortestRoute.getPoints());
+//        Polyline polyline = mMap.addPolyline(polyOptions);
+//        polylines.add(polyline);
+        distanceRemaining = shortestRoute.getDistanceValue();
         MarkerOptions options = new MarkerOptions();
-        options.position(start);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
-        mMap.addMarker(options);
+        options.position(driver);
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car_black));
+        if(mDriverMarker != null)
+            mDriverMarker.remove();
+        mDriverMarker = mMap.addMarker(options);
+        changeVehicleColorByDistance();
 
-        // End marker
-        options = new MarkerOptions();
-        options.position(end);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-        mMap.addMarker(options);
+
     }
 
     @Override

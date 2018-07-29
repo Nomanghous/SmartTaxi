@@ -16,6 +16,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
@@ -28,6 +30,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
@@ -40,11 +43,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private Order CURRENT_ORDER = null;
+    private User CURRENT_USER = null;
+    private boolean IS_RIDE_SHARED = false;
+    private String CUSTOMER_USER_ID = "";
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
     private DatabaseReference db_ref_user;
+    private DatabaseReference db_ref_group;
     private FirebaseUser USER_ME;
     private Location MY_LOCATION = null;
+    private LatLng dropoff, pickup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
         db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
+        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         MY_LOCATION = LocationManagerService.mLastLocation;
         setupOrdersListener();
@@ -73,6 +82,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private class TenSecondsTask extends TimerTask{
         @Override
         public void run() {
+
             updateUserLocation();
         }
     }
@@ -84,9 +94,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
                     Order order = snapshot.getValue(Order.class);
                     if(order != null){
-                        if(order.getStatus() && order.getDriver_id().equals(USER_ME.getUid()) && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
-                            // order is within reach and it's not assigned yet.
-
+                        if(order.getStatus() == Order.OrderStatusInProgress &&
+                                order.getDriver_id().equals(USER_ME.getUid())
+                                && Helper.checkWithinRadius(MY_LOCATION,new LatLng(order.getPickupLat(),order.getPickupLong()))){
+                            // order is within reach and it's assigned.
+                            CURRENT_ORDER = order;
+                            IS_RIDE_SHARED = order.getShared();
+                            CUSTOMER_USER_ID = order.getUser_id();
+                            if(IS_RIDE_SHARED){
+                                fetchThatGroup();
+                            }else{
+                                fetchThatCustomer();
+                            }
+                            break;
                         }
                     }
                 }
@@ -99,6 +119,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    private void fetchThatGroup() {
+        db_ref_group.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_USER = dataSnapshot.getValue(User.class);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void fetchThatCustomer() {
+        db_ref_user.child(CUSTOMER_USER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_USER = dataSnapshot.getValue(User.class);
+                    if(CURRENT_USER != null){
+                        showDataOnMap();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void showDataOnMap() {
+        if(mMap != null){
+            // show User
+            pickup = new LatLng(CURRENT_ORDER.getPickupLat(), CURRENT_ORDER.getPickupLong());
+            dropoff = new LatLng(CURRENT_ORDER.getDropoffLat(), CURRENT_ORDER.getDropoffLat());
+            MarkerOptions options = new MarkerOptions();
+            options.title("Pickup").position(pickup).icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
+            mMap.addMarker(options);
+            MarkerOptions options2 = new MarkerOptions();
+            options2.title("Dropoff").position(dropoff).icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
+            mMap.addMarker(options2);
+
+            // show Driver
+        }
+    }
 
 
     private void updateUserLocation(){

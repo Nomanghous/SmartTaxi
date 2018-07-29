@@ -3,6 +3,8 @@ package com.logixcess.smarttaxiapplication.Models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.database.Exclude;
+
 public class Driver implements Parcelable
 {
     String driving_license_url,
@@ -124,19 +126,19 @@ public class Driver implements Parcelable
     public void setInOnline(Boolean inOnline) {
         this.inOnline = inOnline;
     }
-
+    @Exclude
     public double getLatitude() {
         return latitude;
     }
-
+    @Exclude
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
-
+    @Exclude
     public double getLongitude() {
         return longitude;
     }
-
+    @Exclude
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }

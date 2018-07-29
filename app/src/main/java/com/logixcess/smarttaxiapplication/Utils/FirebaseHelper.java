@@ -32,11 +32,10 @@ public class FirebaseHelper
         my_context = context;
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
         storageReference = FirebaseStorage.getInstance().getReference();
-        databaseReference = FirebaseDatabase.getInstance().getReference();//Constants.Database_Path);
-
+        databaseReference = FirebaseDatabase.getInstance().getReference();
     }
     public void pushUser(final User user, Passenger passenger) {
-        Log.d(TAG, "`````` In Push User...");
+        Log.d(TAG, "In Push User...");
         valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
@@ -48,15 +47,15 @@ public class FirebaseHelper
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         old_user = snapshot.getValue(User.class);
                     }
-                    if(user.getPassword()=="")
+                    if(user.getPassword().isEmpty())
                     {
                         user.setPassword(old_user.getPassword());
                     }
                 }
                 else
                 {
-                    firebase_instance.child("User").child(user.getUser_id()).setValue(user);
-                    firebase_instance.child("Passenger").child(passenger.getFk_user_id()).setValue(passenger);
+                    firebase_instance.child(Helper.REF_USERS).child(user.getUser_id()).setValue(user);
+                    firebase_instance.child(Helper.REF_PASSENGERS).child(passenger.getFk_user_id()).setValue(passenger);
                     Toast.makeText(my_context,"You are Registered Successfully",Toast.LENGTH_SHORT).show();
                 }
 
@@ -66,7 +65,7 @@ public class FirebaseHelper
             public void onCancelled(FirebaseError firebaseError) {
             }
         };
-        firebase_instance.child("User").child(user.getUser_id()).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
+        firebase_instance.child(Helper.REF_USERS).child(user.getUser_id()).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
 
 
 
@@ -92,8 +91,8 @@ public class FirebaseHelper
             }
             else
             {
-                firebase_instance.child("User").child(user.getUser_id()).setValue(user);
-                firebase_instance.child("Driver").child(driver.getFk_user_id()).setValue(driver);
+                firebase_instance.child(Helper.REF_USERS).child(user.getUser_id()).setValue(user);
+                firebase_instance.child(Helper.REF_DRIVERS).child(driver.getFk_user_id()).setValue(driver);
                 Toast.makeText(my_context,"You are Registered Successfully",Toast.LENGTH_SHORT).show();
             }
 

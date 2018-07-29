@@ -7,11 +7,11 @@ import com.logixcess.smarttaxiapplication.Models.Order;
 
 public class Helper {
 
-    public static final String REF_ORDERS = "orders";
-    public static final String REF_USERS = "users";
-    public static final String REF_GROUPS = "groups";
-    public static final String REF_PASSENGERS = "passengers";
-    public static final String REF_DRIVERS = "drivers";
+    public static final String REF_ORDERS = "Order";
+    public static final String REF_USERS = "User";
+    public static final String REF_GROUPS = "Group";
+    public static final String REF_PASSENGERS = "Passenger";
+    public static final String REF_DRIVERS = "Driver";
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
     public static Order CURRENT_ORDER = null;
     public static String polylinesSeparator = "___and___";
@@ -19,6 +19,8 @@ public class Helper {
 
 
     public static boolean checkWithinRadius(Location mine, LatLng other) {
+        if(mine == null)
+            return false;
         Location pickup = new Location("me");
         pickup.setLatitude(other.latitude);
         pickup.setLongitude(other.longitude);

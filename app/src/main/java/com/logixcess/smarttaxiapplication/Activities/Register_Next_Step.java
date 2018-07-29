@@ -42,6 +42,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.logixcess.smarttaxiapplication.DriverModule.DriverMainActivity;
 import com.logixcess.smarttaxiapplication.Fragments.DatePickerFragment;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
@@ -218,16 +219,17 @@ public class Register_Next_Step extends AppCompatActivity {
                                 {
                                     passenger.setFk_user_id(user_data.getUser_id());
                                     firebaseHelper.pushUser(user_data,passenger);
+                                    startActivity(new Intent(Register_Next_Step.this, MainActivity.class));
                                 }
                                 else if(user_data.getUser_type().equals("Driver"))
                                 {
                                     driver.setFk_user_id(user_data.getUser_id());
                                     firebaseHelper.pushUser(user_data,driver);
+                                    startActivity(new Intent(Register_Next_Step.this, DriverMainActivity.class));
                                 }
 
                             }
                             //Successfull
-                            startActivity(new Intent(Register_Next_Step.this, MainActivity.class));
                             finish();
                         }
                     }
@@ -401,7 +403,7 @@ public class Register_Next_Step extends AppCompatActivity {
             //driver.setFk_user_id(user_data.getUser_id());
             driver.setInOnline(true);
             //driver.setDriving_issue();
-            driver.setLongitude(0);
+            driver.setLatitude(0);
             driver.setLongitude(0);
             //driver.setDriving_expiry_date();
             driver.setFk_vehicle_id("");

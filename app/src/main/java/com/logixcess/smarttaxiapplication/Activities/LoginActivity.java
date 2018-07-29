@@ -39,7 +39,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
+import com.logixcess.smarttaxiapplication.DriverModule.DriverMainActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
@@ -433,7 +433,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                                                 startActivity(intent);
                                                 finish();
                                             }else{
-                                                Intent intent = new Intent(LoginActivity.this, MapsActivity.class);
+                                                Intent intent = new Intent(LoginActivity.this, DriverMainActivity.class);
                                                 startActivity(intent);
                                                 finish();
                                             }

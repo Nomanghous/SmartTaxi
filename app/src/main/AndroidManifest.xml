@@ -97,10 +97,9 @@
         <activity
             android:name=".Activities.Register_Next_Step"
             android:parentActivityName=".Activities.RegisterActivity" />
-        <activity android:name=".Activities.RegisterActivity"
-            android:parentActivityName=".Activities.LoginActivity"
-            />
-
+        <activity
+            android:name=".Activities.RegisterActivity"
+            android:parentActivityName=".Activities.LoginActivity" />
         <activity android:name=".Activities.LoginActivity" />
         <activity
             android:name=".Activities.MapsActivity"
@@ -112,9 +111,9 @@
 
         <receiver android:name=".Activities.MyNotificationManager" />
 
-        <activity android:name=".Activities.OrdersActivity"></activity>
-
-        <activity android:name=".Activities.calendar_layout"></activity>
+        <activity android:name=".Activities.OrdersActivity" />
+        <activity android:name=".Activities.calendar_layout" />
+        <activity android:name=".DriverModule.DriverMainActivity"></activity>
     </application>
 
 </manifest>
