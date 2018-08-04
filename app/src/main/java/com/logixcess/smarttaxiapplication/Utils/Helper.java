@@ -4,6 +4,8 @@ import android.location.Location;
 import com.google.android.gms.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Models.Order;
 
+import java.util.Arrays;
+
 public class Helper {
 
     public static final String REF_ORDERS = "Order";
@@ -27,6 +29,11 @@ public class Helper {
         pickup.setLatitude(other.latitude);
         pickup.setLongitude(other.longitude);
         return mine.distanceTo(pickup) < SELECTED_RADIUS;
+    }
+    public static String getConcatenatedID(String myUid,String uid){
+        String[] alphaNumericStringArray = new String[]{myUid, uid};
+        Arrays.sort(alphaNumericStringArray, new AlphanumericSorting());
+        return alphaNumericStringArray[0] + alphaNumericStringArray[1];
     }
 
 }

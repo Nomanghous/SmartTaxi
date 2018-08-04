@@ -1,5 +1,6 @@
 package com.logixcess.smarttaxiapplication.Utils;
 
+import android.location.Location;
 import android.net.Uri;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -14,7 +15,6 @@ public class Constants
     public static Uri FilePathUri2 ;
     public static String Storage_Path = "images" ;
     public static float SELECTED_RADIUS = 10000.0f ;//distance in meters
-    public static LatLng USER_CURRENT_LOCATION = new LatLng(0,0) ;//distance in meters
     public static long date_selected_expiry;
     public static long date_selected_issue;
 }

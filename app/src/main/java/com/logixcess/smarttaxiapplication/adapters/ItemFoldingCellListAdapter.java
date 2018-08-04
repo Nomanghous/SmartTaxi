@@ -36,16 +36,16 @@ public class ItemFoldingCellListAdapter extends RecyclerView.Adapter<ItemFolding
         //super(context, 0, objects);
     }
 
+    public void registerFold(int position) {
+        unfoldedIndexes.remove(position);
+    }
+
     // simple methods for register cell state changes
     public void registerToggle(int position) {
         if (unfoldedIndexes.contains(position))
             registerFold(position);
         else
             registerUnfold(position);
-    }
-
-    public void registerFold(int position) {
-        unfoldedIndexes.remove(position);
     }
 
     public void registerUnfold(int position) {

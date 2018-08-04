@@ -49,6 +49,7 @@ import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
+import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
 import com.logixcess.smarttaxiapplication.Utils.PathJsonParser;
@@ -70,8 +71,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.USER_CURRENT_LOCATION;
-
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
@@ -98,8 +97,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     ValueEventListener valueEventListener;
     ArrayList<Driver> driverList;
     Location DRIVER_LOCATION;
-    Location MY_LOCATION;
-    // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
 
@@ -170,16 +167,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
         return  view;
     }
-    private boolean checkWithinRadius(LatLng latLng) {
+    private boolean checkWithinRadius(LatLng latLng,Location mine) {
         DRIVER_LOCATION = new Location("driver");
         DRIVER_LOCATION.setLatitude(latLng.latitude);
         DRIVER_LOCATION.setLongitude(latLng.longitude);
 
-        MY_LOCATION = new Location("me");
-        MY_LOCATION.setLatitude(31.54010467);//USER_CURRENT_LOCATION.latitude);
-        MY_LOCATION.setLongitude(74.31660785);//USER_CURRENT_LOCATION.longitude);
 
-        return MY_LOCATION.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
+        return mine.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
 
     }
     public void getDriverList()
@@ -197,24 +191,30 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         driver = snapshot.getValue(Driver.class);
 
                         LatLng driver_location = new LatLng(driver.getLatitude(), driver.getLongitude());
-                        if(new_order != null && new_order.getShared()) {
+                        if(new_order != null && new_order.getShared())
+                        {
                             for (Polyline polyline : polyLineList) {
 
                                 //polyline.
-                                if (PolyUtil.isLocationOnEdge(driver_location, polyline.getPoints(), true)) {
+                                //if (PolyUtil.isLocationOnEdge(driver_location, polyline.getPoints(), false)) {
+                                //if(PolyUtil.isLocationOnPath(driver_location, polyline.getPoints(), true))
+                                if(PolyUtil.containsLocation(driver_location, polyline.getPoints(), true)
+                                        || checkWithinRadius(driver_location, ((MainActivity)getContext()).getCurrentLocation()))
+                                {
                                     //means that driver location is inside that path/route
-
-                                    Boolean within_radius = checkWithinRadius(driver_location);
-                                    if (within_radius) {
-                                        driverList.add(driver);
-                                        addDriverMarker(driver);
-                                    }
+                                    driverList.add(driver);
+                                    addDriverMarker(driver);
+//                                    Boolean within_radius = checkWithinRadius(driver_location);
+//                                    if (within_radius) {
+//                                        driverList.add(driver);
+//                                        addDriverMarker(driver);
+//                                    }
                                 } else {
 
                                 }
                             }
                         }else{
-                            Boolean within_radius = checkWithinRadius(driver_location);
+                            Boolean within_radius = checkWithinRadius(driver_location,((MainActivity)getContext()).getCurrentLocation());
                             if(within_radius){
                                 driverList.add(driver);
                                 addDriverMarker(driver);
@@ -410,33 +410,25 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
-//        if(gps.canGetLocation()){
-//            LatLng usa = new LatLng(gps.getLatitude(), gps.getLongitude());
-//            gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
-//        }
         Double latitude = 7.873172;
         Double longitude = 80.665608;
         LatLng usa = new LatLng(latitude, longitude);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         gMap.setOnPolylineClickListener(this);
         gMap.setOnMarkerClickListener(this);
-        //getDriverList();
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
                 + new_order.getPickupLat().toString().concat(",") + new_order.getPickupLong()
                 + "&destination=" + new_order.getDropoffLat()+ ","
                 + new_order.getDropoffLong();
-
         String sensor = "sensor=false";
         String params = addresses + "&" + sensor;
         String output = "json";
         String url = "https://maps.googleapis.com/maps/api/directions/"
                 + output + "?" + params +"&alternatives=true&key="+ getString(R.string.google_maps_api);
-
         ReadTask downloadTask = new ReadTask();
         downloadTask.execute(url);
-
         return url;
     }
 
@@ -452,9 +444,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     .title("Second Point"));
         }
     }
-
-
-
 
     private class ReadTask extends AsyncTask<String, Void, String> {
         @Override

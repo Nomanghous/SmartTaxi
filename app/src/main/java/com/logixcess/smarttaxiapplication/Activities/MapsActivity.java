@@ -52,18 +52,17 @@ import java.util.TimerTask;
 @SuppressLint("MissingPermission")
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
-
     public static final String KEY_DRIVER_ID = "driver_id";
     public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
     private Marker mDriverMarker;
-    private LatLng start, end;
     private ArrayList<Polyline> polylines;
     private Order CURRENT_ORDER = null;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
     private double totalDistance = 100, totalTime = 120; // total time in minutes
     private double distanceRemaining = 90;
+    private LatLng start, end;
     private List<LatLng> waypoints;
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedDriverId;
@@ -71,6 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng pickup = null;
     private LatLng driver = null;
     private Marker driverMarker;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

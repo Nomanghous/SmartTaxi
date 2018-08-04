@@ -21,7 +21,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
+import com.logixcess.smarttaxiapplication.Models.Group;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
@@ -30,6 +32,7 @@ import com.logixcess.smarttaxiapplication.Utils.Helper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -47,11 +50,15 @@ public class DriverMainActivity extends AppCompatActivity {
     private User CURRENT_USER = null;
     private String CURRENT_ORDER_ID;
     private String CURRENT_GROUP_ID;
+    private boolean IS_FIRST_TIME = false;
+    private SharedRide CURRENT_SHARED_RIDE;
+    private String CURRENT_USER_ID = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driver_main);
+        setupBroadcastReceivers();
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
         db_ref_user = firebase_db.getReference().child(Helper.REF_DRIVERS);
@@ -59,8 +66,6 @@ public class DriverMainActivity extends AppCompatActivity {
         db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         checkAssignedSingleOrder();
-
-        setupBroadcastReceivers();
         everyTenSecondsTask();
     }
 
@@ -90,7 +95,7 @@ public class DriverMainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     CURRENT_GROUP_ID = (String) dataSnapshot.getValue();
-
+                    goFetchGroupByID(CURRENT_GROUP_ID);
                 }
             }
 
@@ -145,11 +150,69 @@ public class DriverMainActivity extends AppCompatActivity {
         db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
         db_ref_order.child(orderId).child("driver_id").setValue(FirebaseAuth.getInstance().getCurrentUser().getUid());
         db_ref_order.child(orderId).child("order_id").setValue(orderId);
-        db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(orderId);
-        // TODO: add orderr to driver for shared ride as well.
+        CURRENT_ORDER_ID = orderId;
+        goFetchOrderByID(orderId);
 
-        openOrderActivity(orderId);
-        Toast.makeText(this, "Order Accepted", Toast.LENGTH_SHORT).show();
+        IS_FIRST_TIME = true;
+    }
+
+    private void goFetchOrderByID(String orderId) {
+        db_ref_order.child(orderId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_ORDER = dataSnapshot.getValue(Order.class);
+                    if(CURRENT_ORDER != null){
+                        CURRENT_USER_ID = CURRENT_ORDER.getUser_id();
+                        String groupId = Helper.getConcatenatedID(CURRENT_USER_ID,CURRENT_ORDER_ID);
+                        if(CURRENT_ORDER.getShared())
+                            goFetchGroupByID(groupId);
+                        else {
+                            openOrderActivity(orderId);
+                            db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(orderId);
+                        }
+                        Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void goFetchGroupByID(String groupId) {
+        db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
+                    if(CURRENT_SHARED_RIDE != null){
+                        if(CURRENT_ORDER_ID != null)
+                            openOrderActivity(CURRENT_SHARED_RIDE);
+                        else{
+                            goFetchOrderByID(CURRENT_SHARED_RIDE.getOrder_id());
+                        }
+                    }
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    private void openOrderActivity(SharedRide current_shared_ride) {
+        Intent intent = new Intent(this, MapsActivity.class);
+        intent.putExtra(MapsActivity.KEY_CURRENT_SHARED_RIDE,current_shared_ride);
+        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, CURRENT_ORDER);
+        startActivity(intent);
     }
 
     private BroadcastReceiver mAcceptOrderReceiver = new BroadcastReceiver() {
@@ -177,7 +240,6 @@ public class DriverMainActivity extends AppCompatActivity {
 
         }
     };
-
 
     private void setupBroadcastReceivers() {
         LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,

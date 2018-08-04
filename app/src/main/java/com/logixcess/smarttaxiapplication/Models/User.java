@@ -32,8 +32,7 @@ public class User implements Parcelable
         user_token = in.readString();
         password = in.readString();
         email = in.readString();
-        //latitude = in.readDouble();
-        //longitude = in.readDouble();
+
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
@@ -123,8 +122,7 @@ public class User implements Parcelable
         dest.writeString(user_token);
         dest.writeString(password);
         dest.writeString(email);
-       // dest.writeDouble(latitude);
-       // dest.writeDouble(longitude);
+
     }
     public String getUser_token() {
         return user_token;

@@ -53,32 +53,7 @@ public class Order implements Parcelable{
         this.SELECTED_ROUTE = selectedRoute;
     }
 
-    protected Order(Parcel in) {
-        pickup = in.readString();
-        dropoff = in.readString();
-        pickupLat = in.readDouble();
-        pickupLong = in.readDouble();
-        dropoffLat = in.readDouble();
-        dropoffLong = in.readDouble();
-        user_id = in.readString();
-        user_name = in.readString();
-        scheduled_time = in.readString();
-        driver_id = in.readString();
-        driver_name = in.readString();
-        vehicle_id = in.readString();
-        total_kms = in.readString();
-        waiting_time = in.readString();
-        pickup_time = in.readString();
-        pickup_date = in.readString();
-        order_id = in.readString();
-        estimated_cost = in.readString();
-        byte tmpIsScheduled = in.readByte();
-        isScheduled = tmpIsScheduled == 0 ? null : tmpIsScheduled == 1;
-        byte tmpIsShared = in.readByte();
-        isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
-        status = in.readInt();
-        SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
-    }
+
 
     public static final Creator<Order> CREATOR = new Creator<Order>() {
         @Override
@@ -265,7 +240,32 @@ public class Order implements Parcelable{
     public int describeContents() {
         return 0;
     }
-
+    protected Order(Parcel in) {
+        pickup = in.readString();
+        dropoff = in.readString();
+        pickupLat = in.readDouble();
+        pickupLong = in.readDouble();
+        dropoffLat = in.readDouble();
+        dropoffLong = in.readDouble();
+        user_id = in.readString();
+        user_name = in.readString();
+        scheduled_time = in.readString();
+        driver_id = in.readString();
+        driver_name = in.readString();
+        vehicle_id = in.readString();
+        total_kms = in.readString();
+        waiting_time = in.readString();
+        pickup_time = in.readString();
+        pickup_date = in.readString();
+        order_id = in.readString();
+        estimated_cost = in.readString();
+        byte tmpIsScheduled = in.readByte();
+        isScheduled = tmpIsScheduled == 0 ? null : tmpIsScheduled == 1;
+        byte tmpIsShared = in.readByte();
+        isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
+        status = in.readInt();
+        SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
+    }
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(pickup);
@@ -284,12 +284,12 @@ public class Order implements Parcelable{
         dest.writeString(waiting_time);
         dest.writeString(pickup_time);
         dest.writeString(pickup_date);
-        dest.writeString(estimated_cost);
         dest.writeString(order_id);
-        dest.writeInt(status);
-        dest.writeList(SELECTED_ROUTE);
+        dest.writeString(estimated_cost);
         dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
+        dest.writeInt(status);
+        dest.writeList(SELECTED_ROUTE);
     }
 
     public ArrayList<RoutePoints> getSELECTED_ROUTE() {

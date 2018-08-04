@@ -1,20 +1,39 @@
 package com.logixcess.smarttaxiapplication.Models;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.HashMap;
 
-public class SharedRide {
-    private String group_id;
-    private String creator_id; // it will the ID of first passenger
+public class SharedRide extends Group implements Parcelable {
     private HashMap<String, Boolean> passengers;
     private HashMap<String, Boolean> orderIDs;
 
 
-    public SharedRide(String creatorId, String gId, HashMap<String,Boolean> passengers, HashMap<String, Boolean> orderIds){
-        this.group_id = gId;
-        this.creator_id = creatorId;
+    public SharedRide(HashMap<String,Boolean> passengers, HashMap<String, Boolean> orderIds){
         this.passengers = passengers;
         this.orderIDs = orderIds;
     }
+
+    public SharedRide() {
+
+    }
+
+    protected SharedRide(Parcel in) {
+
+    }
+
+    public static final Creator<SharedRide> CREATOR = new Creator<SharedRide>() {
+        @Override
+        public SharedRide createFromParcel(Parcel in) {
+            return new SharedRide(in);
+        }
+
+        @Override
+        public SharedRide[] newArray(int size) {
+            return new SharedRide[size];
+        }
+    };
 
     public String getGroup_id() {
         return group_id;
@@ -40,11 +59,12 @@ public class SharedRide {
         this.orderIDs = orderIDs;
     }
 
-    public String getCreator_id() {
-        return creator_id;
+    @Override
+    public int describeContents() {
+        return 0;
     }
 
-    public void setCreator_id(String creator_id) {
-        this.creator_id = creator_id;
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
     }
 }

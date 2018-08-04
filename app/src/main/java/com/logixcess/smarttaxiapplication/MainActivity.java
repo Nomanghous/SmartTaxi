@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Address;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -140,6 +141,11 @@ public class MainActivity extends BaseActivity
         displayFirebaseRegId();
         new FetchDriversBasedOnRadius(this, mLastLocation,this);
     }
+
+    public Location getCurrentLocation(){
+        return mLastLocation;
+    }
+
 
     // Fetches reg id from shared preferences
     // and displays on the screen
