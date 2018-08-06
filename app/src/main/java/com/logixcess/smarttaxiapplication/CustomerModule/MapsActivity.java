@@ -78,7 +78,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             CURRENT_ORDER = bundle.getParcelable(KEY_CURRENT_ORDER);
 
             askLocationPermission();
-            setContentView(R.layout.activity_maps);
+            setContentView(R.layout.activity_maps_customer);
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
