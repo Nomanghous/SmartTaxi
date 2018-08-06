@@ -42,6 +42,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.Passenger;
@@ -87,6 +88,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedPassengerId;
     private Passenger SELECTED_PASSENGER;
+    private Driver SELECTED_DRIVER;
     private LatLng driver = null;
     private Marker driverMarker;
     private SharedRide CURRENT_SHARED_RIDE;
@@ -124,12 +126,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
             db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(CURRENT_ORDER.getUser_id());
-            db_ref_driver.addListenerForSingleValueEvent(new ValueEventListener() {
+            db_ref_driver.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
-                        SELECTED_PASSENGER = dataSnapshot.getValue(Passenger.class);
-                        if(SELECTED_PASSENGER != null && mMap != null) {
+                       // SELECTED_PASSENGER = dataSnapshot.getValue(Passenger.class);
+                        SELECTED_DRIVER = dataSnapshot.getValue(Driver.class);
+                        if(SELECTED_DRIVER != null && mMap != null) {
+                            MY_LOCATION.setLatitude(SELECTED_DRIVER.getLatitude());
+                            MY_LOCATION.setLongitude(SELECTED_DRIVER.getLongitude());
                             requestNewRoute();
                         }
                     }
@@ -139,7 +144,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             });
-            sendNotification("Get Ready","New Order is assigned to You");
         }else{
             // driver id not provided
             finish();
@@ -324,12 +328,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(mDriverMarker != null)
             mDriverMarker.remove();
         mDriverMarker = mMap.addMarker(options);
-        try {
-
-            checkForDistanceToSendNotification();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        Toast.makeText(getApplicationContext(),"Destination Arrived! ",Toast.LENGTH_SHORT).show();
+//        try {
+//
+//            checkForDistanceToSendNotification();
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
 
 
     }
@@ -480,9 +485,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                MY_LOCATION = location;
-                if(driver == null && SELECTED_PASSENGER != null)
-                    requestNewRoute();
+                //MY_LOCATION = location;
+                //if(driver == null && SELECTED_DRIVER != null)
+                  //  requestNewRoute();
             }
         });
 
