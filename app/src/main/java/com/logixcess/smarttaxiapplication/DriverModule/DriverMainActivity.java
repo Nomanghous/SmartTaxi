@@ -4,11 +4,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Toast;
 
@@ -31,8 +34,11 @@ import com.logixcess.smarttaxiapplication.Utils.Helper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -106,7 +112,7 @@ public class DriverMainActivity extends AppCompatActivity {
         });
     }
 
-
+    int count_for_region = 0;
     private void everyTenSecondsTask() {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
     }
@@ -115,6 +121,12 @@ public class DriverMainActivity extends AppCompatActivity {
         @Override
         public void run() {
             updateUserLocation();
+            count_for_region ++;
+            if(count_for_region == 60)
+            {
+                count_for_region = 0;
+                getRegionName(DriverMainActivity.this,MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
+            }
         }
     }
 
@@ -127,7 +139,23 @@ public class DriverMainActivity extends AppCompatActivity {
             db_ref_user.child(USER_ME.getUid()).child(longitude).setValue(MY_LOCATION.getLongitude());
         }
     }
-
+    public void getRegionName(Context context, double lati, double longi) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+                if(!TextUtils.isEmpty(regioName))
+                {
+                    String region_name = "region_name";
+                    db_ref_user.child(USER_ME.getUid()).child(region_name).setValue(regioName);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public void openOrderHistory(View view) {
 
     }

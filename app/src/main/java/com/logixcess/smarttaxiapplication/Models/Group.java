@@ -7,6 +7,7 @@ public class Group {
     String group_id, user_id;
     long time;
     String order_id;
+    String region_name;
 
     public Group(){}
 
@@ -21,6 +22,7 @@ public class Group {
         user_id = in.readString();
         time = in.readLong();
         order_id =in.readString();
+        region_name =in.readString();
     }
 
     public String getGroup_id() {
@@ -56,5 +58,11 @@ public class Group {
     }
 
 
+    public String getRegion_name() {
+        return region_name;
+    }
 
+    public void setRegion_name(String region_name) {
+        this.region_name = region_name;
+    }
 }

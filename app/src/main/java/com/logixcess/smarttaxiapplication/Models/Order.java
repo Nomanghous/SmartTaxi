@@ -24,12 +24,13 @@ public class Order implements Parcelable{
     private int status = 0; // nothing
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
     private ArrayList<RoutePoints> SELECTED_ROUTE;
+    private int passenger_status;
 
     public Order() {
 
     }
 
-    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList<RoutePoints> selectedRoute) {
+    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList<RoutePoints> selectedRoute,int passenger_status) {
         this.pickup = pickup;
         this.dropoff = dropoff;
         this.pickupLat = pickupLat;
@@ -51,6 +52,7 @@ public class Order implements Parcelable{
         this.isShared = isShared;
         this.status = status;
         this.SELECTED_ROUTE = selectedRoute;
+        this.passenger_status = passenger_status;
     }
 
 
@@ -264,6 +266,7 @@ public class Order implements Parcelable{
         byte tmpIsShared = in.readByte();
         isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
         status = in.readInt();
+        passenger_status = in.readInt();
         SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
     }
     @Override
@@ -289,6 +292,7 @@ public class Order implements Parcelable{
         dest.writeByte((byte) (isScheduled == null ? 0 : isScheduled ? 1 : 2));
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
         dest.writeInt(status);
+        dest.writeInt(passenger_status);
         dest.writeList(SELECTED_ROUTE);
     }
 
@@ -298,6 +302,14 @@ public class Order implements Parcelable{
 
     public void setSELECTED_ROUTE(ArrayList<RoutePoints> SELECTED_ROUTE) {
         this.SELECTED_ROUTE = SELECTED_ROUTE;
+    }
+
+    public int getPassenger_status() {
+        return passenger_status;
+    }
+
+    public void setPassenger_status(int passenger_status) {
+        this.passenger_status = passenger_status;
     }
 
     public class Cost{

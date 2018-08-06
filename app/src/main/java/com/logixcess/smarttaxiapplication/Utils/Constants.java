@@ -14,7 +14,12 @@ public class Constants
     public static Uri FilePathUri ;
     public static Uri FilePathUri2 ;
     public static String Storage_Path = "images" ;
+    public static String region_name = "" ;
     public static float SELECTED_RADIUS = 10000.0f ;//distance in meters
     public static long date_selected_expiry;
     public static long date_selected_issue;
+    public static final int PRIMARY_USER = 1;
+    public static final int SECONDARY_USER = 2;
+    public static final int TERTIARY_USER = 3;
+    public static final double BASE_FAIR_PER_KM = 40;
 }

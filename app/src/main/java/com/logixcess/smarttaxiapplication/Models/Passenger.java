@@ -11,6 +11,7 @@ public class Passenger  implements Parcelable
     private String fk_user_id;
     private Boolean is_working_student;
     private String orgnization_name;
+    private String region_name;
     private long priority_level;
     public long getPriority_level() {
         return priority_level;
@@ -28,6 +29,7 @@ public class Passenger  implements Parcelable
         byte tmpIs_working_student = in.readByte();
         is_working_student = tmpIs_working_student == 0 ? null : tmpIs_working_student == 1;
         orgnization_name = in.readString();
+        region_name = in.readString();
     }
 
     public static final Creator<Passenger> CREATOR = new Creator<Passenger>() {
@@ -76,6 +78,7 @@ public class Passenger  implements Parcelable
         dest.writeString(fk_user_id);
         dest.writeByte((byte) (is_working_student == null ? 0 : is_working_student ? 1 : 2));
         dest.writeString(orgnization_name);
+        dest.writeString(region_name);
     }
 
     public Boolean getInOnline() {
@@ -100,5 +103,13 @@ public class Passenger  implements Parcelable
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    public String getRegion_name() {
+        return region_name;
+    }
+
+    public void setRegion_name(String region_name) {
+        this.region_name = region_name;
     }
 }

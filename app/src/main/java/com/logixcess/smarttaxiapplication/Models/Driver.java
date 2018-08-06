@@ -12,7 +12,7 @@ public class Driver implements Parcelable
             fk_user_id,
             fk_vehicle_id,
             driving_issue_date,
-            driving_expiry_date;
+            driving_expiry_date,region_name;
     private Boolean inOnline;
     private double latitude;
     private double longitude;
@@ -25,6 +25,7 @@ public class Driver implements Parcelable
         fk_vehicle_id = in.readString();
         driving_issue_date = in.readString();
         driving_expiry_date = in.readString();
+        region_name = in.readString();
         latitude = in.readDouble();
         longitude = in.readDouble();
     }
@@ -106,6 +107,7 @@ public class Driver implements Parcelable
         dest.writeString(fk_vehicle_id);
         dest.writeString(driving_issue_date);
         dest.writeString(driving_expiry_date);
+        dest.writeString(region_name);
         dest.writeDouble(latitude);
         dest.writeDouble(longitude);
     }
@@ -133,5 +135,13 @@ public class Driver implements Parcelable
     @Exclude
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    public String getRegion_name() {
+        return region_name;
+    }
+
+    public void setRegion_name(String region_name) {
+        this.region_name = region_name;
     }
 }

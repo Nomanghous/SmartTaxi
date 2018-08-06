@@ -86,7 +86,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SharedRide CURRENT_SHARED_RIDE;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);

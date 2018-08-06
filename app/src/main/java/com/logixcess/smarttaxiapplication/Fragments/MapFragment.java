@@ -1,22 +1,31 @@
 package com.logixcess.smarttaxiapplication.Fragments;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.client.DataSnapshot;
@@ -39,6 +48,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.Activities.Register_Next_Step;
@@ -47,6 +60,7 @@ import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
+import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
@@ -70,6 +84,7 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS;
 /**
  * A simple {@link Fragment} subclass.
@@ -84,6 +99,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private DatabaseReference db_ref_user;
     public static GoogleMap gMap;
     public static EditText et_drop_off,et_pickup;
     public static Order new_order;
@@ -97,12 +113,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     ValueEventListener valueEventListener;
     ArrayList<Driver> driverList;
     Location DRIVER_LOCATION;
+    Location MY_LOCATION;
+    double total_cost = 0 ;
+    // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
-
+    Button btn_select_vehicle;
+    private FirebaseUser USER_ME;
 
     public MapFragment() {
         // Required empty public constructor
@@ -135,15 +155,80 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
     }
+    android.app.AlertDialog builder;
+    public void user_selection_dialog()
+    {
+        Context mContext = getActivity();
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(LAYOUT_INFLATER_SERVICE);
+//        View layout = inflater.inflate(R.layout.dialog_shared_user_selection,
+//                (ViewGroup) findViewById(R.id.rating_linear_layout));
+        EditText edt_user_numbers = layout.findViewById(R.id.edt_user_numbers);
+        Button btn_done = layout.findViewById(R.id.btn_done);
+        builder = new android.app.AlertDialog.Builder(mContext).create();
+        builder.setView(layout);
+        builder.show();
+        btn_done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                if(TextUtils.isEmpty(edt_user_numbers.getText().toString()))
+                {
+                    Snackbar snackbar = Snackbar.make(getActivity().findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                }
+                else {
+                    builder.dismiss();
+                }
 
+            }
+        });
+    }
+    LinearLayout ct_address;
+    RelativeLayout ct_vehicles;
+    Button btn_confirm;
+    CheckBox cb_shared2;
+    View layout;
+    private FirebaseDatabase firebase_db;
+    ProgressDialog progressDialog;
+    LinearLayout layout_cost_detail;
+    TextView txtLocation,txtDestination,txt_cost;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
+        firebase_db = FirebaseDatabase.getInstance();
+        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        db_ref_user = firebase_db.getReference().child(Helper.REF_PASSENGERS);
         driverList = new ArrayList<>();
+         layout = inflater.inflate(R.layout.dialog_shared_user_selection,
+                (ViewGroup) view.findViewById(R.id.rating_linear_layout));
+         progressDialog = new ProgressDialog(getActivity());
+         progressDialog.setMessage("Please Wait");
         mapFragment = view.findViewById(R.id.map);
+        layout_cost_detail = view.findViewById(R.id.layout_detail);
+        txtLocation = view.findViewById(R.id.txtLocation);
+        txtDestination = view.findViewById(R.id.txtDestination);
+        txt_cost = view.findViewById(R.id.txt_cost);
+        cb_shared2 = view.findViewById(R.id.cb_shared);
+        ct_address = view.findViewById(R.id.ct_address);// .setVisibility(View.VISIBLE);
+        ct_vehicles = view.findViewById(R.id.ct_vehicles);//.setVisibility(View.GONE);
+        btn_confirm = view.findViewById(R.id.btn_confirm);//.setVisibility(View.VISIBLE);
+        btn_select_vehicle = view.findViewById(R.id.btn_select_vehicle);
+        btn_select_vehicle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(cb_shared2.isChecked())
+                {
+                    user_selection_dialog();
+                }
+                getDriverList();
+                ct_address.setVisibility(View.VISIBLE);
+                ct_vehicles.setVisibility(View.GONE);
+                btn_confirm.setVisibility(View.VISIBLE);
+            }
+        });
         mapFragment.onCreate(savedInstanceState);
         mapFragment.getMapAsync(this);
         new_order = new Order();
@@ -163,8 +248,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 new_order.setShared(isChecked);
             }
         });
-        //everyTenSecondsTask();
-
+        everyTenSecondsTask();
         return  view;
     }
     private boolean checkWithinRadius(LatLng latLng,Location mine) {
@@ -249,7 +333,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         .title("Driver: ".concat(driver1.getFk_user_id())));
                 marker.setTag(driver1.getFk_user_id());
             }
-
+    }
+    public double check_cost(int shared_user_status,double base_fair_per_km)
+    {
+        if(shared_user_status == 1)//primary
+        {
+            total_cost = (base_fair_per_km / 100.0f) * 20; //give 20% discount
+        }
+        else if(shared_user_status == 2) // secondary
+        {
+            total_cost = (base_fair_per_km / 100.0f) * 10; //give 10% discount
+        }
+        else if(shared_user_status == 3) //tertiary
+        {
+            total_cost = (base_fair_per_km / 100.0f) * 5; //give
+        }
+        return total_cost;
     }
     public void  show_driverDetail(String driverId)
     {
@@ -264,7 +363,24 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if (items[item].equals("SELECT"))
                 {
                     new_order.setDriver_id(driverId);
-
+                    //displayCostDetails();
+                   //TODO :check number of passengers for ride
+                    if(!progressDialog.isShowing())
+                        progressDialog.show();
+                    if(new_order.getShared())
+                    checkRidePassengers(Constants.region_name,driverId);
+                    else {//non shared
+                    double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+                        //Display Cost
+                        if(layout_cost_detail.getVisibility() == View.GONE)
+                        {
+                            layout_cost_detail.setVisibility(View.VISIBLE);
+                            txtLocation.setText("Location");
+                            txtDestination.setText("Destination");
+                            txt_cost.setText(String.valueOf(total_cost));
+                        }
+                    }
+                    //check_cost(0,0.0);
                 }
                 else if (items[item].equals("OPEN PROFILE"))
                 {
@@ -275,6 +391,55 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         });
         builder.show();
+    }
+    public void checkRidePassengers(String region_name,String driver_id) {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())
+                {
+                    SharedRide sharedRide = null;
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
+                    {
+                        if(snapshot.getKey().contains(driver_id))
+                        {
+                            sharedRide = snapshot.getValue(SharedRide.class);
+                            int passengers_count = sharedRide.getPassengers().size();
+                            double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+                            if(passengers_count == 0)
+                                total_cost = (cost / 100.0f) * 20; //give 20% discount
+                            else if(passengers_count == 1)
+                                total_cost = (cost / 100.0f) * 10; //give 10% discount
+                            else if(passengers_count > 2)
+                                total_cost = (cost / 100.0f) * 5; //give
+                            //Display Cost
+                            if(layout_cost_detail.getVisibility() == View.GONE)
+                            {
+                                layout_cost_detail.setVisibility(View.VISIBLE);
+                                txtLocation.setText("Location");
+                                txtDestination.setText("Destination");
+                                txt_cost.setText(String.valueOf(total_cost));
+                            }
+                            if(progressDialog.isShowing())
+                                progressDialog.dismiss();
+                        }
+                    }
+                }
+                else
+                {
+                    if(progressDialog.isShowing())
+                        progressDialog.dismiss();
+                    Toast.makeText(getActivity(),"No passengers right now !",Toast.LENGTH_SHORT).show();
+                }
+
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        };
+        firebase_instance.child("Group").orderByChild("region_name").equalTo(region_name).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
     }
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
@@ -568,28 +733,41 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         String[] value = ((String) polyline.getTag()).split("--");
         Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
-    private void everyTenSecondsTask() {
+    private void everyTenSecondsTask()
+    {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
     }
-
-    private class TenSecondsTask extends TimerTask {
+    int count_for_region = 0;
+    private class TenSecondsTask extends TimerTask
+    {
         @Override
         public void run() {
             // markers driver clear <driverId, marker>
             // place markers again
+            count_for_region ++;
+            if(count_for_region == 60)
+            {
+                count_for_region = 0;
+                getRegionName(getActivity(),MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
+            }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public void getRegionName(Context context, double lati, double longi) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+                if(!TextUtils.isEmpty(regioName))
+                {
+                    String region_name = "region_name";
+                    Constants.region_name = regioName;
+                    db_ref_user.child(USER_ME.getUid()).child(region_name).setValue(regioName);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

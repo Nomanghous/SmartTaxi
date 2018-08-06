@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -64,6 +65,7 @@ import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.schibstedspain.leku.LocationPickerActivity;
 
 import java.util.List;
+import java.util.Locale;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
 
@@ -86,6 +88,19 @@ public class MainActivity extends BaseActivity
     private FirebaseUser mFirebaseUser;
     private int CURRENT_ORDER_STATUS = 0;
     private String CURRENT_ORDER_ID = "";
+    public static String getRegionName(Context context, double lati, double longi) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return regioName;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -242,7 +257,7 @@ public class MainActivity extends BaseActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
+/*
 AlertDialog builder;
     public void user_selection_dialog()
     {
@@ -280,8 +295,10 @@ AlertDialog builder;
         findViewById(R.id.ct_address).setVisibility(View.VISIBLE);
         findViewById(R.id.ct_vehicles).setVisibility(View.GONE);
         findViewById(R.id.btn_confirm).setVisibility(View.VISIBLE);
+        getDriverList();
 
-    }
+
+    }*/
 
     public void openVehicles(View view) {
         findViewById(R.id.ct_address).setVisibility(View.GONE);
@@ -297,12 +314,26 @@ AlertDialog builder;
 //            latitude = gps.getLatitude();
 //            longitude = gps.getLongitude();
 //        }
+//        val locationPickerIntent = LocationPickerActivity.Builder()
+//                .withLocation(41.4036299, 2.1743558)
+//                .withGeolocApiKey("<PUT API KEY HERE>")
+//                .withSearchZone("es_ES")
+//                .shouldReturnOkOnBackPressed()
+//                .withStreetHidden()
+//                .withCityHidden()
+//                .withZipCodeHidden()
+//                .withSatelliteViewHidden()
+//                .withGooglePlacesEnabled()
+//                .withGoogleTimeZoneEnabled()
+//                .withVoiceSearchHidden()
+//                .build(applicationContext)
         Intent intent = new LocationPickerActivity.Builder()
                 .withLocation(latitude,longitude)
                 .withGeolocApiKey(getResources().getString(R.string.google_maps_api))
-                .withSearchZone("es_ES")
+                //.withSearchZone("es_ES")
                 .shouldReturnOkOnBackPressed()
                 .withStreetHidden()
+                .withGooglePlacesEnabled()
                 .withCityHidden()
                 .withZipCodeHidden()
                 .withSatelliteViewHidden()
@@ -319,15 +350,15 @@ AlertDialog builder;
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE_LOCATION) {
             if(resultCode == RESULT_OK){
-                double latitude = data.getDoubleExtra(LocationPickerActivity.LATITUDE, 0);
+                double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
-                double longitude = data.getDoubleExtra(LocationPickerActivity.LONGITUDE, 0);
+                double longitude = data.getDoubleExtra("longitude", 0);
                 Log.d("LONGITUDE****", String.valueOf(longitude));
-                String address = data.getStringExtra(LocationPickerActivity.LOCATION_ADDRESS);
+                String address = data.getStringExtra("location_address");
                 Log.d("ADDRESS****", String.valueOf(address));
-                String postalcode = data.getStringExtra(LocationPickerActivity.ZIPCODE);
+                String postalcode = data.getStringExtra("zipcode");
                 Log.d("POSTALCODE****", String.valueOf(postalcode));
-                Address fullAddress = data.getParcelableExtra(LocationPickerActivity.ADDRESS);
+                Address fullAddress = data.getParcelableExtra("address");
                 if(fullAddress != null) {
                     Log.d("FULL ADDRESS****", fullAddress.toString());
                     MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
@@ -342,16 +373,16 @@ AlertDialog builder;
         }
         if (requestCode == REQUEST_CODE_LOCATION_DROP_OFF) {
             if(resultCode == RESULT_OK){
-                double latitude = data.getDoubleExtra(LocationPickerActivity.LATITUDE, 0);
+                double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
-                double longitude = data.getDoubleExtra(LocationPickerActivity.LONGITUDE, 0);
+                double longitude = data.getDoubleExtra("longitude", 0);
                 Log.d("LONGITUDE****", String.valueOf(longitude));
-                String address = data.getStringExtra(LocationPickerActivity.LOCATION_ADDRESS);
+                String address = data.getStringExtra("location_address");
                 Log.d("ADDRESS****", String.valueOf(address));
-                String postalcode = data.getStringExtra(LocationPickerActivity.ZIPCODE);
+                String postalcode = data.getStringExtra("zipcode");
                 Log.d("POSTALCODE****", String.valueOf(postalcode));
 
-                Address fullAddress = data.getParcelableExtra(LocationPickerActivity.ADDRESS);
+                Address fullAddress = data.getParcelableExtra("address");
                 if(fullAddress != null) {
                     Log.d("FULL ADDRESS****", fullAddress.toString());
                     MapFragment.et_drop_off.setText(fullAddress.getAddressLine(0));
@@ -537,6 +568,7 @@ AlertDialog builder;
     private void selectNavMenu() {
         navigationView.getMenu().getItem(navItemIndex).setChecked(true);
     }
+
     public void openOrderDetailsActivity(View view) {
         Helper.CURRENT_ORDER = MapFragment.new_order;
         startActivity(new Intent(this, OrderDetailsActivity.class));

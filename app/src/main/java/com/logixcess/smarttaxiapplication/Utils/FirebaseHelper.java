@@ -13,7 +13,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.logixcess.smarttaxiapplication.Models.Driver;
+import com.logixcess.smarttaxiapplication.Models.Group;
 import com.logixcess.smarttaxiapplication.Models.Passenger;
+import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 
@@ -103,9 +105,6 @@ public class FirebaseHelper
         }
     };
     firebase_instance.child("User").child(user.getUser_id()).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
-
-
-
 }
     public void updateUser(final User user) {
 //        firebase_instance.child("User").child(user.getUser_id()).setValue(user);
@@ -210,5 +209,36 @@ public class FirebaseHelper
         };
         firebase_instance.child("User").child(driver_id).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
 
+    }
+
+    public void checkRidePassengers(String region_name,String driver_id) {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())
+                {
+                    SharedRide sharedRide = null;
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
+                    {
+                        if(snapshot.getKey().contains(driver_id))
+                        {
+                            sharedRide = snapshot.getValue(SharedRide.class);
+                            int passengers_count = sharedRide.getPassengers().size();
+                        }
+                    }
+                }
+                else
+                {
+                    Toast.makeText(my_context,"No passengers right now !",Toast.LENGTH_SHORT).show();
+                }
+
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        };
+        firebase_instance.child("Group").orderByChild("region_name").equalTo(region_name).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
     }
 }

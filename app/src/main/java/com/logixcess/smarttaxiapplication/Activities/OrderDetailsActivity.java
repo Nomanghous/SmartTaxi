@@ -1,10 +1,14 @@
 package com.logixcess.smarttaxiapplication.Activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +25,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
@@ -30,6 +35,7 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class OrderDetailsActivity extends AppCompatActivity {
     TextView tv_pickup, tv_destination, tv_shared, tv_distance, tv_cost, tv_time, tv_vehicle;
@@ -37,6 +43,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
     ValueEventListener valueEventListener;
     Firebase firebase_instance;
     private DatabaseReference db_ref_group;
+    String my_region_name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,9 +134,11 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     private void goCreateGroupForSharedRide() {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        String groupId = Helper.getConcatenatedID(userId,Helper.CURRENT_ORDER.getOrder_id());
+        //String groupId = Helper.getConcatenatedID(userId,Helper.CURRENT_ORDER.getOrder_id());
+        String groupId = Helper.getConcatenatedID(Helper.CURRENT_ORDER.getOrder_id(),Helper.CURRENT_ORDER.getDriver_id());
         SharedRide sharedRide = new SharedRide();
         sharedRide.setGroup_id(groupId);
+        getRegionName(OrderDetailsActivity.this,LocationManagerService.mLastLocation.getLatitude(),LocationManagerService.mLastLocation.getLongitude(),groupId);
         sharedRide.setTime(System.currentTimeMillis());
         sharedRide.setUser_id(userId);
         sharedRide.setOrder_id(Helper.CURRENT_ORDER.getOrder_id());
@@ -141,6 +150,23 @@ public class OrderDetailsActivity extends AppCompatActivity {
         sharedRide.setPassengers(passengersIds);
         db_ref_group.child(groupId).setValue(sharedRide);
         CloseActivity();
+    }
+    public void getRegionName(Context context, double lati, double longi,String group_id) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+                if(!TextUtils.isEmpty(regioName))
+                {
+                    String region_name = "region_name";
+                    db_ref_group.child(group_id).child(region_name).setValue(regioName);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void CloseActivity() {

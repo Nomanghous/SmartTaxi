@@ -26,7 +26,11 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 //    implementation 'com.google.android.gms:play-services:12.0.1'
-    implementation('com.schibstedspain.android:leku:4.0.2') {
+//    implementation('com.schibstedspain.android:leku:4.0.2') {
+//        exclude group: 'com.google.android.gms'
+//        exclude group: 'com.android.support'
+//    }
+    implementation ('com.schibstedspain.android:leku:5.0.0') {
         exclude group: 'com.google.android.gms'
         exclude group: 'com.android.support'
     }
