@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Activities.MapsActivity">
+    tools:context=".CustomerModule.CustomerMapsActivity">
     
 
     
@@ -17,19 +17,20 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:background="#802ECAE5"
+        android:background="#80FDBC49"
         android:layout_alignParentBottom="true"
         >
-        <Switch
+        <Button
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:textColor="#19ADC8"
-            android:background="#90FFFFFF"
-            android:text="Online "
+            android:layout_height="40dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:textColor="@color/white"
+            android:background="@drawable/bg_rounded_blue"
+            android:text="Mark Order Complete"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:checked="true"
+            android:onClick="markOrderAsComplete"
             android:layout_centerInParent="true"
             />
     </RelativeLayout>

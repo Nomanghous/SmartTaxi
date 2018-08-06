@@ -44,6 +44,10 @@
             android:id="@+id/nav_find_user"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Find User" />
+        <item
+            android:id="@+id/nav_current_ride"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="Current Ride" />
     </group>
 
     <item android:title="Communicate">

@@ -13,6 +13,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
+import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
@@ -398,5 +399,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         else
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
+
+
 }
 

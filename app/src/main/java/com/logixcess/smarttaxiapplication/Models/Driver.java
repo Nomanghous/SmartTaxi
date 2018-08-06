@@ -120,19 +120,19 @@ public class Driver implements Parcelable
     public void setInOnline(Boolean inOnline) {
         this.inOnline = inOnline;
     }
-    @Exclude
+
     public double getLatitude() {
         return latitude;
     }
-    @Exclude
+
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
-    @Exclude
+
     public double getLongitude() {
         return longitude;
     }
-    @Exclude
+
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }

@@ -1,6 +1,5 @@
 package com.logixcess.smarttaxiapplication;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
@@ -24,31 +22,27 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
-import com.logixcess.smarttaxiapplication.Activities.LoginActivity;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
+import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
 import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
 import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
@@ -82,7 +76,7 @@ public class MainActivity extends BaseActivity
 
     Handler mHandler;
     NavigationView navigationView;
-
+    private ProgressBar progressbar;
     private DrawerLayout drawer;
     BroadcastReceiver mRegistrationBroadcastReceiver;
     private FirebaseUser mFirebaseUser;
@@ -116,6 +110,7 @@ public class MainActivity extends BaseActivity
         toggle.syncState();
 
         navigationView = findViewById(R.id.nav_view);
+        progressbar = findViewById(R.id.progressbar);
         navigationView.setNavigationItemSelectedListener(this);
 
         //Ahmads
@@ -529,18 +524,18 @@ AlertDialog builder;
     public static String CURRENT_TAG = TAG_ADD_RIDE;
     private Fragment getHomeFragment() {
         switch (navItemIndex) {
-            case 2:
-                // home user profile
-                UserProfileFragment homeFragment = new UserProfileFragment();
-                return homeFragment;
+            case 0:
+            // add ride fragment
+            mapFragment = new MapFragment();
+            return mapFragment;
             case 1:
                 // ride history
                 RideHistoryFragment rideHistoryFragment = new RideHistoryFragment();
                 return rideHistoryFragment;
-            case 0:
-                // add ride fragment
-                mapFragment = new MapFragment();
-                return mapFragment;
+            case 2:
+                // home user profile
+                UserProfileFragment homeFragment = new UserProfileFragment();
+                return homeFragment;
             case 3:
                 // notifications fragment
                 NotificationsFragment notificationsFragment = new NotificationsFragment();
@@ -554,6 +549,9 @@ AlertDialog builder;
                 // find user fragment
                 FindUserFragment findUserFragment = new FindUserFragment();
                 return findUserFragment;
+
+
+
             default:
                 return mapFragment = new  MapFragment();
             //return new UserProfileFragment();
@@ -608,6 +606,9 @@ AlertDialog builder;
                     case R.id.nav_find_user:
                         navItemIndex = 5;
                         CURRENT_TAG = TAG_FIND_USER;
+                        break;
+                    case R.id.nav_current_ride:
+                        getCurrentOrderId();
                         break;
                     default:
                         navItemIndex = 0;
@@ -664,8 +665,42 @@ AlertDialog builder;
         return CURRENT_ORDER_STATUS;
     }
 
-    public String getCurrentOrderId(){
-        return CURRENT_ORDER_ID;
-    }
+    public void getCurrentOrderId(){
+        progressbar.setVisibility(View.VISIBLE);
+        DatabaseReference db_orders = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS);
+        Query ref = db_orders.orderByChild("user_id").equalTo(mFirebaseUser.getUid());
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    for(DataSnapshot snapshot : dataSnapshot.getChildren()){
+                        Order order = snapshot.getValue(Order.class);
+                        if(order != null){
+                            if(order.getStatus() == Order.OrderStatusInProgress){
+                                openOrderActivity(order);
+                                break;
+                            }
+                        }
+                    }
 
+
+                }else{
+                    Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                }
+                progressbar.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                progressbar.setVisibility(View.GONE);
+                Toast.makeText(MainActivity.this, "Something went Wrong", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+    private void openOrderActivity(Order order) {
+        Intent intent = new Intent(this, CustomerMapsActivity.class);
+        intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
+        startActivity(intent);
+    }
 }

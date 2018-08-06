@@ -106,7 +106,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     User driver = dataSnapshot.getValue(User.class);
                     String token = driver.getUser_token();
                     JSONObject data = new JSONObject();
-
                     try {
                         data.put("order_id", Helper.CURRENT_ORDER.getOrder_id());
                         new PushNotifictionHelper(getApplicationContext()).execute(token,data);

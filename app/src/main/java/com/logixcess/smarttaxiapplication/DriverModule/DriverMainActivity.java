@@ -231,7 +231,6 @@ public class DriverMainActivity extends AppCompatActivity {
 
             }
         });
-
     }
 
     private void openOrderActivity(SharedRide current_shared_ride) {

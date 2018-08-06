@@ -5,6 +5,9 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,6 +16,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
+import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
@@ -34,6 +38,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -60,7 +66,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
+public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     private GoogleMap mMap;
@@ -106,8 +112,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             CURRENT_ORDER = bundle.getParcelable(KEY_CURRENT_ORDER);
-
-
             if(CURRENT_ORDER != null && CURRENT_ORDER.getShared()){
                 if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
                     CURRENT_SHARED_RIDE = bundle.getParcelable(KEY_CURRENT_SHARED_RIDE);
@@ -117,24 +121,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 finish();
                 return;
             }
-
             askLocationPermission();
             setContentView(R.layout.activity_maps_customer);
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
+            MY_LOCATION = LocationManagerService.mLastLocation;
             db_ref = FirebaseDatabase.getInstance().getReference();
-            db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(CURRENT_ORDER.getUser_id());
+            db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(CURRENT_ORDER.getDriver_id());
             db_ref_driver.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
-                       // SELECTED_PASSENGER = dataSnapshot.getValue(Passenger.class);
-                        SELECTED_DRIVER = dataSnapshot.getValue(Driver.class);
-                        if(SELECTED_DRIVER != null && mMap != null) {
-                            MY_LOCATION.setLatitude(SELECTED_DRIVER.getLatitude());
-                            MY_LOCATION.setLongitude(SELECTED_DRIVER.getLongitude());
+                        Driver driver = dataSnapshot.getValue(Driver.class);
+                        if(driver != null && mMap != null && MY_LOCATION != null) {
+                            MY_LOCATION.setLatitude(driver.getLatitude());
+                            MY_LOCATION.setLongitude(driver.getLongitude());
                             requestNewRoute();
                         }
                     }
@@ -148,6 +151,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // driver id not provided
             finish();
         }
+    }
+
+    private void setupDriverLcoationListener(String driver_id) {
+        db_ref_driver.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Driver driver = dataSnapshot.getValue(Driver.class);
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void requestNewRoute() {
@@ -185,29 +205,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void checkForDistanceToSendNotification() throws JSONException {
-        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
-        driverMarker.setPosition(driver);
-        NotificationPayload payload = new NotificationPayload();
-        payload.setDriver_id(USER_ME.getUid());
-        payload.setUser_id(CURRENT_ORDER.getUser_id());
-        String group_id = "--NA--";
-        if(CURRENT_ORDER.getShared())
-            group_id = Helper.getConcatenatedID(CURRENT_ORDER.getOrder_id(),USER_ME.getUid());
-        payload.setGroup_id(group_id);
-        payload.setOrder_id(CURRENT_ORDER.getOrder_id());
-        if(percentageLeft < 25){
-            payload.setPercentage_left("25");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 50){
-            payload.setPercentage_left("50");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 75){
-            payload.setPercentage_left("75");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 100){
-            payload.setPercentage_left("100");
-        }
+    private void checkForDistanceToSendNotification()  {
+//        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
+//        driverMarker.setPosition(driver);
+//        if(percentageLeft < 2){
+//            Toast.makeText(this, "Driver has arrived", Toast.LENGTH_SHORT).show();
+//        }else if(percentageLeft < 50){
+//
+//        }else if(percentageLeft < 75){
+//
+//        }else if(percentageLeft < 100){
+//
+//        }
     }
 
     private MarkerOptions getDesiredMarker(float kind, LatLng posToSet, String title) {
@@ -324,11 +333,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         distanceRemaining = shortestRoute.getDistanceValue();
         MarkerOptions options = new MarkerOptions();
         options.position(driver);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car_black));
+
+        Bitmap bitmap = getResizedBitmap(getResources().getDrawable(R.drawable.dropoff_pin),90,150);
+        options.icon(BitmapDescriptorFactory.fromBitmap(bitmap));
         if(mDriverMarker != null)
             mDriverMarker.remove();
         mDriverMarker = mMap.addMarker(options);
-        Toast.makeText(getApplicationContext(),"Destination Arrived! ",Toast.LENGTH_SHORT).show();
+        checkForDistanceToSendNotification();
 //        try {
 //
 //            checkForDistanceToSendNotification();
@@ -338,6 +349,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     }
+
+    public void markOrderAsComplete(View view) {
+        // change the order status
+        db_ref_order.child(CURRENT_ORDER.getOrder_id()).child("status").setValue(Order.OrderStatusCompleted).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    Toast.makeText(CustomerMapsActivity.this, "Order Successfully Completed", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+        });
+    }
+    private Bitmap getResizedBitmap(Drawable drawable, int width, int height){
+        Bitmap mutableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(mutableBitmap);
+        drawable.setBounds(0, 0, width, height);
+        drawable.draw(canvas);
+
+        return mutableBitmap;
+    }
+
+
 
     @Override
     public void onRoutingCancelled() {
@@ -369,42 +403,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         else
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-    private void setupOrdersListener() {
-        db_ref_order.child(CURRENT_ORDER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(!dataSnapshot.exists())
-                    return;
-                Order order = dataSnapshot.getValue(Order.class);
-                if(order != null){
-                    if(order.getStatus() == Order.OrderStatusInProgress &&
-                            order.getDriver_id().equals(USER_ME.getUid())
-                            && Helper.checkWithinRadius(MY_LOCATION, new LatLng(order.getPickupLat(),order.getPickupLong()))){
-                        // order is within reach and it's assigned.
-                        CURRENT_ORDER = order;
-                        IS_RIDE_SHARED = order.getShared();
-                        CUSTOMER_USER_ID = order.getUser_id();
-                        goDrawRoute();
-                        if(IS_RIDE_SHARED){
-                            fetchThatGroup();
-                        }else{
-                            fetchThatCustomer();
-                        }
-                    }
-                }
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
-    private void goDrawRoute() {
-
-    }
 
     private void fetchThatGroup() {
         db_ref_group.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -474,7 +473,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
     }
-
 
 
     @Override
