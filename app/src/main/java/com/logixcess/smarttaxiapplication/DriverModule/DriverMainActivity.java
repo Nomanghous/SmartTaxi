@@ -180,7 +180,6 @@ public class DriverMainActivity extends AppCompatActivity {
         db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
         goFetchOrderByID(orderId);
-
         IS_FIRST_TIME = true;
     }
 
@@ -192,7 +191,8 @@ public class DriverMainActivity extends AppCompatActivity {
                     CURRENT_ORDER = dataSnapshot.getValue(Order.class);
                     if(CURRENT_ORDER != null){
                         CURRENT_USER_ID = CURRENT_ORDER.getUser_id();
-                        String groupId = Helper.getConcatenatedID(CURRENT_USER_ID,CURRENT_ORDER_ID);
+                        CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
+                        String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, USER_ME.getUid());
                         if(CURRENT_ORDER.getShared())
                             goFetchGroupByID(groupId);
                         else {
@@ -224,10 +224,8 @@ public class DriverMainActivity extends AppCompatActivity {
                             goFetchOrderByID(CURRENT_SHARED_RIDE.getOrder_id());
                         }
                     }
-
                 }
             }
-
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 

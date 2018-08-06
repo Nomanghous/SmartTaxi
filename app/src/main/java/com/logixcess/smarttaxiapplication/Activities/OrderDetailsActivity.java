@@ -143,7 +143,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
         sharedRide.setUser_id(userId);
         sharedRide.setOrder_id(Helper.CURRENT_ORDER.getOrder_id());
         HashMap<String, Boolean> ordersIds = new HashMap<>();
-        ordersIds.put(Helper.CURRENT_ORDER.getOrder_id(),true);
+        ordersIds.put(Helper.CURRENT_ORDER.getOrder_id(), false);
         sharedRide.setOrderIDs(ordersIds);
         HashMap<String, Boolean> passengersIds = new HashMap<>();
         passengersIds.put(userId,true);

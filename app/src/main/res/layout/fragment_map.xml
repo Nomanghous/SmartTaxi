@@ -143,115 +143,6 @@
         android:id="@+id/btn_confirm"
         android:visibility="gone"
         />
-    <!-- Costs and Detail Layout -->
-    <LinearLayout
-        android:id="@+id/layout_detail"
-        android:visibility="visible"
-        android:layout_width="match_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_height="190dp"
-        android:background="@android:color/white"
-        android:orientation="horizontal">
-        <LinearLayout
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/white">
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_centerInParent="true"
-                    android:weightSum="10"
-                    >
-                    <ImageView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="drop_sign"
-                        android:src="@drawable/ic_pin_drop_black_24dp" />
-
-                    <TextView
-                        android:id="@+id/txtLocation"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="9"
-                        android:padding="0dp"
-                        android:text="Location" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="10dp"
-                    android:layout_marginRight="10dp"
-                    android:orientation="horizontal"
-                    android:weightSum="10">
-
-                    <ImageView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="drop_sign"
-                        android:src="@drawable/ic_map_black_24dp" />
-
-
-                    <TextView
-                        android:id="@+id/txtDestination"
-                        android:layout_gravity="center_vertical"
-                        android:layout_width="0dp"
-                        android:layout_weight="9"
-                        android:layout_height="wrap_content"
-                        android:text="Destination"
-                        android:gravity="center_vertical"
-                        />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:layout_marginRight="10dp"
-                    android:orientation="horizontal"
-                    android:weightSum="10">
-
-                    <ImageView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="drop_sign"
-                        android:src="@drawable/ic_attach_money_black_24dp" />
-
-                    <TextView
-                        android:id="@+id/txt_cost"
-                        android:layout_gravity="center_vertical"
-                        android:layout_width="0dp"
-                        android:layout_weight="9"
-                        android:layout_height="wrap_content"
-                        android:text="10km + 10 mins = $100"
-                        />
-
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-
-
-        </LinearLayout>
-    </LinearLayout>
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="250dp"
@@ -386,6 +277,104 @@
 
             />
     </RelativeLayout>
+    <!-- Costs and Detail Layout -->
+    <LinearLayout
+        android:id="@+id/layout_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:weightSum="10">
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="drop_sign"
+                android:src="@drawable/ic_pin_drop_black_24dp" />
+
+            <TextView
+                android:id="@+id/txtLocation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="9"
+                android:padding="0dp"
+                android:text="Location" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:weightSum="10">
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="drop_sign"
+                android:src="@drawable/ic_map_black_24dp" />
+
+
+            <TextView
+                android:id="@+id/txtDestination"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="9"
+                android:gravity="center_vertical"
+                android:text="Destination" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="10dp"
+            android:orientation="horizontal"
+            android:weightSum="10">
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="drop_sign"
+                android:src="@drawable/ic_attach_money_black_24dp" />
+
+            <TextView
+                android:id="@+id/txt_cost"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="9"
+                android:text="10km + 10 mins = $100" />
+
+
+        </LinearLayout>
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Okay"
+            android:id="@+id/btn_hide_details"
+            />
+    </LinearLayout>
 
 
 

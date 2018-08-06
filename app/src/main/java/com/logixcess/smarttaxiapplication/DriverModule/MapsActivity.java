@@ -41,6 +41,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
@@ -49,6 +51,10 @@ import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,17 +181,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void checkForDistanceToSendNotification(){
-        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance* 100);
+    private void checkForDistanceToSendNotification() throws JSONException {
+        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         driverMarker.setPosition(driver);
+        NotificationPayload payload = new NotificationPayload();
+        payload.setDriver_id(USER_ME.getUid());
+        payload.setUser_id(CURRENT_ORDER.getUser_id());
+        String group_id = "--NA--";
+        if(CURRENT_ORDER.getShared())
+            group_id = Helper.getConcatenatedID(CURRENT_ORDER.getOrder_id(),USER_ME.getUid());
+        payload.setGroup_id(group_id);
+        payload.setOrder_id(CURRENT_ORDER.getOrder_id());
         if(percentageLeft < 25){
-
+            payload.setPercentage_left("25");
+            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
         }else if(percentageLeft < 50){
-
+            payload.setPercentage_left("50");
+            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
         }else if(percentageLeft < 75){
-
+            payload.setPercentage_left("75");
+            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
         }else if(percentageLeft < 100){
-
+            payload.setPercentage_left("100");
         }
     }
 
@@ -289,7 +306,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 //        polylines = new ArrayList<>();
         //add route(s) to the map.
+
         Route shortestRoute = route.get(shortestRouteIndex);
+        if(totalDistance < 0 || distanceRemaining >= totalDistance)
+            totalDistance = shortestRoute.getDistanceValue();
 //        int colorIndex = shortestRouteIndex % COLORS.length;
 //        PolylineOptions polyOptions = new PolylineOptions();
 //        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
@@ -304,7 +324,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(mDriverMarker != null)
             mDriverMarker.remove();
         mDriverMarker = mMap.addMarker(options);
-        checkForDistanceToSendNotification();
+        try {
+
+            checkForDistanceToSendNotification();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
 
     }

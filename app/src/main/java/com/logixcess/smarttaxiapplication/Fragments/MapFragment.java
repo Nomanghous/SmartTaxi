@@ -121,7 +121,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
-    Button btn_select_vehicle;
+    Button btn_select_vehicle,btn_hide_details;
     private FirebaseUser USER_ME;
 
     public MapFragment() {
@@ -189,7 +189,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     CheckBox cb_shared2;
     View layout;
     private FirebaseDatabase firebase_db;
-    ProgressDialog progressDialog;
     LinearLayout layout_cost_detail;
     TextView txtLocation,txtDestination,txt_cost;
     @Override
@@ -204,12 +203,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         driverList = new ArrayList<>();
          layout = inflater.inflate(R.layout.dialog_shared_user_selection,
                 (ViewGroup) view.findViewById(R.id.rating_linear_layout));
-         progressDialog = new ProgressDialog(getActivity());
-         progressDialog.setMessage("Please Wait");
+
         mapFragment = view.findViewById(R.id.map);
         layout_cost_detail = view.findViewById(R.id.layout_detail);
         txtLocation = view.findViewById(R.id.txtLocation);
         txtDestination = view.findViewById(R.id.txtDestination);
+        btn_hide_details = view.findViewById(R.id.btn_hide_details);
         txt_cost = view.findViewById(R.id.txt_cost);
         cb_shared2 = view.findViewById(R.id.cb_shared);
         ct_address = view.findViewById(R.id.ct_address);// .setVisibility(View.VISIBLE);
@@ -239,7 +238,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         new_order.setEstimated_cost("200.0");
         new_order.setTotal_kms("20");
 
-
+        btn_hide_details.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                layout_cost_detail.setVisibility(View.GONE);
+            }
+        });
         new_order.setPickup_time(Calendar.getInstance().getTime().toString());
 //        new_order.setPickup_date(Calendar.getInstance().getTime().toString());
         cb_shared.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -363,10 +367,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if (items[item].equals("SELECT"))
                 {
                     new_order.setDriver_id(driverId);
-                    //displayCostDetails();
-                   //TODO :check number of passengers for ride
-                    if(!progressDialog.isShowing())
-                        progressDialog.show();
                     if(new_order.getShared())
                     checkRidePassengers(Constants.region_name,driverId);
                     else {//non shared
@@ -417,27 +417,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             if(layout_cost_detail.getVisibility() == View.GONE)
                             {
                                 layout_cost_detail.setVisibility(View.VISIBLE);
-                                txtLocation.setText("Location");
-                                txtDestination.setText("Destination");
+                                txtLocation.setText(new_order.getPickup());
+                                txtDestination.setText(new_order.getDropoff());
                                 txt_cost.setText(String.valueOf(total_cost));
                             }
-                            if(progressDialog.isShowing())
-                                progressDialog.dismiss();
                         }
                     }
                 }
                 else
                 {
-                    if(progressDialog.isShowing())
-                        progressDialog.dismiss();
-                    Toast.makeText(getActivity(),"No passengers right now !",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(),"No Rides are going nearby, we will create your new Ride.",Toast.LENGTH_SHORT).show();
                     double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                    //Display Cost
                     if(layout_cost_detail.getVisibility() == View.GONE)
                     {
                         layout_cost_detail.setVisibility(View.VISIBLE);
-                        txtLocation.setText("Location");
-                        txtDestination.setText("Destination");
+                        txtLocation.setText(new_order.getPickup());
+                        txtDestination.setText(new_order.getDropoff());
                         txt_cost.setText(String.valueOf(total_cost));
                     }
                 }
@@ -757,7 +752,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             if(count_for_region == 60)
             {
                 count_for_region = 0;
-                getRegionName(getActivity(),MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
+                if(MY_LOCATION != null)
+                    getRegionName(getActivity(),MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
             }
         }
     }
