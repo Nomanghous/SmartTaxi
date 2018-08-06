@@ -431,6 +431,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     if(progressDialog.isShowing())
                         progressDialog.dismiss();
                     Toast.makeText(getActivity(),"No passengers right now !",Toast.LENGTH_SHORT).show();
+                    double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+                    //Display Cost
+                    if(layout_cost_detail.getVisibility() == View.GONE)
+                    {
+                        layout_cost_detail.setVisibility(View.VISIBLE);
+                        txtLocation.setText("Location");
+                        txtDestination.setText("Destination");
+                        txt_cost.setText(String.valueOf(total_cost));
+                    }
                 }
 
             }
