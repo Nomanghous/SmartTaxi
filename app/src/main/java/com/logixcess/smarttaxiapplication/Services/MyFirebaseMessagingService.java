@@ -91,7 +91,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
 
     private void sendOrderNotification(String data) {
-        NotificationUtils.showNotificationForOrderToDriver(getApplicationContext(),data);
+        NotificationUtils.showNotificationForUserActions(getApplicationContext(),data);
     }
 
 
