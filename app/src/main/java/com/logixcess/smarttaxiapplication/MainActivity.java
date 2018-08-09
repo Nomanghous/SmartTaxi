@@ -117,6 +117,8 @@ public class MainActivity extends BaseActivity
                         .fromJson(bundle.getString(
                                 MyNotificationManager.INTENT_FILTER_VIEW_ORDER),NotificationPayload.class);
                 IS_FOR_ORDER_VIEW = (notificationPayload != null);
+                if(IS_FOR_ORDER_VIEW)
+                    goFechOrder();
             }
         }
 
@@ -737,12 +739,10 @@ AlertDialog builder;
     public void DriversListAdded(List<Driver> drivers) {
         DriversInRadius = drivers;
         // drivers refreshed
-        if(IS_FOR_ORDER_VIEW){
-            goFechOrder();
-        }else {
-            if (mapFragment != null)
-                mapFragment.getDriverList();
-        }
+
+        if (mapFragment != null)
+            mapFragment.getDriverList();
+
     }
     private void goFechOrder() {
         DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(notificationPayload.getOrder_id());
