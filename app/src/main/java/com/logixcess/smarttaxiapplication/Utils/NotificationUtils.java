@@ -258,13 +258,11 @@ public class NotificationUtils {
 
     private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
         Intent viewIntent = new Intent(context, MainActivity.class);
-
-
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         viewIntent.putExtra("data", payload);
         viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         PendingIntent viewPendingIntent =
-                PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
+                PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_UPDATE_CURRENT);
         sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent);
     }
 
