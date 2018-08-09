@@ -48,7 +48,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     }
     private void startMainActivity(String payload) {
         Intent intent = new Intent(mContext, MainActivity.class);
-        intent.putExtra("data", payload);
+        intent.putExtra(INTENT_FILTER_VIEW_ORDER, payload);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
     }
