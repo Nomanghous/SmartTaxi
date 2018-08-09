@@ -23,6 +23,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
@@ -114,7 +115,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     notificationPayload.setUser_id(Helper.CURRENT_ORDER.getUser_id());
                     notificationPayload.setDriver_id(Helper.CURRENT_ORDER.getDriver_id());
                     notificationPayload.setPercentage_left(Helper.CURRENT_ORDER.getOrder_id());
-                    new PushNotifictionHelper(getApplicationContext()).execute(token,new Gson().toJson(notificationPayload));
+                    String str = new Gson().toJson(notificationPayload);
+                    try {
+                        JSONObject json = new JSONObject(str);
+                        new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                     if(Helper.CURRENT_ORDER.getShared())
                         goCreateGroupForSharedRide();
                     else

@@ -201,26 +201,59 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
         payload.setOrder_id(CURRENT_ORDER.getOrder_id());
+        String token  = CURRENT_USER.getUser_token();
         if(percentageLeft < 25 && !NotificaionsDone[0]){
             NotificaionsDone[0] = true;
             payload.setPercentage_left("25");
             payload.setDescription("Driver is reaching soon");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
+            String str = new Gson().toJson(payload);
+
+            try {
+                JSONObject json = new JSONObject(str);
+                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }else if(percentageLeft < 50 && !NotificaionsDone[1]){
             NotificaionsDone[1] = true;
             payload.setDescription("Driver is reaching soon");
             payload.setPercentage_left("50");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
+            String str = new Gson().toJson(payload);
+
+            try {
+                JSONObject json = new JSONObject(str);
+                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }else if(percentageLeft < 75&& !NotificaionsDone[2]){
             NotificaionsDone[2] = true;
             payload.setDescription("Driver is reaching soon");
             payload.setPercentage_left("75");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
+            String str = new Gson().toJson(payload);
+
+            try {
+                JSONObject json = new JSONObject(str);
+                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }else if(percentageLeft < 100 && !NotificaionsDone[3]){
             NotificaionsDone[3] = true;
             payload.setDescription("Driver is coming your way");
             payload.setPercentage_left("100");
-            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
+            String str = new Gson().toJson(payload);
+
+            try {
+                JSONObject json = new JSONObject(str);
+                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
 
         }
     }

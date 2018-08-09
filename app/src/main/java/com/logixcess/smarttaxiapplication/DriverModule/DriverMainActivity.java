@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -244,7 +245,14 @@ public class DriverMainActivity extends AppCompatActivity {
             payload.setGroup_id("--NA--");
         payload.setUser_id(CURRENT_USER_ID);
         payload.setDriver_id(USER_ME.getUid());
-        new PushNotifictionHelper(this).execute(CURRENT_USER.getUser_token(),payload);
+        String str = new Gson().toJson(payload);
+        try {
+            JSONObject json = new JSONObject(str);
+            new PushNotifictionHelper(getApplicationContext()).execute(CURRENT_USER.getUser_token(),json);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void goFetchGroupByID(String groupId) {
