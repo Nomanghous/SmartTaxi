@@ -61,6 +61,9 @@ import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
+
+    boolean[] NotificaionsDone = new boolean[4];
+
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     private GoogleMap mMap;
     private Order CURRENT_ORDER = null;
@@ -100,7 +103,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
-
+        NotificaionsDone[0] = false;
+        NotificaionsDone[1] = false;
+        NotificaionsDone[2] = false;
+        NotificaionsDone[3] = false;
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             CURRENT_ORDER = bundle.getParcelable(KEY_CURRENT_ORDER);
@@ -191,18 +197,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(CURRENT_ORDER.getShared())
             group_id = Helper.getConcatenatedID(CURRENT_ORDER.getOrder_id(),USER_ME.getUid());
         payload.setGroup_id(group_id);
+        payload.setTitle("Order Updates");
+
+        payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
         payload.setOrder_id(CURRENT_ORDER.getOrder_id());
-        if(percentageLeft < 25){
+        if(percentageLeft < 25 && !NotificaionsDone[0]){
+            NotificaionsDone[0] = true;
             payload.setPercentage_left("25");
+            payload.setDescription("Driver is reaching soon");
             new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 50){
+        }else if(percentageLeft < 50 && !NotificaionsDone[1]){
+            NotificaionsDone[1] = true;
+            payload.setDescription("Driver is reaching soon");
             payload.setPercentage_left("50");
             new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 75){
+        }else if(percentageLeft < 75&& !NotificaionsDone[2]){
+            NotificaionsDone[2] = true;
+            payload.setDescription("Driver is reaching soon");
             payload.setPercentage_left("75");
             new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
-        }else if(percentageLeft < 100){
+        }else if(percentageLeft < 100 && !NotificaionsDone[3]){
+            NotificaionsDone[3] = true;
+            payload.setDescription("Driver is coming your way");
             payload.setPercentage_left("100");
+            new PushNotifictionHelper(this).execute(CURRENT_ORDER.getUser_id(),new JSONObject(new Gson().toJson(payload)));
+
         }
     }
 
@@ -325,7 +344,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mDriverMarker.remove();
         mDriverMarker = mMap.addMarker(options);
         try {
-
             checkForDistanceToSendNotification();
         } catch (JSONException e) {
             e.printStackTrace();

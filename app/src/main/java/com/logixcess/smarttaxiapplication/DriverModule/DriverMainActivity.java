@@ -235,6 +235,9 @@ public class DriverMainActivity extends AppCompatActivity {
         NotificationPayload payload = new NotificationPayload();
         payload.setOrder_id(CURRENT_ORDER_ID);
         payload.setPercentage_left("");
+        payload.setTitle("Order Accepted");
+        payload.setDescription("Tap to View Details");
+        payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
         if(CURRENT_ORDER.getShared())
             payload.setGroup_id(CURRENT_GROUP_ID);
         else

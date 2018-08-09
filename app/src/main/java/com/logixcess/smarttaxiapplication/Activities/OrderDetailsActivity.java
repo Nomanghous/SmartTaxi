@@ -22,6 +22,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
@@ -105,13 +107,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     User driver = dataSnapshot.getValue(User.class);
                     String token = driver.getUser_token();
-                    JSONObject data = new JSONObject();
-                    try {
-                        data.put("order_id", Helper.CURRENT_ORDER.getOrder_id());
-                        new PushNotifictionHelper(getApplicationContext()).execute(token,data);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    NotificationPayload notificationPayload = new NotificationPayload();
+                    notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED);
+                    notificationPayload.setTitle("Order Created");
+                    notificationPayload.setDescription("Do you want to accept it");
+                    notificationPayload.setUser_id(Helper.CURRENT_ORDER.getUser_id());
+                    notificationPayload.setDriver_id(Helper.CURRENT_ORDER.getDriver_id());
+                    notificationPayload.setPercentage_left(Helper.CURRENT_ORDER.getOrder_id());
+                    new PushNotifictionHelper(getApplicationContext()).execute(token,new Gson().toJson(notificationPayload));
                     if(Helper.CURRENT_ORDER.getShared())
                         goCreateGroupForSharedRide();
                     else
@@ -119,7 +122,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    Toast.makeText(OrderDetailsActivity.this,"Driver not found !",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(OrderDetailsActivity.this,"Driver not found!",Toast.LENGTH_SHORT).show();
                 }
             }
 

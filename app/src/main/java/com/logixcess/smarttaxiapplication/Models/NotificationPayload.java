@@ -2,7 +2,33 @@ package com.logixcess.smarttaxiapplication.Models;
 
 public class NotificationPayload {
     private String user_id, driver_id, percentage_left, group_id, order_id;
+    private String title, description;
+    private int type;
 
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
 
     public String getUser_id() {
         return user_id;

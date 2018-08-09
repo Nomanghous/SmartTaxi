@@ -17,6 +17,7 @@ import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 
 import java.io.IOException;
@@ -25,11 +26,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.BuildConfig;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.R;
 
 /**
@@ -221,6 +225,17 @@ public class NotificationUtils {
 
 
     public static void showNotificationForOrderToDriver(Context context, String payload){
+
+
+
+
+
+
+
+
+
+
+
         Intent acceptIntent = new Intent(context, MyNotificationManager.class);
         acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
         acceptIntent.putExtra("data", payload);
@@ -242,6 +257,9 @@ public class NotificationUtils {
         viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
+
+
+
 
         if (Build.VERSION.SDK_INT >= 27) {
             // Call some material design APIs here
@@ -275,5 +293,121 @@ public class NotificationUtils {
             mNotificationManager.notify(123, mBuilder.build());
         }
     }
+    public static void showNotificationForUserActions(Context context, String payload){
+        NotificationPayload notificationPayload = null;
+        try {
+            notificationPayload = new Gson().fromJson(payload, NotificationPayload.class);
+        }catch (Exception ignore){
+            Log.e(TAG, ignore.getMessage());
+        }
+        if(notificationPayload == null){
+            return;
 
+        }else {
+
+
+
+            if(isAppIsInBackground(context)){
+
+            }
+
+
+            switch (notificationPayload.getType()) {
+                case Helper.NOTI_TYPE_ORDER_CREATED:
+                    // friend requested
+                    preparePendingIntentForFriendRequest(context,payload,notificationPayload);
+                    break;
+                case Helper.NOTI_TYPE_ORDER_ACCEPTED:
+                    // friend requested
+                    preparePendingIntentForMessage(context,payload,notificationPayload);
+                    break;
+            }
+        }
+    }
+
+    private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
+        if(isAppRunning(context,context.getPackageName()))
+            return;
+        Intent viewIntent = new Intent(context, MyNotificationManager.class);
+        viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        viewIntent.putExtra("data", payload);
+        viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        PendingIntent viewPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
+        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent);
+    }
+
+    private static void preparePendingIntentForFriendRequest(Context context, String payload, NotificationPayload userData) {
+        Intent acceptIntent = new Intent(context, MyNotificationManager.class);
+        acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        acceptIntent.putExtra("data", payload);
+        acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        PendingIntent acceptPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
+        Intent rejectIntent = new Intent(context, MyNotificationManager.class);
+        rejectIntent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+        rejectIntent.putExtra("data", payload);
+        rejectIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+        PendingIntent rejectPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
+
+        Intent viewIntent = new Intent(context, MyNotificationManager.class);
+        viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        viewIntent.putExtra("data", payload);
+        viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        PendingIntent viewPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
+        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent);
+    }
+
+    private static void sendNotificationsWithPendingIntent(Context context,String title, String message, List<NotificationCompat.Action> actions,PendingIntent contentIntent) {
+        if (Build.VERSION.SDK_INT >= 27) {
+            // Call some material design APIs here
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setContentIntent(contentIntent);
+            if(actions != null)
+                for (NotificationCompat.Action action : actions) {
+                    mBuilder.addAction(action);
+                }
+            mBuilder.notify();
+        } else {
+            // Implement this feature without material design
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setContentIntent(contentIntent);
+            if(actions != null)
+                for (NotificationCompat.Action action : actions) {
+                    mBuilder.addAction(action);
+                }
+            NotificationManager mNotificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(123, mBuilder.build());
+        }
+
+    }
+    private static boolean isAppRunning(final Context context, final String packageName) {
+        final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
+        if (procInfos != null)
+        {
+            for (final ActivityManager.RunningAppProcessInfo processInfo : procInfos) {
+                if (processInfo.processName.equals(packageName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
