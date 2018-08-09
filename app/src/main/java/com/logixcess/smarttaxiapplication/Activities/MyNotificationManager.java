@@ -30,7 +30,10 @@ public class MyNotificationManager extends BroadcastReceiver {
             notificationManager.cancel(123);
         NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
         if(notificationPayload != null) {
-            fuelUpTheBroadcastReceiver(action, data);
+            if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED)
+                startMainActivity(data);
+            else
+                fuelUpTheBroadcastReceiver(action, data);
         }
 
     }
@@ -41,6 +44,12 @@ public class MyNotificationManager extends BroadcastReceiver {
         intent.putExtra("action", action);
         intent.putExtra("data", data);
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-    }
 
+    }
+    private void startMainActivity(String payload) {
+        Intent intent = new Intent(mContext, MainActivity.class);
+        intent.putExtra("data", payload);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(intent);
+    }
 }
