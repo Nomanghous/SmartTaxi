@@ -49,6 +49,7 @@ import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.Fragments.NotificationsFragment;
 import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
+import com.logixcess.smarttaxiapplication.Interfaces.IDrivers;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
@@ -67,7 +68,8 @@ public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener,
          MapFragment.OnFragmentInteractionListener
         ,FeedbackFragment.OnFragmentInteractionListener,FindUserFragment.OnFragmentInteractionListener,NotificationsFragment.OnFragmentInteractionListener
-        ,RideHistoryFragment.OnFragmentInteractionListener,UserProfileFragment.OnFragmentInteractionListener{
+        ,RideHistoryFragment.OnFragmentInteractionListener,UserProfileFragment.OnFragmentInteractionListener
+        , IDrivers {
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
@@ -326,6 +328,7 @@ AlertDialog builder;
                 .withLocation(latitude,longitude)
                 .withGeolocApiKey(getResources().getString(R.string.google_maps_api))
                 //.withSearchZone("es_ES")
+                //.withSearchZone("ur-PK")
                 .shouldReturnOkOnBackPressed()
                 .withStreetHidden()
                 .withGooglePlacesEnabled()
@@ -362,7 +365,8 @@ AlertDialog builder;
                     MapFragment.new_order.setPickupLong(longitude);
                 }
             }
-            else if (resultCode == RESULT_CANCELED) {
+            else if (resultCode == RESULT_CANCELED)
+            {
                 //Write your code if there's no result
             }
         }
@@ -608,15 +612,19 @@ AlertDialog builder;
                         CURRENT_TAG = TAG_FIND_USER;
                         break;
                     case R.id.nav_current_ride:
+                        //navItemIndex = 6;
+                        CURRENT_TAG = "current_ride";
                         getCurrentOrderId();
                         break;
                     default:
                         navItemIndex = 0;
+
+                        //Checking if the item is in checked state or not, if not make it in checked state
+                        menuItem.setChecked(!menuItem.isChecked());
+                        loadHomeFragment();
                 }
 
-                //Checking if the item is in checked state or not, if not make it in checked state
-                menuItem.setChecked(!menuItem.isChecked());
-                loadHomeFragment();
+
 
                 return true;
             }
@@ -703,4 +711,17 @@ AlertDialog builder;
         intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
         startActivity(intent);
     }
+
+
+
+
+    @Override
+    public void DriversListAdded(List<Driver> drivers) {
+        DriversInRadius = drivers;
+        // drivers refreshed
+        if(mapFragment != null)
+            mapFragment.getDriverList();
+    }
+
+
 }

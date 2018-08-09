@@ -488,6 +488,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void showDataOnMap() {
+
         if(mMap != null && CURRENT_USER != null){
             // show User
             pickup = new LatLng(CURRENT_ORDER.getPickupLat(), CURRENT_ORDER.getPickupLong());
@@ -501,6 +502,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pickup, 12f));
             // show Driver
         }
+
     }
 
 
@@ -524,7 +526,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(GoogleMap googleMap)
+    {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
@@ -536,7 +539,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     requestNewRoute();
             }
         });
-
         populateMap();
         showDataOnMap();
     }

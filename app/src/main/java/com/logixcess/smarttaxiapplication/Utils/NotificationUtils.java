@@ -256,8 +256,7 @@ public class NotificationUtils {
     }
 
     private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
-        if(isAppRunning(context,context.getPackageName()))
-            return;
+
         Intent viewIntent = new Intent(context, MyNotificationManager.class);
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         viewIntent.putExtra("data", payload);

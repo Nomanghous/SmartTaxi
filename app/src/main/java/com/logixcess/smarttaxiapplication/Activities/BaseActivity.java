@@ -9,7 +9,7 @@ import com.logixcess.smarttaxiapplication.Models.Driver;
 
 import java.util.List;
 
-public class BaseActivity extends AppCompatActivity implements IDrivers{
+public class BaseActivity extends AppCompatActivity{
     protected List<Driver> DriversInRadius;
 
     @Override
@@ -18,8 +18,5 @@ public class BaseActivity extends AppCompatActivity implements IDrivers{
     }
 
 
-    @Override
-    public void DriversListAdded(List<Driver> drivers) {
-        DriversInRadius = drivers;
-    }
+
 }

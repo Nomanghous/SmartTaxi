@@ -81,7 +81,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             Log.e(TAG, "Data Payload: " + remoteMessage.getData().toString());
             try {
 //                JSONObject json = new JSONObject(remoteMessage.getData().toString());
-//                handleDataMessage(json);
+//                handleDataMessage(json)        ;
                 sendOrderNotification(remoteMessage.getData().toString());
             } catch (Exception e) {
                 Log.e(TAG, "Exception: " + e.getMessage());

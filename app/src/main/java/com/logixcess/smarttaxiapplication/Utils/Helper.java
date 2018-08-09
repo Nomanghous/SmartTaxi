@@ -24,7 +24,7 @@ public class Helper {
 
     public static Order CURRENT_ORDER = null;
     public static String polylinesSeparator = "___and___";
-    public static double SELECTED_RADIUS = 10 * 1.602;
+    public static double SELECTED_RADIUS = 10000;
 
 
     public static boolean checkWithinRadius(Location mine, LatLng other) {

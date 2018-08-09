@@ -110,11 +110,12 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     String token = driver.getUser_token();
                     NotificationPayload notificationPayload = new NotificationPayload();
                     notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED);
-                    notificationPayload.setTitle("Order Created");
-                    notificationPayload.setDescription("Do you want to accept it");
-                    notificationPayload.setUser_id(Helper.CURRENT_ORDER.getUser_id());
-                    notificationPayload.setDriver_id(Helper.CURRENT_ORDER.getDriver_id());
-                    notificationPayload.setPercentage_left(Helper.CURRENT_ORDER.getOrder_id());
+                    notificationPayload.setTitle("\"Order Created\"");
+                    notificationPayload.setDescription("\"Do you want to accept it\"");
+                    notificationPayload.setUser_id("\""+Helper.CURRENT_ORDER.getUser_id()+"\"");
+                    notificationPayload.setDriver_id("\""+Helper.CURRENT_ORDER.getDriver_id()+"\"");
+                    notificationPayload.setOrder_id("\""+Helper.CURRENT_ORDER.getOrder_id()+"\"");
+                    notificationPayload.setPercentage_left("\""+-1+"\"");
                     String str = new Gson().toJson(notificationPayload);
                     try {
                         JSONObject json = new JSONObject(str);

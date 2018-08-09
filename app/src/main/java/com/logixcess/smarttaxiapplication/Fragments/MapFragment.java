@@ -43,6 +43,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -195,6 +196,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
         firebase_db = FirebaseDatabase.getInstance();
@@ -235,13 +237,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         et_drop_off = view.findViewById(R.id.et_dropoff);
         cb_shared = view.findViewById(R.id.cb_shared);
         new_order.setShared(false);
-        new_order.setEstimated_cost("200.0");
-        new_order.setTotal_kms("20");
+
 
         btn_hide_details.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 layout_cost_detail.setVisibility(View.GONE);
+                if(btn_confirm.getVisibility()==View.GONE)
+                    btn_confirm.setVisibility(View.VISIBLE);
             }
         });
         new_order.setPickup_time(Calendar.getInstance().getTime().toString());
@@ -266,7 +269,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
     public void getDriverList()
     {
-        valueEventListener = new ValueEventListener() {
+        for(Driver driver : ((MainActivity)getContext()).getDrivers())
+        {
+            driverList.add(driver);
+            addDriverMarker(driver);
+        }
+        /*valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot)
             {
@@ -282,7 +290,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         if(new_order != null && new_order.getShared())
                         {
                             for (Polyline polyline : polyLineList) {
-
                                 //polyline.
                                 //if (PolyUtil.isLocationOnEdge(driver_location, polyline.getPoints(), false)) {
                                 //if(PolyUtil.isLocationOnPath(driver_location, polyline.getPoints(), true))
@@ -323,20 +330,30 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         };
         firebase_instance.child(Helper.REF_DRIVERS).orderByChild("inOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
+        */
     }
     public void addDriverMarker(Driver driver1)
     {
         //now update the routes and remove markers if already present in it.
+        LatLng driverLatLng = new LatLng(driver1.getLatitude(), driver1.getLongitude());
             if(driver_in_map.containsKey(driver1.getFk_user_id()))
             {
                 Marker marker = driver_in_map.get(driver1.getFk_user_id());
-                marker.remove();
+                marker.setPosition(driverLatLng);
             }
-            if (gMap != null) {
-                Marker marker = gMap.addMarker(new MarkerOptions().position(new LatLng(driver1.getLatitude(), driver1.getLongitude()))
-                        .title("Driver: ".concat(driver1.getFk_user_id())));
-                marker.setTag(driver1.getFk_user_id());
+            else
+            {
+                if (gMap != null) {
+                    Marker marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
+                            .title("Driver: ".concat(driver1.getFk_user_id())));
+
+                    marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                    marker.setTag(driver1.getFk_user_id());
+                    driver_in_map.put(driver1.getFk_user_id(),marker);
+                }
+
             }
+
     }
     public double check_cost(int shared_user_status,double base_fair_per_km)
     {
@@ -374,10 +391,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         //Display Cost
                         if(layout_cost_detail.getVisibility() == View.GONE)
                         {
+                            if(btn_confirm.getVisibility()==View.VISIBLE)
+                                btn_confirm.setVisibility(View.GONE);
                             layout_cost_detail.setVisibility(View.VISIBLE);
-                            txtLocation.setText("Location");
-                            txtDestination.setText("Destination");
+                            txtLocation.setText("Location : "+new_order.getPickup());
+                            txtDestination.setText("Destination : "+new_order.getDropoff());
                             txt_cost.setText(String.valueOf(total_cost));
+                            new_order.setEstimated_cost(String.valueOf(total_cost));
                         }
                     }
                     //check_cost(0,0.0);
@@ -579,12 +599,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
-        Double latitude = 7.873172;
-        Double longitude = 80.665608;
+        Double latitude = 7.8731;
+        Double longitude = 80.7718;
         LatLng usa = new LatLng(latitude, longitude);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
+        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(usa, 10));
         gMap.setOnPolylineClickListener(this);
         gMap.setOnMarkerClickListener(this);
+
     }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
@@ -671,7 +693,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 String distance = route_details.get(i+1).split("--")[0];
                 String duration = route_details.get(i+1).split("--")[1];
 
-                distance = distance.replaceAll("\\D+","");
+                distance = distance.replaceAll("\\D+\\.\\D+","");
                 if(distance.contains("mi"))
                     distance = String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344);
                 else if( distance.contains(("km")))
