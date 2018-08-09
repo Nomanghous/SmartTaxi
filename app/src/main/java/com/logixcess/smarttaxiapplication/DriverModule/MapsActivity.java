@@ -104,13 +104,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             CURRENT_ORDER = bundle.getParcelable(KEY_CURRENT_ORDER);
-
-
             if(CURRENT_ORDER != null && CURRENT_ORDER.getShared()){
                 if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
                     CURRENT_SHARED_RIDE = bundle.getParcelable(KEY_CURRENT_SHARED_RIDE);
                     IS_RIDE_SHARED = true;
                 }
+            }else if(CURRENT_ORDER != null){
+                IS_RIDE_SHARED = false;
             }else {
                 finish();
                 return;

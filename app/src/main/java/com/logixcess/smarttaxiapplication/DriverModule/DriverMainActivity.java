@@ -22,21 +22,19 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
-import com.logixcess.smarttaxiapplication.Models.Group;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -45,7 +43,7 @@ import java.util.TimerTask;
 public class DriverMainActivity extends AppCompatActivity {
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
-    private DatabaseReference db_ref_user;
+    private DatabaseReference db_ref_drivers,db_ref_users;
     private DatabaseReference db_ref_group;
     private DatabaseReference db_ref_single_order;
     private DatabaseReference db_ref_shared_order;
@@ -67,7 +65,8 @@ public class DriverMainActivity extends AppCompatActivity {
         setupBroadcastReceivers();
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-        db_ref_user = firebase_db.getReference().child(Helper.REF_DRIVERS);
+        db_ref_drivers = firebase_db.getReference().child(Helper.REF_DRIVERS);
+        db_ref_users = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
@@ -82,6 +81,7 @@ public class DriverMainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     CURRENT_ORDER_ID = (String) dataSnapshot.getValue();
+                    goFetchOrderByID(CURRENT_ORDER_ID,true);
                 }else{
                     checkAssignedGroupOrder();
                 }
@@ -135,8 +135,8 @@ public class DriverMainActivity extends AppCompatActivity {
         if(MY_LOCATION != null && USER_ME != null){
             String latitude = "latitude";
             String longitude = "longitude";
-            db_ref_user.child(USER_ME.getUid()).child(latitude).setValue(MY_LOCATION.getLatitude());
-            db_ref_user.child(USER_ME.getUid()).child(longitude).setValue(MY_LOCATION.getLongitude());
+            db_ref_drivers.child(USER_ME.getUid()).child(latitude).setValue(MY_LOCATION.getLatitude());
+            db_ref_drivers.child(USER_ME.getUid()).child(longitude).setValue(MY_LOCATION.getLongitude());
         }
     }
     public void getRegionName(Context context, double lati, double longi) {
@@ -149,7 +149,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(!TextUtils.isEmpty(regioName))
                 {
                     String region_name = "region_name";
-                    db_ref_user.child(USER_ME.getUid()).child(region_name).setValue(regioName);
+                    db_ref_drivers.child(USER_ME.getUid()).child(region_name).setValue(regioName);
                 }
             }
         } catch (Exception e) {
@@ -162,28 +162,28 @@ public class DriverMainActivity extends AppCompatActivity {
 
     public void openRunningOrder(View view) {
         if(CURRENT_ORDER_ID != null && !CURRENT_ORDER_ID.isEmpty()) {
-            openOrderActivity(CURRENT_ORDER_ID);
+            openOrderActivity();
         }else{
             Toast.makeText(this, "No Order in Progress", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void openOrderActivity(String current_order_id) {
+    private void openOrderActivity() {
         Intent intent = new Intent(this, MapsActivity.class);
-        intent.putExtra(com.logixcess.smarttaxiapplication.Activities.MapsActivity.KEY_CURRENT_ORDER,current_order_id);
+        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER,CURRENT_ORDER);
         startActivity(intent);
     }
 
     private void acceptOrder(String orderId){
         db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
-        db_ref_order.child(orderId).child("driver_id").setValue(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        db_ref_order.child(orderId).child("driver_id").setValue(USER_ME.getUid());
         db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
-        goFetchOrderByID(orderId);
+        goFetchOrderByID(orderId,false);
         IS_FIRST_TIME = true;
     }
 
-    private void goFetchOrderByID(String orderId) {
+    private void goFetchOrderByID(String orderId, boolean isAlreadyAccepted) {
         db_ref_order.child(orderId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -192,14 +192,13 @@ public class DriverMainActivity extends AppCompatActivity {
                     if(CURRENT_ORDER != null){
                         CURRENT_USER_ID = CURRENT_ORDER.getUser_id();
                         CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
+                        goFetchCustomerById(isAlreadyAccepted);
                         String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, USER_ME.getUid());
                         if(CURRENT_ORDER.getShared())
                             goFetchGroupByID(groupId);
-                        else {
-                            openOrderActivity(orderId);
-                            db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(orderId);
+                        if(!isAlreadyAccepted) {
+                            Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
                         }
-                        Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -208,6 +207,41 @@ public class DriverMainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void goFetchCustomerById(boolean isAlreadyAccepted) {
+        db_ref_users.child(CURRENT_USER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_USER = dataSnapshot.getValue(User.class);
+                    if(CURRENT_USER != null){
+                        if(!isAlreadyAccepted) {
+                            sendPushNotification();
+                        }
+                        openOrderActivity();
+                        db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(CURRENT_ORDER_ID);
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void sendPushNotification() {
+        NotificationPayload payload = new NotificationPayload();
+        payload.setOrder_id(CURRENT_ORDER_ID);
+        payload.setPercentage_left("");
+        if(CURRENT_ORDER.getShared())
+            payload.setGroup_id(CURRENT_GROUP_ID);
+        else
+            payload.setGroup_id("--NA--");
+        payload.setUser_id(CURRENT_USER_ID);
+        payload.setDriver_id(USER_ME.getUid());
+        new PushNotifictionHelper(this).execute(CURRENT_USER.getUser_token(),payload);
     }
 
     private void goFetchGroupByID(String groupId) {
@@ -221,7 +255,12 @@ public class DriverMainActivity extends AppCompatActivity {
                         if(CURRENT_ORDER_ID != null)
                             openOrderActivity(CURRENT_SHARED_RIDE);
                         else{
-                            goFetchOrderByID(CURRENT_SHARED_RIDE.getOrder_id());
+                            if(CURRENT_ORDER == null)
+                                goFetchOrderByID(CURRENT_SHARED_RIDE.getOrder_id(),true);
+                            else{
+                                CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
+                                openOrderActivity(CURRENT_SHARED_RIDE);
+                            }
                         }
                     }
                 }
@@ -259,12 +298,14 @@ public class DriverMainActivity extends AppCompatActivity {
 
         }
     };
+
     private BroadcastReceiver mViewOrderReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
 
         }
     };
+
 
     private void setupBroadcastReceivers() {
         LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,
