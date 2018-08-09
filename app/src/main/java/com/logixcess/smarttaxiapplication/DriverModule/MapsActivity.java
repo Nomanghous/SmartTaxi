@@ -191,23 +191,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         driverMarker.setPosition(driver);
         NotificationPayload payload = new NotificationPayload();
-        payload.setDriver_id(USER_ME.getUid());
-        payload.setUser_id(CURRENT_ORDER.getUser_id());
-        String group_id = "--NA--";
+        payload.setDriver_id(escapeValue(USER_ME.getUid()));
+        payload.setUser_id(escapeValue(CURRENT_ORDER.getUser_id()));
+        String group_id = escapeValue("--NA--");
         if(CURRENT_ORDER.getShared())
             group_id = Helper.getConcatenatedID(CURRENT_ORDER.getOrder_id(),USER_ME.getUid());
-        payload.setGroup_id(group_id);
-        payload.setTitle("Order Updates");
-
+        payload.setGroup_id(escapeValue(group_id));
+        payload.setTitle(escapeValue("Order Updates"));
+        payload.setPercentage_left(escapeValue(""+percentageLeft));
         payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
-        payload.setOrder_id(CURRENT_ORDER.getOrder_id());
+        payload.setOrder_id(escapeValue(CURRENT_ORDER.getOrder_id()));
         String token  = CURRENT_USER.getUser_token();
         if(percentageLeft < 25 && !NotificaionsDone[0]){
             NotificaionsDone[0] = true;
-            payload.setPercentage_left("25");
-            payload.setDescription("Driver is reaching soon");
+            payload.setDescription(escapeValue("Driver is reaching soon"));
             String str = new Gson().toJson(payload);
-
             try {
                 JSONObject json = new JSONObject(str);
                 new PushNotifictionHelper(getApplicationContext()).execute(token,json);
@@ -217,10 +215,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }else if(percentageLeft < 50 && !NotificaionsDone[1]){
             NotificaionsDone[1] = true;
-            payload.setDescription("Driver is reaching soon");
-            payload.setPercentage_left("50");
+            payload.setDescription(escapeValue("Driver is reaching soon"));
             String str = new Gson().toJson(payload);
-
             try {
                 JSONObject json = new JSONObject(str);
                 new PushNotifictionHelper(getApplicationContext()).execute(token,json);
@@ -230,10 +226,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }else if(percentageLeft < 75&& !NotificaionsDone[2]){
             NotificaionsDone[2] = true;
-            payload.setDescription("Driver is reaching soon");
-            payload.setPercentage_left("75");
+            payload.setDescription(escapeValue("Driver is reaching soon"));
             String str = new Gson().toJson(payload);
-
             try {
                 JSONObject json = new JSONObject(str);
                 new PushNotifictionHelper(getApplicationContext()).execute(token,json);
@@ -243,10 +237,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }else if(percentageLeft < 100 && !NotificaionsDone[3]){
             NotificaionsDone[3] = true;
-            payload.setDescription("Driver is coming your way");
-            payload.setPercentage_left("100");
+            payload.setDescription(escapeValue("Driver is coming your way"));
             String str = new Gson().toJson(payload);
-
             try {
                 JSONObject json = new JSONObject(str);
                 new PushNotifictionHelper(getApplicationContext()).execute(token,json);
@@ -256,6 +248,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         }
+    }
+
+    private String escapeValue(String value) {
+        return "\""+value+"\"";
     }
 
     private MarkerOptions getDesiredMarker(float kind, LatLng posToSet, String title) {

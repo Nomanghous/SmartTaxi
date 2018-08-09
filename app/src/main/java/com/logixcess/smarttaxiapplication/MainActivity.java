@@ -40,9 +40,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
+import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
+import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
 import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
@@ -51,6 +54,7 @@ import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
 import com.logixcess.smarttaxiapplication.Interfaces.IDrivers;
 import com.logixcess.smarttaxiapplication.Models.Driver;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
@@ -61,6 +65,8 @@ import com.schibstedspain.leku.LocationPickerActivity;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
 
@@ -84,6 +90,8 @@ public class MainActivity extends BaseActivity
     private FirebaseUser mFirebaseUser;
     private int CURRENT_ORDER_STATUS = 0;
     private String CURRENT_ORDER_ID = "";
+    private boolean IS_FOR_ORDER_VIEW = false;
+    private NotificationPayload notificationPayload = null;
     public static String getRegionName(Context context, double lati, double longi) {
         String regioName = "";
         Geocoder gcd = new Geocoder(context, Locale.getDefault());
@@ -101,6 +109,16 @@ public class MainActivity extends BaseActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Bundle bundle = getIntent().getExtras();
+        if(bundle != null){
+            if(bundle.containsKey(MyNotificationManager.INTENT_FILTER_VIEW_ORDER)){
+                IS_FOR_ORDER_VIEW = true;
+                notificationPayload = new Gson()
+                        .fromJson(bundle.getString(
+                                MyNotificationManager.INTENT_FILTER_VIEW_ORDER),NotificationPayload.class);
+                IS_FOR_ORDER_VIEW = (notificationPayload != null);
+            }
+        }
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -719,8 +737,35 @@ AlertDialog builder;
     public void DriversListAdded(List<Driver> drivers) {
         DriversInRadius = drivers;
         // drivers refreshed
-        if(mapFragment != null)
-            mapFragment.getDriverList();
+        if(IS_FOR_ORDER_VIEW){
+            goFechOrder();
+        }else {
+            if (mapFragment != null)
+                mapFragment.getDriverList();
+        }
+    }
+    private void goFechOrder() {
+        DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(notificationPayload.getOrder_id());
+        db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Order order = dataSnapshot.getValue(Order.class);
+                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                    if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--"))
+                        intent.putExtra(MapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
+                    intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, order);
+                    startActivity(intent);
+                    IS_FOR_ORDER_VIEW = false;
+                    notificationPayload = null;
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
 

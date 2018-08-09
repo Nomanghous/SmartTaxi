@@ -33,6 +33,7 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.BuildConfig;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.R;
 
@@ -256,8 +257,9 @@ public class NotificationUtils {
     }
 
     private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
+        Intent viewIntent = new Intent(context, MainActivity.class);
 
-        Intent viewIntent = new Intent(context, MyNotificationManager.class);
+
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         viewIntent.putExtra("data", payload);
         viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);

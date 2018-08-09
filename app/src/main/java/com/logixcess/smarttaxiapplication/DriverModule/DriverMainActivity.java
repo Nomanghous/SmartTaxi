@@ -235,16 +235,16 @@ public class DriverMainActivity extends AppCompatActivity {
     private void sendPushNotification() {
         NotificationPayload payload = new NotificationPayload();
         payload.setOrder_id(CURRENT_ORDER_ID);
-        payload.setPercentage_left("");
-        payload.setTitle("Order Accepted");
-        payload.setDescription("Tap to View Details");
+        payload.setPercentage_left(escapeValue(""));
+        payload.setTitle(escapeValue("Order Accepted"));
+        payload.setDescription(escapeValue("Tap to View Details"));
         payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
         if(CURRENT_ORDER.getShared())
-            payload.setGroup_id(CURRENT_GROUP_ID);
+            payload.setGroup_id(escapeValue(CURRENT_GROUP_ID));
         else
-            payload.setGroup_id("--NA--");
-        payload.setUser_id(CURRENT_USER_ID);
-        payload.setDriver_id(USER_ME.getUid());
+            payload.setGroup_id(escapeValue("--NA--"));
+        payload.setUser_id(escapeValue(CURRENT_USER_ID));
+        payload.setDriver_id(escapeValue(USER_ME.getUid()));
         String str = new Gson().toJson(payload);
         try {
             JSONObject json = new JSONObject(str);
@@ -254,7 +254,9 @@ public class DriverMainActivity extends AppCompatActivity {
         }
 
     }
-
+    private String escapeValue(String value) {
+        return "\""+value+"\"";
+    }
     private void goFetchGroupByID(String groupId) {
         db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
         db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -294,12 +296,10 @@ public class DriverMainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String data = intent.getExtras().getString("data");
-            try {
-                String order_id = new JSONObject(data).getString("order_id");
-                acceptOrder(order_id);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
+            String order_id = notificationPayload.getOrder_id();
+            acceptOrder(order_id);
+
         }
     };
 

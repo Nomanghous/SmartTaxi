@@ -117,7 +117,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     CURRENT_SHARED_RIDE = bundle.getParcelable(KEY_CURRENT_SHARED_RIDE);
                     IS_RIDE_SHARED = true;
                 }
-            }else {
+            }else if(CURRENT_USER != null) {
+                IS_RIDE_SHARED = false;
+            }else{
                 finish();
                 return;
             }

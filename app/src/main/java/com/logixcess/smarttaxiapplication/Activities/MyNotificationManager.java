@@ -6,6 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.MainActivity;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
+import com.logixcess.smarttaxiapplication.Utils.Helper;
+
 public class MyNotificationManager extends BroadcastReceiver {
 
     public static final String INTENT_FILTER_ACCEPT_ORDER = "accept_order";
@@ -23,8 +28,11 @@ public class MyNotificationManager extends BroadcastReceiver {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if(notificationManager != null)
             notificationManager.cancel(123);
+        NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
+        if(notificationPayload != null) {
+            fuelUpTheBroadcastReceiver(action, data);
+        }
 
-        fuelUpTheBroadcastReceiver(action, data);
     }
 
     private void fuelUpTheBroadcastReceiver(String action, String data) {
