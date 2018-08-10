@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.adapters.ItemFoldingCellListAdapter;
@@ -58,10 +59,12 @@ public class RideHistoryFragment extends Fragment {
         fragment.setArguments(args);
         return fragment;
     }
-
+ArrayList<Order> orders;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle args = getArguments();
+        orders = args.getParcelableArrayList("history_orders");
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -80,7 +83,7 @@ private ArrayList<User> driverDataList = null;
         theListView =  view.findViewById(R.id.itemListView);
 
         // create custom adapter that holds elements and their state (we need hold a id's of unfolded elements for reusable elements)
-        adapter = new ItemFoldingCellListAdapter(getActivity(), driverDataList);
+        adapter = new ItemFoldingCellListAdapter(getActivity(), orders);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
         theListView.setLayoutManager(mLayoutManager);
         theListView.setItemAnimator(new DefaultItemAnimator());

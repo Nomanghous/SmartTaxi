@@ -21,5 +21,5 @@ public class Constants
     public static final int PRIMARY_USER = 1;
     public static final int SECONDARY_USER = 2;
     public static final int TERTIARY_USER = 3;
-    public static final double BASE_FAIR_PER_KM = 40;
+    public static double BASE_FAIR_PER_KM = 40;
 }

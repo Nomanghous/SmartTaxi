@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.ramotion.foldingcell.FoldingCell;
@@ -28,8 +29,8 @@ public class ItemFoldingCellListAdapter extends RecyclerView.Adapter<ItemFolding
     public HashMap<String,ImageView> user_profile_record2 = new HashMap<>();
     public  HashMap<String,ArrayList<TextView>> item_owner_name = new HashMap<>();
     Context my_context;
-    List<User> driverDataList;
-    public ItemFoldingCellListAdapter(Context context, List<User> objects)
+    List<Order> driverDataList;
+    public ItemFoldingCellListAdapter(Context context, List<Order> objects)
     {
         my_context = context;
         driverDataList = objects;
@@ -71,14 +72,17 @@ public class ItemFoldingCellListAdapter extends RecyclerView.Adapter<ItemFolding
     public void onBindViewHolder(ViewHolder viewHolder, final int position) {
 
 //        final User driverData = driverDataList.get(position);
+        final Order order = driverDataList.get(position);
         //final Item item = driverData.getItem();
-        viewHolder.tv_car_info.setText("LZ 6140");
-        viewHolder.tv_cost.setText("$320");
-        viewHolder.tv_destination.setText("Lahore");
-        viewHolder.tv_destination2.setText("Lahore");
-        viewHolder.tv_cost2.setText("$320");
-        viewHolder.tv_rider_name.setText("Ahmad Irfan");
-        viewHolder.tv_rider_name2.setText("Ahmad Irfan");
+        //viewHolder.tv_car_info.setText("LZ 6140");
+        viewHolder.tv_car_info.setText(order.getVehicle_id());
+        //viewHolder.tv_cost.setText("$320");
+        viewHolder.tv_cost.setText(order.getEstimated_cost());
+        viewHolder.tv_destination.setText(order.getDropoff());
+        viewHolder.tv_destination2.setText(order.getDropoff());
+        viewHolder.tv_cost2.setText(order.getEstimated_cost());
+        viewHolder.tv_rider_name.setText(order.getDriver_name());
+        viewHolder.tv_rider_name2.setText(order.getDriver_name());
         Typeface typeFace1=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Bold.ttf");
         Typeface typeFace=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Bold.ttf");
         Typeface typeFace2=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Regular.ttf");
@@ -86,6 +90,18 @@ public class ItemFoldingCellListAdapter extends RecyclerView.Adapter<ItemFolding
         viewHolder.tv_rider_name2.setTypeface(typeFace2);
         viewHolder.tv_rider_name.setTypeface(typeFace1);
         viewHolder.tv_rider_phone.setText("03124002951");
+//        viewHolder.tv_destination.setText("Lahore");
+//        viewHolder.tv_destination2.setText("Lahore");
+//        viewHolder.tv_cost2.setText("$320");
+//        viewHolder.tv_rider_name.setText("Ahmad Irfan");
+//        viewHolder.tv_rider_name2.setText("Ahmad Irfan");
+//        Typeface typeFace1=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Bold.ttf");
+//        Typeface typeFace=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Bold.ttf");
+//        Typeface typeFace2=Typeface.createFromAsset(my_context.getAssets(),"MavenPro-Regular.ttf");
+//        viewHolder.tv_rider_phone.setTypeface(typeFace);
+//        viewHolder.tv_rider_name2.setTypeface(typeFace2);
+//        viewHolder.tv_rider_name.setTypeface(typeFace1);
+//        viewHolder.tv_rider_phone.setText("03124002951");
 
         viewHolder.iv_rider_pic.setImageDrawable(my_context.getResources().getDrawable(R.drawable.user_placeholder));
         viewHolder.iv_rider_pic2.setImageDrawable(my_context.getResources().getDrawable(R.drawable.user_placeholder));
@@ -122,7 +138,7 @@ public class ItemFoldingCellListAdapter extends RecyclerView.Adapter<ItemFolding
 
     @Override
     public int getItemCount() {
-        return 3;//driverDataList.size();
+        return driverDataList.size();
     }
 
     // View lookup cache
