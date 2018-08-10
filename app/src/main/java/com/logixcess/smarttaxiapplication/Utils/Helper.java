@@ -1,5 +1,8 @@
 package com.logixcess.smarttaxiapplication.Utils;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import com.google.android.gms.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -40,5 +43,12 @@ public class Helper {
         Arrays.sort(alphaNumericStringArray, new AlphanumericSorting());
         return alphaNumericStringArray[0] + alphaNumericStringArray[1];
     }
+    public static Bitmap convertToBitmap(Drawable drawable, int widthPixels, int heightPixels) {
+        Bitmap mutableBitmap = Bitmap.createBitmap(widthPixels, heightPixels, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(mutableBitmap);
+        drawable.setBounds(0, 0, widthPixels, heightPixels);
+        drawable.draw(canvas);
 
+        return mutableBitmap;
+    }
 }

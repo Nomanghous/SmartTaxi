@@ -58,6 +58,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
@@ -67,15 +69,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     private GoogleMap mMap;
     private Order CURRENT_ORDER = null;
-    private User CURRENT_USER = null;
     private boolean IS_RIDE_SHARED = false;
-    private String CUSTOMER_USER_ID = "";
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
     private DatabaseReference db_ref_user;
     private DatabaseReference db_ref_group;
     private FirebaseUser USER_ME;
-    private Location MY_LOCATION = null;
+    private Location myLocation = null;
     private LatLng dropoff, pickup;
     private String CURRENT_ORDER_ID = "";
     private LatLng start, end;
@@ -89,9 +89,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private double distanceRemaining = 90;
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedPassengerId;
-    private Passenger SELECTED_PASSENGER;
+    private User SELECTED_PASSENGER;
     private LatLng driver = null;
-    private Marker driverMarker;
     private SharedRide CURRENT_SHARED_RIDE;
 
     @Override
@@ -129,12 +128,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
-            db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(CURRENT_ORDER.getUser_id());
+            db_ref_driver = db_ref.child(Helper.REF_USERS).child(CURRENT_ORDER.getUser_id());
             db_ref_driver.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
-                        SELECTED_PASSENGER = dataSnapshot.getValue(Passenger.class);
+                        SELECTED_PASSENGER = dataSnapshot.getValue(User.class);
                         if(SELECTED_PASSENGER != null && mMap != null) {
                             requestNewRoute();
                         }
@@ -145,7 +144,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             });
-            sendNotification("Get Ready","New Order is assigned to You");
+            new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
             // driver id not provided
             finish();
@@ -153,7 +152,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void requestNewRoute() {
-        driver = new LatLng(MY_LOCATION.getLatitude(), MY_LOCATION.getLongitude());
+        if(myLocation == null)
+            return;
+        driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         if(pickup == null)
             pickup = new LatLng(CURRENT_ORDER.getPickupLat(),CURRENT_ORDER.getPickupLong());
         List<LatLng> points = new ArrayList<>();
@@ -162,7 +163,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Routing routing = new Routing.Builder()
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
-                .alternativeRoutes(true)
+                .alternativeRoutes(false)
                 .waypoints(points)
                 .build();
         routing.execute();
@@ -176,8 +177,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.setMyLocationEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
         addRoute();
     }
 
@@ -189,7 +190,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void checkForDistanceToSendNotification() throws JSONException {
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
-        driverMarker.setPosition(driver);
+        mDriverMarker.setPosition(driver);
         NotificationPayload payload = new NotificationPayload();
         payload.setDriver_id(escapeValue(USER_ME.getUid()));
         payload.setUser_id(escapeValue(CURRENT_ORDER.getUser_id()));
@@ -199,12 +200,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         payload.setGroup_id(escapeValue(group_id));
         payload.setTitle(escapeValue("Order Updates"));
         payload.setPercentage_left(escapeValue(""+percentageLeft));
-        payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
+        payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(escapeValue(CURRENT_ORDER.getOrder_id()));
-        String token  = CURRENT_USER.getUser_token();
+        String token = SELECTED_PASSENGER.getUser_token();
         if(percentageLeft < 25 && !NotificaionsDone[0]){
             NotificaionsDone[0] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
+            payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
             String str = new Gson().toJson(payload);
             try {
                 JSONObject json = new JSONObject(str);
@@ -316,21 +318,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.animateCamera(center);
         PolylineOptions line = new PolylineOptions().addAll(waypoints);
         mMap.addPolyline(line);
-        mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_YELLOW,start,"driver"));
         MarkerOptions options = new MarkerOptions();
         options.position(start);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+        Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
+        Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
+        options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
         mMap.addMarker(options);
-
         // End marker
         options = new MarkerOptions();
         options.position(end);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+        options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
         mMap.addMarker(options);
-
-
-
-
     }
 
     private void getRoutePoints() {
@@ -341,7 +339,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRoutingFailure(RouteException e) {
-        Toast.makeText(this, "failed", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -356,7 +353,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //add route(s) to the map.
 
         Route shortestRoute = route.get(shortestRouteIndex);
-        if(totalDistance < 0 || distanceRemaining >= totalDistance)
+        if (totalDistance < 0 || distanceRemaining > totalDistance)
             totalDistance = shortestRoute.getDistanceValue();
 //        int colorIndex = shortestRouteIndex % COLORS.length;
 //        PolylineOptions polyOptions = new PolylineOptions();
@@ -365,15 +362,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        polyOptions.addAll(shortestRoute.getPoints());
 //        Polyline polyline = mMap.addPolyline(polyOptions);
 //        polylines.add(polyline);
+        if (driver == null && myLocation != null)
+            driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         distanceRemaining = shortestRoute.getDistanceValue();
-        MarkerOptions options = new MarkerOptions();
-        options.position(driver);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car_black));
-        if(mDriverMarker != null)
-            mDriverMarker.remove();
-        mDriverMarker = mMap.addMarker(options);
+
         try {
-            checkForDistanceToSendNotification();
+            if(mDriverMarker != null && driver != null && myLocation != null)
+                checkForDistanceToSendNotification();
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -421,11 +416,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if(order != null){
                     if(order.getStatus() == Order.OrderStatusInProgress &&
                             order.getDriver_id().equals(USER_ME.getUid())
-                            && Helper.checkWithinRadius(MY_LOCATION, new LatLng(order.getPickupLat(),order.getPickupLong()))){
+                            && Helper.checkWithinRadius(myLocation, new LatLng(order.getPickupLat(),order.getPickupLong()))){
                         // order is within reach and it's assigned.
                         CURRENT_ORDER = order;
                         IS_RIDE_SHARED = order.getShared();
-                        CUSTOMER_USER_ID = order.getUser_id();
                         goDrawRoute();
                         if(IS_RIDE_SHARED){
                             fetchThatGroup();
@@ -449,12 +443,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void fetchThatGroup() {
+        if(CURRENT_SHARED_RIDE != null)
+            return;
         db_ref_group.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    CURRENT_USER = dataSnapshot.getValue(User.class);
-                }
+                CURRENT_SHARED_RIDE  = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
             }
 
             @Override
@@ -465,27 +459,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void fetchThatCustomer() {
-        db_ref_user.child(CUSTOMER_USER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    CURRENT_USER = dataSnapshot.getValue(User.class);
-                    if(CURRENT_USER != null){
-                        showDataOnMap();
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+        if(SELECTED_PASSENGER != null)
+            showDataOnMap();
     }
 
     private void showDataOnMap() {
 
-        if(mMap != null && CURRENT_USER != null){
+        if(mMap != null && SELECTED_PASSENGER != null){
             // show User
             pickup = new LatLng(CURRENT_ORDER.getPickupLat(), CURRENT_ORDER.getPickupLong());
             dropoff = new LatLng(CURRENT_ORDER.getDropoffLat(), CURRENT_ORDER.getDropoffLat());
@@ -503,19 +483,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private void updateUserLocation(){
-        MY_LOCATION = LocationManagerService.mLastLocation;
-        if(MY_LOCATION != null && USER_ME != null){
+        myLocation = LocationManagerService.mLastLocation;
+        if(myLocation != null && USER_ME != null){
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mDriverMarker == null  && mMap != null) {
+                        driver = new LatLng(myLocation.getLatitude(),myLocation.getLongitude());
+                        MarkerOptions options = new MarkerOptions();
+                        options.position(driver);
+                        Bitmap driverPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.ic_option_nano), 70, 70);
+                        options.icon(BitmapDescriptorFactory.fromBitmap(driverPin));
+                        mDriverMarker = mMap.addMarker(options);
+                    }
+                }
+            });
+
             String latitude = "latitude";
             String longitude = "longitude";
-            db_ref_user.child(USER_ME.getUid()).child(latitude).setValue(MY_LOCATION.getLatitude());
-            db_ref_user.child(USER_ME.getUid()).child(longitude).setValue(MY_LOCATION.getLongitude());
-        }
-    }
-
-    private void setupOrderOnMap(){
-        if(CURRENT_ORDER != null){
-            MarkerOptions userMarker = new MarkerOptions();
-
+            db_ref_driver.child(USER_ME.getUid()).child(latitude).setValue(myLocation.getLatitude());
+            db_ref_driver.child(USER_ME.getUid()).child(longitude).setValue(myLocation.getLongitude());
         }
     }
 
@@ -525,20 +513,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap)
     {
         mMap = googleMap;
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
-        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-            @Override
-            public void onMyLocationChange(Location location) {
-                MY_LOCATION = location;
-                if(driver == null && SELECTED_PASSENGER != null)
-                    requestNewRoute();
-            }
-        });
+
         populateMap();
         showDataOnMap();
     }
 
 
+    private class Every10Seconds extends TimerTask{
+        @Override
+        public void run() {
+            updateUserLocation();
+            requestNewRoute();
+        }
+    }
 
 }
