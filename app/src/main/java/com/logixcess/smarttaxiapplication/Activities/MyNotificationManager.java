@@ -16,6 +16,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     public static final String INTENT_FILTER_ACCEPT_ORDER = "accept_order";
     public static final String INTENT_FILTER_REJECT_ORDER = "reject_order";
     public static final String INTENT_FILTER_VIEW_ORDER = "view_order";
+    public static final String INTENT_FILTER_COMPETED_ORDER = "completed_order";
     Context mContext = null;
 
     @Override

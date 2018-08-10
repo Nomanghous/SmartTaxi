@@ -238,28 +238,31 @@ public class NotificationUtils {
 
 
 
-            if(isAppIsInBackground(context)){
+        if(isAppIsInBackground(context)){
 
-            }
+        }
 
 
             switch (notificationPayload.getType()) {
                 case Helper.NOTI_TYPE_ORDER_CREATED:
-                    // friend requested
+
                     preparePendingIntentForFriendRequest(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_ACCEPTED:
-                    // friend requested
+
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_WAITING:
-                    // friend requested
+
                     playsound(context,"beep.mp3");
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_WAITING_LONG:
-                    // friend requested
                     playsound(context,"beep_beep_beep.mp3");
+                    preparePendingIntentForMessage(context,payload,notificationPayload);
+                    break;
+                case Helper.NOTI_TYPE_ORDER_COMPLETED:
+                    // friend requested=
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
             }
@@ -278,9 +281,14 @@ public class NotificationUtils {
 
     private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
         Intent viewIntent = new Intent(context, MyNotificationManager.class);
-        viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        if(userData.getType() == Helper.NOTI_TYPE_ORDER_COMPLETED){
+            viewIntent.setAction(MyNotificationManager.INTENT_FILTER_COMPETED_ORDER);
+            viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_COMPETED_ORDER);
+        }else{
+            viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+            viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        }
         viewIntent.putExtra("data", payload);
-        viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
         sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent);
@@ -359,4 +367,8 @@ public class NotificationUtils {
         }
         return false;
     }
+
+
+    
+
 }

@@ -358,12 +358,42 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
+                    sendPushNotification();
                     Toast.makeText(CustomerMapsActivity.this, "Order Successfully Completed", Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }
         });
     }
+
+
+    private void sendPushNotification() {
+        NotificationPayload payload = new NotificationPayload();
+        payload.setOrder_id(CURRENT_ORDER_ID);
+        payload.setPercentage_left(escapeValue(""));
+        payload.setTitle(escapeValue("Order Completed"));
+        payload.setDescription(escapeValue("Congratulations, Your order is completed."));
+        payload.setType(Helper.NOTI_TYPE_ORDER_COMPLETED);
+        if(CURRENT_ORDER.getShared())
+            payload.setGroup_id(escapeValue(CURRENT_SHARED_RIDE.getGroup_id()));
+        else
+            payload.setGroup_id(escapeValue("--NA--"));
+        payload.setUser_id(escapeValue(USER_ME.getUid()));
+        payload.setDriver_id(escapeValue("--NA--"));
+        String str = new Gson().toJson(payload);
+        try {
+            JSONObject json = new JSONObject(str);
+            new PushNotifictionHelper(getApplicationContext()).execute(CURRENT_USER.getUser_token(),json);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String escapeValue(String value) {
+        return "\""+value+"\"";
+    }
+
     private Bitmap getResizedBitmap(Drawable drawable, int width, int height){
         Bitmap mutableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(mutableBitmap);

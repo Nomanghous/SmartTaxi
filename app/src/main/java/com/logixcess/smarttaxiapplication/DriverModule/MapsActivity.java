@@ -15,7 +15,6 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.Toast;
 
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
@@ -44,7 +43,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
-import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
@@ -57,7 +55,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -85,13 +85,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
-    private double totalDistance = 100, totalTime = 120; // total time in minutes
-    private double distanceRemaining = 90;
+    private double totalDistance = 0, totalTime = 120; // total time in minutes
+    private double distanceRemaining = 0;
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedPassengerId;
     private User SELECTED_PASSENGER;
     private LatLng driver = null;
     private SharedRide CURRENT_SHARED_RIDE;
+    private boolean IS_ROUTE_ADDED = false;
+
+
+    List<Order> ORDERS_IN_SHARED_RIDE = null;
+    private HashMap<String, Boolean> orderIDs;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -144,6 +150,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             });
+            getTheNextNearestDropOff(true);
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
             // driver id not provided
@@ -152,7 +159,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void requestNewRoute() {
-        if(myLocation == null)
+        if(myLocation == null || IS_ROUTE_ADDED)
             return;
         driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         if(pickup == null)
@@ -188,13 +195,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void checkForDistanceToSendNotification() throws JSONException {
+    private void checkForDistanceToSendNotification()  {
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         mDriverMarker.setPosition(driver);
         NotificationPayload payload = new NotificationPayload();
         payload.setDriver_id(escapeValue(USER_ME.getUid()));
         payload.setUser_id(escapeValue(CURRENT_ORDER.getUser_id()));
-        String group_id = escapeValue("--NA--");
+        String group_id = "--NA--";
         if(CURRENT_ORDER.getShared())
             group_id = Helper.getConcatenatedID(CURRENT_ORDER.getOrder_id(),USER_ME.getUid());
         payload.setGroup_id(escapeValue(group_id));
@@ -203,7 +210,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(escapeValue(CURRENT_ORDER.getOrder_id()));
         String token = SELECTED_PASSENGER.getUser_token();
-        if(percentageLeft < 25 && !NotificaionsDone[0]){
+        if(percentageLeft < 10 && !NotificaionsDone[0]){
             NotificaionsDone[0] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
             payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
@@ -349,29 +356,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
 
-//        polylines = new ArrayList<>();
+        polylines = new ArrayList<>();
         //add route(s) to the map.
-
+        IS_ROUTE_ADDED = true;
         Route shortestRoute = route.get(shortestRouteIndex);
         if (totalDistance < 0 || distanceRemaining > totalDistance)
             totalDistance = shortestRoute.getDistanceValue();
-//        int colorIndex = shortestRouteIndex % COLORS.length;
-//        PolylineOptions polyOptions = new PolylineOptions();
-//        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
-//        polyOptions.width(10 + shortestRouteIndex * 3);
-//        polyOptions.addAll(shortestRoute.getPoints());
-//        Polyline polyline = mMap.addPolyline(polyOptions);
-//        polylines.add(polyline);
+        int colorIndex = shortestRouteIndex % COLORS.length;
+        PolylineOptions polyOptions = new PolylineOptions();
+        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
+        polyOptions.width(10 + shortestRouteIndex * 3);
+        polyOptions.addAll(shortestRoute.getPoints());
+        Polyline polyline = mMap.addPolyline(polyOptions);
+        polylines.add(polyline);
         if (driver == null && myLocation != null)
             driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         distanceRemaining = shortestRoute.getDistanceValue();
 
-        try {
-            if(mDriverMarker != null && driver != null && myLocation != null)
-                checkForDistanceToSendNotification();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        if(mDriverMarker != null && driver != null && myLocation != null)
+            checkForDistanceToSendNotification();
+
 
 
     }
@@ -523,8 +527,96 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         @Override
         public void run() {
             updateUserLocation();
-            requestNewRoute();
+            if(!IS_ROUTE_ADDED)
+                requestNewRoute();
+            else {
+                try {
+                    if(mDriverMarker != null && driver != null && myLocation != null) {
+                        Location location = new Location("pickup");
+                        location.setLatitude(start.latitude);
+                        location.setLongitude(start.longitude);
+                        if(totalDistance == 0)
+                            totalDistance = myLocation.distanceTo(location);
+                        distanceRemaining = myLocation.distanceTo(location);
+                        driver = new LatLng(myLocation.getLatitude(),myLocation.getLongitude());
+                        if(distanceRemaining > totalDistance)
+                            return;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                checkForDistanceToSendNotification();
+                            }
+                        });
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
+
+
+    private Order getTheNextNearestDropOff(boolean fetchOrdersAgain){
+        Order nextOrder = null;
+        double totalDistance = 0;
+        if(CURRENT_SHARED_RIDE == null)
+            return null;
+        if(fetchOrdersAgain)
+            goFetchOrderById();
+        else{
+            for (Order order : ORDERS_IN_SHARED_RIDE){
+                if(order.getStatus() == Order.OrderStatusInProgress){
+                    Location dropOff = new Location("dropoff");
+                    dropOff.setLatitude(order.getDropoffLat());
+                    dropOff.setLongitude(order.getDropoffLong());
+                    if(totalDistance == 0) {
+                        totalDistance = myLocation.distanceTo(dropOff);
+                        nextOrder = order;
+                    }
+
+                    if(myLocation.distanceTo(dropOff) < totalDistance ) {
+                        totalDistance = myLocation.distanceTo(dropOff);
+                        nextOrder = order;
+                    }
+                }
+            }
+        }
+        return nextOrder;
+    }
+
+    private void goFetchOrderById(){
+        ORDERS_IN_SHARED_RIDE = new ArrayList<>();
+        orderIDs = CURRENT_SHARED_RIDE.getOrderIDs();
+        for (Map.Entry<String, Boolean> entry : orderIDs.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            db_ref_order.child(key).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(!dataSnapshot.exists())
+                        return;
+                    Order order = dataSnapshot.getValue(Order.class);
+                    if(order != null){
+                        if(order.getStatus() == Order.OrderStatusInProgress &&
+                                order.getDriver_id().equals(USER_ME.getUid())){
+                            if(!ORDERS_IN_SHARED_RIDE.contains(order))
+                                ORDERS_IN_SHARED_RIDE.add(order);
+                        }
+                    }
+                    if(orderIDs.size() == ORDERS_IN_SHARED_RIDE.size())
+                        getTheNextNearestDropOff(false);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+
+    }
+
 
 }
