@@ -906,13 +906,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-                   if(dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER) || dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                   if(dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER)){
                        Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
-                   }else{
-                       show_driverDetail(driverId);
+                       return;
+                   }else if( dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                       if(new_order.getShared()){
+                           show_driverDetail(driverId);
+                       }else {
+                           Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
+                           return;
+                       }
                    }
-
                 }
+                show_driverDetail(driverId);
+
             }
 
             @Override

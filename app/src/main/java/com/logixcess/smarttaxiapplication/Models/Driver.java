@@ -16,6 +16,7 @@ public class Driver implements Parcelable
     private Boolean inOnline;
     private double latitude;
     private double longitude;
+    private int status; //0 free 1 driver single ride 2 driver shared ride
     public Driver()
     {}
     protected Driver(Parcel in) {
