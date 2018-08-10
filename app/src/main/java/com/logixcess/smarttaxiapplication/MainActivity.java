@@ -751,10 +751,10 @@ AlertDialog builder;
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     Order order = dataSnapshot.getValue(Order.class);
-                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                    Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
                     if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--"))
-                        intent.putExtra(MapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
-                    intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, order);
+                        intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
+                    intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
                     startActivity(intent);
                     IS_FOR_ORDER_VIEW = false;
                     notificationPayload = null;
