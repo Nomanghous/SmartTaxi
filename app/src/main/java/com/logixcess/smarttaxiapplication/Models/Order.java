@@ -2,6 +2,7 @@ package com.logixcess.smarttaxiapplication.Models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.design.internal.ParcelableSparseArray;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.Exclude;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class Order implements Parcelable{
+public class Order extends ParcelableSparseArray implements Parcelable {
 
     @Exclude
     public static final int OrderStatusCompleted = 1, OrderStatusInProgress = 2, OrderStatusPending = 3,

@@ -58,11 +58,13 @@ import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
+import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.schibstedspain.leku.LocationPickerActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -110,17 +112,7 @@ public class MainActivity extends BaseActivity
         super.onCreate(savedInstanceState);
 
         Bundle bundle = getIntent().getExtras();
-        if(bundle != null){
-            if(bundle.containsKey(MyNotificationManager.INTENT_FILTER_VIEW_ORDER)){
-                IS_FOR_ORDER_VIEW = true;
-                notificationPayload = new Gson()
-                        .fromJson(bundle.getString(
-                                MyNotificationManager.INTENT_FILTER_VIEW_ORDER),NotificationPayload.class);
-                IS_FOR_ORDER_VIEW = (notificationPayload != null);
-                if(IS_FOR_ORDER_VIEW)
-                    goFechOrder();
-            }
-        }
+
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -172,6 +164,18 @@ public class MainActivity extends BaseActivity
         mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         displayFirebaseRegId();
         new FetchDriversBasedOnRadius(this, mLastLocation,this);
+        if(bundle != null){
+            if(bundle.containsKey(MyNotificationManager.INTENT_FILTER_VIEW_ORDER)){
+                IS_FOR_ORDER_VIEW = true;
+                notificationPayload = new Gson()
+                        .fromJson(bundle.getString(
+                                MyNotificationManager.INTENT_FILTER_VIEW_ORDER),NotificationPayload.class);
+                IS_FOR_ORDER_VIEW = (notificationPayload != null);
+                if(IS_FOR_ORDER_VIEW)
+                    goFechOrder();
+            }
+        }
+        getAllOrders();
     }
 
     public Location getCurrentLocation(){
@@ -250,30 +254,7 @@ public class MainActivity extends BaseActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
 
-//        if (id == R.id.nav_camera) {
-//            // Handle the camera action
-//        } else if (id == R.id.nav_gallery) {
-//
-//        } else if (id == R.id.nav_slideshow) {
-//
-//        } else if (id == R.id.nav_manage) {
-//
-//        } else if (id == R.id.nav_share) {
-//
-//        } else if (id == R.id.nav_send) {
-//
-//        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
 /*
 AlertDialog builder;
     public void user_selection_dialog()
@@ -535,6 +516,54 @@ AlertDialog builder;
         // refresh toolbar menu
         invalidateOptionsMenu();
     }
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+        //Check to see which item was being clicked and perform appropriate action
+        switch (id) {
+            //Replacing the main content with ContentFragment Which is our Inbox View
+            case R.id.nav_user_profile:
+                navItemIndex = 2;
+                CURRENT_TAG = TAG_USER_PROFILE;
+                break;
+            case R.id.nav_ride_history:
+                navItemIndex = 1;
+                CURRENT_TAG = TAG_RIDE_HISTORY;
+                break;
+            case R.id.nav_add_ride:
+                navItemIndex = 0;
+                CURRENT_TAG = TAG_ADD_RIDE;
+                break;
+            case R.id.nav_notifications:
+                navItemIndex = 3;
+                CURRENT_TAG = TAG_NOTIFICATIONS;
+                break;
+            case R.id.nav_feedback:
+                navItemIndex = 4;
+                CURRENT_TAG = TAG_FEEDBACK;
+                break;
+            case R.id.nav_find_user:
+                navItemIndex = 5;
+                CURRENT_TAG = TAG_FIND_USER;
+                break;
+            case R.id.nav_current_ride:
+                //navItemIndex = 6;
+                CURRENT_TAG = "current_ride";
+                getCurrentOrderId();
+                break;
+            default:
+                navItemIndex = 0;
+
+                //Checking if the item is in checked state or not, if not make it in checked state
+                loadHomeFragment();
+                item.setChecked(!item.isChecked());
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
     // index to identify current nav menu item
     public int navItemIndex = 0;
 
@@ -546,6 +575,7 @@ AlertDialog builder;
     private static final String TAG_FIND_USER = "find_user";
     private static final String TAG_RIDE_HISTORY = "ride_history";
     public static String CURRENT_TAG = TAG_ADD_RIDE;
+    RideHistoryFragment rideHistoryFragment;
     private Fragment getHomeFragment() {
         switch (navItemIndex) {
             case 0:
@@ -554,7 +584,11 @@ AlertDialog builder;
             return mapFragment;
             case 1:
                 // ride history
-                RideHistoryFragment rideHistoryFragment = new RideHistoryFragment();
+                rideHistoryFragment = new RideHistoryFragment();
+                if(my_orders != null){
+                Bundle args = new Bundle();
+                args.putParcelableArrayList("history_orders", my_orders );
+                rideHistoryFragment.setArguments(args);}
                 return rideHistoryFragment;
             case 2:
                 // home user profile
@@ -595,7 +629,8 @@ AlertDialog builder;
         Helper.CURRENT_ORDER = MapFragment.new_order;
         startActivity(new Intent(this, OrderDetailsActivity.class));
     }
-    private void setUpNavigationView() {
+    private void setUpNavigationView()
+    {
         //Setting Navigation View Item Selected Listener to handle the item click of the navigation menu
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener()
         {
@@ -632,7 +667,7 @@ AlertDialog builder;
                         CURRENT_TAG = TAG_FIND_USER;
                         break;
                     case R.id.nav_current_ride:
-                        //navItemIndex = 6;
+                        navItemIndex = 6;
                         CURRENT_TAG = "current_ride";
                         getCurrentOrderId();
                         break;
@@ -640,10 +675,11 @@ AlertDialog builder;
                         navItemIndex = 0;
 
                         //Checking if the item is in checked state or not, if not make it in checked state
-                        menuItem.setChecked(!menuItem.isChecked());
-                        loadHomeFragment();
+//                        menuItem.setChecked(!menuItem.isChecked());
+//                        loadHomeFragment();
                 }
-
+                menuItem.setChecked(!menuItem.isChecked());
+                loadHomeFragment();
 
 
                 return true;
@@ -751,16 +787,49 @@ AlertDialog builder;
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     Order order = dataSnapshot.getValue(Order.class);
-                    Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
-                    if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--"))
-                        intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
-                    intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
-                    startActivity(intent);
-                    IS_FOR_ORDER_VIEW = false;
-                    notificationPayload = null;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
+                            if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--"))
+                                intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
+                            intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
+                            startActivity(intent);
+                            IS_FOR_ORDER_VIEW = false;
+                            notificationPayload = null;
+                        }
+                    });
+
                 }
             }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+ArrayList<Order> my_orders;
+    private void getAllOrders() {
+        my_orders = new ArrayList<>();
+        FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        Query db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).orderByChild("user_id").equalTo(USER_ME.getUid());
+        db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+                    for (DataSnapshot snapshot:dataSnapshot.getChildren())
+                    {
+                        Order order = snapshot.getValue(Order.class);
+                        if(order.getStatus() == Order.OrderStatusCompleted)
+                        {
+                            my_orders.add(order);
+                        }
+                    }
+
+                }
+            }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 

@@ -97,7 +97,7 @@ import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener {
+public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener,View.OnClickListener {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -194,6 +194,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private FirebaseDatabase firebase_db;
     LinearLayout layout_cost_detail;
     TextView txtLocation,txtDestination,txt_cost;
+    View vehicle1,vehicle2,vehicle3,vehicle4,vehicle5;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -207,8 +208,26 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         driverList = new ArrayList<>();
          layout = inflater.inflate(R.layout.dialog_shared_user_selection,
                 (ViewGroup) view.findViewById(R.id.rating_linear_layout));
-
+    LinearLayout layout_vehicle1,layout_vehicle2,layout_vehicle3,layout_vehicle4,layout_vehicle5;
         mapFragment = view.findViewById(R.id.map);
+
+        vehicle1 = view.findViewById(R.id.vehicle1);
+        vehicle2 = view.findViewById(R.id.vehicle2);
+        vehicle3 = view.findViewById(R.id.vehicle3);
+        vehicle4 = view.findViewById(R.id.vehicle4);
+        vehicle5 = view.findViewById(R.id.vehicle5);
+
+        layout_vehicle1 = view.findViewById(R.id.layout_vehicle1);
+        layout_vehicle1.setOnClickListener(this);
+        layout_vehicle2 = view.findViewById(R.id.layout_vehicle2);
+        layout_vehicle2.setOnClickListener(this);
+        layout_vehicle3 = view.findViewById(R.id.layout_vehicle3);
+        layout_vehicle3.setOnClickListener(this);
+        layout_vehicle4 = view.findViewById(R.id.layout_vehicle4);
+        layout_vehicle4.setOnClickListener(this);
+        layout_vehicle5 = view.findViewById(R.id.layout_vehicle5);
+        layout_vehicle5.setOnClickListener(this);
+
         layout_cost_detail = view.findViewById(R.id.layout_detail);
         txtLocation = view.findViewById(R.id.txtLocation);
         txtDestination = view.findViewById(R.id.txtDestination);
@@ -226,6 +245,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 {
                     user_selection_dialog();
                 }
+                if(new_order != null)
+                    new_order.setVehicle_id("Chingchi");
                 getDriverList();
                 ct_address.setVisibility(View.VISIBLE);
                 ct_vehicles.setVisibility(View.GONE);
@@ -271,7 +292,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
     public void getDriverList()
     {
-        for(Driver driver : ((MainActivity)getContext()).getDrivers())
+        MainActivity mainActivity = ((MainActivity)getContext());
+        if(mainActivity == null)
+            return;
+        for(Driver driver : mainActivity.getDrivers())
         {
             driverList.add(driver);
             addDriverMarker(driver);
@@ -526,6 +550,80 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             return  true;
         }else
             return false;
+    }
+
+    @Override
+    public void onClick(View view)
+    {
+        switch (view.getId())
+        {
+            case R.id.layout_vehicle1:
+                if(vehicle1.getVisibility()==View.GONE)
+                    vehicle1.setVisibility(View.VISIBLE);
+                if(vehicle2.getVisibility() == View.VISIBLE)
+                    vehicle2.setVisibility(View.GONE);
+                if(vehicle3.getVisibility() == View.VISIBLE)
+                vehicle3.setVisibility(View.GONE);
+                if(vehicle4.getVisibility() == View.VISIBLE)
+                vehicle4.setVisibility(View.GONE);
+                if(vehicle5.getVisibility() == View.VISIBLE)
+                    vehicle5.setVisibility(View.GONE);
+                Constants.BASE_FAIR_PER_KM = 50;//car
+            break;
+            case R.id.layout_vehicle2:
+                if(vehicle2.getVisibility()==View.GONE)
+                    vehicle2.setVisibility(View.VISIBLE);
+                if(vehicle5.getVisibility() == View.VISIBLE)
+                    vehicle5.setVisibility(View.GONE);
+                if(vehicle3.getVisibility() == View.VISIBLE)
+                    vehicle3.setVisibility(View.GONE);
+                if(vehicle4.getVisibility() == View.VISIBLE)
+                    vehicle4.setVisibility(View.GONE);
+                if(vehicle1.getVisibility() == View.VISIBLE)
+                    vehicle1.setVisibility(View.GONE);
+                Constants.BASE_FAIR_PER_KM = 30;//option mini
+                break;
+            case R.id.layout_vehicle3:
+                if(vehicle3.getVisibility()==View.GONE)
+                    vehicle3.setVisibility(View.VISIBLE);
+                if(vehicle2.getVisibility() == View.VISIBLE)
+                    vehicle2.setVisibility(View.GONE);
+                if(vehicle5.getVisibility() == View.VISIBLE)
+                    vehicle5.setVisibility(View.GONE);
+                if(vehicle4.getVisibility() == View.VISIBLE)
+                    vehicle4.setVisibility(View.GONE);
+                if(vehicle1.getVisibility() == View.VISIBLE)
+                    vehicle1.setVisibility(View.GONE);
+                Constants.BASE_FAIR_PER_KM = 20;//option nano
+                break;
+            case R.id.layout_vehicle4:
+                if(vehicle4.getVisibility()==View.GONE)
+                    vehicle4.setVisibility(View.VISIBLE);
+                if(vehicle2.getVisibility() == View.VISIBLE)
+                    vehicle2.setVisibility(View.GONE);
+                if(vehicle3.getVisibility() == View.VISIBLE)
+                    vehicle3.setVisibility(View.GONE);
+                if(vehicle5.getVisibility() == View.VISIBLE)
+                    vehicle5.setVisibility(View.GONE);
+                if(vehicle1.getVisibility() == View.VISIBLE)
+                    vehicle1.setVisibility(View.GONE);
+                Constants.BASE_FAIR_PER_KM = 60;//option vip
+                break;
+            case R.id.layout_vehicle5:
+                if(vehicle5.getVisibility()==View.GONE)
+                    vehicle5.setVisibility(View.VISIBLE);
+                if(vehicle2.getVisibility() == View.VISIBLE)
+                    vehicle2.setVisibility(View.GONE);
+                if(vehicle3.getVisibility() == View.VISIBLE)
+                    vehicle3.setVisibility(View.GONE);
+                if(vehicle4.getVisibility() == View.VISIBLE)
+                    vehicle4.setVisibility(View.GONE);
+                if(vehicle1.getVisibility() == View.VISIBLE)
+                    vehicle1.setVisibility(View.GONE);
+                Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
+                break;
+
+        }
     }
 
     /**

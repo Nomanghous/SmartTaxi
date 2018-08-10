@@ -178,6 +178,7 @@
                 android:orientation="horizontal"
                 >
                 <LinearLayout
+                    android:id="@+id/layout_vehicle1"
                     android:layout_width="120dp"
                     android:layout_height="90dp"
                     android:orientation="vertical"
@@ -190,12 +191,14 @@
                         android:src="@drawable/ic_option_car"
                         />
                     <View
+                        android:id="@+id/vehicle1"
                         android:layout_width="match_parent"
                         android:layout_height="5dp"
                         android:background="@color/colorOrange"
                         />
                 </LinearLayout>
                 <LinearLayout
+                    android:id="@+id/layout_vehicle2"
                     android:layout_width="120dp"
                     android:layout_height="90dp"
                     android:orientation="vertical"
@@ -209,12 +212,15 @@
 
                         />
                     <View
+                        android:id="@+id/vehicle2"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="5dp"
-                        android:background="@color/white"
+                        android:background="@color/colorOrange"
                         />
                 </LinearLayout>
                 <LinearLayout
+                    android:id="@+id/layout_vehicle3"
                     android:layout_width="120dp"
                     android:layout_height="90dp"
                     android:orientation="vertical"
@@ -227,12 +233,15 @@
                         android:src="@drawable/ic_option_nano"
                         />
                     <View
+                        android:id="@+id/vehicle3"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="5dp"
-                        android:background="@color/white"
+                        android:background="@color/colorOrange"
                         />
                 </LinearLayout>
                 <LinearLayout
+                    android:id="@+id/layout_vehicle4"
                     android:layout_width="120dp"
                     android:layout_height="90dp"
                     android:orientation="vertical"
@@ -245,12 +254,15 @@
                         android:src="@drawable/ic_option_vip"
                         />
                     <View
+                        android:id="@+id/vehicle4"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="5dp"
-                        android:background="@color/white"
+                        android:background="@color/colorOrange"
                         />
                 </LinearLayout>
                 <LinearLayout
+                    android:id="@+id/layout_vehicle5"
                     android:layout_width="120dp"
                     android:layout_height="90dp"
                     android:orientation="vertical"
@@ -263,9 +275,11 @@
                         android:src="@drawable/ic_option_three_wheeler"
                         />
                     <View
+                        android:id="@+id/vehicle5"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="5dp"
-                        android:background="@color/white"
+                        android:background="@color/colorOrange"
                         />
                 </LinearLayout>
             </LinearLayout>
