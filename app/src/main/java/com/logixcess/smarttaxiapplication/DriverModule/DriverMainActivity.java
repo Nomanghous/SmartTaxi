@@ -44,22 +44,22 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class DriverMainActivity extends AppCompatActivity {
-    private FirebaseDatabase firebase_db;
-    private DatabaseReference db_ref_order;
-    private DatabaseReference db_ref_drivers,db_ref_users;
-    private DatabaseReference db_ref_group;
-    private DatabaseReference db_ref_single_order;
-    private DatabaseReference db_ref_shared_order;
-    private DatabaseReference db_ref_order_to_driver;
-    private FirebaseUser USER_ME;
-    private Location MY_LOCATION = null;
-    private Order CURRENT_ORDER = null;
-    private User CURRENT_USER = null;
-    private String CURRENT_ORDER_ID;
-    private String CURRENT_GROUP_ID;
+    protected FirebaseDatabase firebase_db;
+    protected DatabaseReference db_ref_order;
+    protected DatabaseReference db_ref_drivers,db_ref_users;
+    protected DatabaseReference db_ref_group;
+    protected DatabaseReference db_ref_single_order;
+    protected DatabaseReference db_ref_shared_order;
+    protected DatabaseReference db_ref_order_to_driver;
+    protected FirebaseUser userMe;
+    protected Location myLocation = null;
+    protected Order currentOrder = null;
+    protected User currentUser = null;
+    protected String CURRENT_ORDER_ID;
+    protected String CURRENT_GROUP_ID;
     private boolean IS_FIRST_TIME = false;
-    private SharedRide CURRENT_SHARED_RIDE;
-    private String CURRENT_USER_ID = "";
+    protected SharedRide currentSharedRide;
+    protected String currentUserId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,13 +72,13 @@ public class DriverMainActivity extends AppCompatActivity {
         db_ref_users = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
-        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        userMe = FirebaseAuth.getInstance().getCurrentUser();
         checkAssignedSingleOrder();
         everyTenSecondsTask();
     }
 
     private void checkAssignedSingleOrder() {
-        db_ref_order_to_driver.child(USER_ME.getUid())
+        db_ref_order_to_driver.child(userMe.getUid())
                 .child(Helper.REF_SINGLE_ORDER).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -98,7 +98,7 @@ public class DriverMainActivity extends AppCompatActivity {
     }
 
     private void checkAssignedGroupOrder(){
-        db_ref_order_to_driver.child(USER_ME.getUid())
+        db_ref_order_to_driver.child(userMe.getUid())
                 .child(Helper.REF_GROUP_ORDER).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -128,18 +128,18 @@ public class DriverMainActivity extends AppCompatActivity {
             if(count_for_region == 60)
             {
                 count_for_region = 0;
-                getRegionName(DriverMainActivity.this,MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
+                getRegionName(DriverMainActivity.this, myLocation.getLatitude(), myLocation.getLongitude());
             }
         }
     }
 
     private void updateUserLocation(){
-        MY_LOCATION = LocationManagerService.mLastLocation;
-        if(MY_LOCATION != null && USER_ME != null){
+        myLocation = LocationManagerService.mLastLocation;
+        if(myLocation != null && userMe != null){
             String latitude = "latitude";
             String longitude = "longitude";
-            db_ref_drivers.child(USER_ME.getUid()).child(latitude).setValue(MY_LOCATION.getLatitude());
-            db_ref_drivers.child(USER_ME.getUid()).child(longitude).setValue(MY_LOCATION.getLongitude());
+            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(myLocation.getLatitude());
+            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(myLocation.getLongitude());
         }
     }
     public void getRegionName(Context context, double lati, double longi) {
@@ -152,7 +152,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(!TextUtils.isEmpty(regioName))
                 {
                     String region_name = "region_name";
-                    db_ref_drivers.child(USER_ME.getUid()).child(region_name).setValue(regioName);
+                    db_ref_drivers.child(userMe.getUid()).child(region_name).setValue(regioName);
                 }
             }
         } catch (Exception e) {
@@ -173,13 +173,13 @@ public class DriverMainActivity extends AppCompatActivity {
 
     private void openOrderActivity() {
         Intent intent = new Intent(this, MapsActivity.class);
-        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER,CURRENT_ORDER);
+        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, currentOrder);
         startActivity(intent);
     }
 
     private void acceptOrder(String orderId){
         db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
-        db_ref_order.child(orderId).child("driver_id").setValue(USER_ME.getUid());
+        db_ref_order.child(orderId).child("driver_id").setValue(userMe.getUid());
         db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
         goFetchOrderByID(orderId,false);
@@ -199,34 +199,34 @@ public class DriverMainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-                    CURRENT_ORDER = dataSnapshot.getValue(Order.class);
-                    if(CURRENT_ORDER != null){
-                        if(CURRENT_ORDER.getStatus() == Order.OrderStatusCompleted ){
-                            db_ref_order_to_driver.child(USER_ME.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    currentOrder = dataSnapshot.getValue(Order.class);
+                    if(currentOrder != null){
+                        if(currentOrder.getStatus() == Order.OrderStatusCompleted ){
+                            db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     Toast.makeText(DriverMainActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
-                                    CURRENT_ORDER = null;
+                                    currentOrder = null;
                                 }
                             });
                             return;
-                        }else if(CURRENT_ORDER.getStatus() == Order.OrderStatusCancelled){
-                            db_ref_order_to_driver.child(USER_ME.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                        }else if(currentOrder.getStatus() == Order.OrderStatusCancelled){
+                            db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     Toast.makeText(DriverMainActivity.this, "Your Order has been Cancelled", Toast.LENGTH_SHORT).show();
-                                    CURRENT_ORDER = null;
+                                    currentOrder = null;
                                 }
                             });
 
                             return;
                         }
 
-                        CURRENT_USER_ID = CURRENT_ORDER.getUser_id();
-                        CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
+                        currentUserId = currentOrder.getUser_id();
+                        CURRENT_ORDER_ID = currentOrder.getOrder_id();
                         goFetchCustomerById(isAlreadyAccepted);
-                        String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, USER_ME.getUid());
-                        if(CURRENT_ORDER.getShared())
+                        String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
+                        if(currentOrder.getShared())
                             goFetchGroupByID(groupId);
                         if(!isAlreadyAccepted) {
                             Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
@@ -242,17 +242,17 @@ public class DriverMainActivity extends AppCompatActivity {
     }
 
     private void goFetchCustomerById(boolean isAlreadyAccepted) {
-        db_ref_users.child(CURRENT_USER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
+        db_ref_users.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-                    CURRENT_USER = dataSnapshot.getValue(User.class);
-                    if(CURRENT_USER != null){
+                    currentUser = dataSnapshot.getValue(User.class);
+                    if(currentUser != null){
                         if(!isAlreadyAccepted) {
                             sendPushNotification();
                         }
                         openOrderActivity();
-                        db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(CURRENT_ORDER_ID);
+                        db_ref_order_to_driver.child(userMe.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(CURRENT_ORDER_ID);
                     }
                 }
             }
@@ -270,16 +270,16 @@ public class DriverMainActivity extends AppCompatActivity {
         payload.setTitle(escapeValue("Order Accepted"));
         payload.setDescription(escapeValue("Tap to View Details"));
         payload.setType(Helper.NOTI_TYPE_ORDER_ACCEPTED);
-        if(CURRENT_ORDER.getShared())
+        if(currentOrder.getShared())
             payload.setGroup_id(escapeValue(CURRENT_GROUP_ID));
         else
             payload.setGroup_id(escapeValue("--NA--"));
-        payload.setUser_id(escapeValue(CURRENT_USER_ID));
-        payload.setDriver_id(escapeValue(USER_ME.getUid()));
+        payload.setUser_id(escapeValue(currentUserId));
+        payload.setDriver_id(escapeValue(userMe.getUid()));
         String str = new Gson().toJson(payload);
         try {
             JSONObject json = new JSONObject(str);
-            new PushNotifictionHelper(getApplicationContext()).execute(CURRENT_USER.getUser_token(),json);
+            new PushNotifictionHelper(getApplicationContext()).execute(currentUser.getUser_token(),json);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -289,21 +289,21 @@ public class DriverMainActivity extends AppCompatActivity {
         return "\""+value+"\"";
     }
     private void goFetchGroupByID(String groupId) {
-        db_ref_order_to_driver.child(USER_ME.getUid()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
+        db_ref_order_to_driver.child(userMe.getUid()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
         db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
-                    if(CURRENT_SHARED_RIDE != null){
+                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
+                    if(currentSharedRide != null){
                         if(CURRENT_ORDER_ID != null)
-                            openOrderActivity(CURRENT_SHARED_RIDE);
+                            openOrderActivity(currentSharedRide);
                         else{
-                            if(CURRENT_ORDER == null)
-                                goFetchOrderByID(CURRENT_SHARED_RIDE.getOrder_id(),true);
+                            if(currentOrder == null)
+                                goFetchOrderByID(currentSharedRide.getOrder_id(),true);
                             else{
-                                CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
-                                openOrderActivity(CURRENT_SHARED_RIDE);
+                                CURRENT_ORDER_ID = currentOrder.getOrder_id();
+                                openOrderActivity(currentSharedRide);
                             }
                         }
                     }
@@ -319,7 +319,7 @@ public class DriverMainActivity extends AppCompatActivity {
     private void openOrderActivity(SharedRide current_shared_ride) {
         Intent intent = new Intent(this, MapsActivity.class);
         intent.putExtra(MapsActivity.KEY_CURRENT_SHARED_RIDE,current_shared_ride);
-        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, CURRENT_ORDER);
+        intent.putExtra(MapsActivity.KEY_CURRENT_ORDER, currentOrder);
         startActivity(intent);
     }
 

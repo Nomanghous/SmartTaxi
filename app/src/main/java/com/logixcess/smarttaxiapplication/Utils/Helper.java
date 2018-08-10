@@ -24,6 +24,7 @@ public class Helper {
     public static final String REF_GROUP_ORDER = "GroupOrder";
     public static final String REF_ORDER_TO_DRIVER = "OrderToDriver";
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
+    public static final String REF_NOTIFICATIONS = "notifications";
 
     public static Order CURRENT_ORDER = null;
     public static String polylinesSeparator = "___and___";

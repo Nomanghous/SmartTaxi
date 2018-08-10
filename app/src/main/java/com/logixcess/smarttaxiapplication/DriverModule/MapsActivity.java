@@ -66,26 +66,21 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
+public class MapsActivity extends DriverMainActivity implements OnMapReadyCallback, RoutingListener {
 
 
     boolean[] NotificaionsDone = new boolean[4];
-
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
+    public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
-    private Order currentOrder = null;
     private boolean IS_RIDE_SHARED = false;
-    private FirebaseDatabase firebase_db;
-    private DatabaseReference db_ref_order;
     private DatabaseReference db_ref_user;
-    private DatabaseReference db_ref_group;
-    private FirebaseUser userMe;
+    
     private Location myLocation = null;
     private LatLng dropoff, pickup;
-    private String CURRENT_ORDER_ID = "";
+    private String currentOrderId = "";
     private LatLng start, end;
     private ArrayList<LatLng> waypoints;
-    public static final String KEY_CURRENT_ORDER = "current_order";
     private Marker mDriverMarker;
     private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
@@ -94,9 +89,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private double distanceRemaining = 0;
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedPassengerId;
-    private User SELECTED_PASSENGER;
     private LatLng driver = null;
-    private SharedRide CURRENT_SHARED_RIDE;
     private boolean IS_ROUTE_ADDED = false;
 
 
@@ -121,10 +114,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
-                if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
-                    CURRENT_SHARED_RIDE = bundle.getParcelable(KEY_CURRENT_SHARED_RIDE);
+
+                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null)
                     IS_RIDE_SHARED = true;
+                else{
+                    fetchThatGroup();
                 }
+
             }else if(currentOrder != null){
                 IS_RIDE_SHARED = false;
             }else {
@@ -144,8 +140,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
-                        SELECTED_PASSENGER = dataSnapshot.getValue(User.class);
-                        if(SELECTED_PASSENGER != null && mMap != null) {
+                        currentUser = dataSnapshot.getValue(User.class);
+                        if(currentUser != null && mMap != null) {
                             requestNewRoute();
                         }
                     }
@@ -155,7 +151,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             });
-            addOrdersListener();
+            try {
+                addOrdersListener();
+            }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
             // driver id not provided
@@ -214,7 +212,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         payload.setPercentage_left(escapeValue(""+percentageLeft));
         payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(escapeValue(currentOrder.getOrder_id()));
-        String token = SELECTED_PASSENGER.getUser_token();
+        String token = currentUser.getUser_token();
         if(percentageLeft < 10 && !NotificaionsDone[0]){
             NotificaionsDone[0] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
@@ -416,7 +414,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
     private void setupOrdersListener() {
-        db_ref_order.child(CURRENT_ORDER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
+        db_ref_order.child(currentOrderId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(!dataSnapshot.exists())
@@ -452,12 +450,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void fetchThatGroup() {
-        if(CURRENT_SHARED_RIDE != null)
+        if(currentSharedRide != null)
             return;
-        db_ref_group.addListenerForSingleValueEvent(new ValueEventListener() {
+        String groupId = Helper.getConcatenatedID(currentOrder.getOrder_id(), userMe.getUid());
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                CURRENT_SHARED_RIDE  = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
+                currentSharedRide = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
+                if(currentSharedRide == null || currentSharedRide.getGroup_id() == null){
+                    Toast.makeText(MapsActivity.this, "Something went Wrong.", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
             }
 
             @Override
@@ -468,13 +471,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void fetchThatCustomer() {
-        if(SELECTED_PASSENGER != null)
+        if(currentUser != null)
             showDataOnMap();
     }
 
     private void showDataOnMap() {
 
-        if(mMap != null && SELECTED_PASSENGER != null){
+        if(mMap != null && currentUser != null){
             // show User
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
             dropoff = new LatLng(currentOrder.getDropoffLat(), currentOrder.getDropoffLat());
@@ -566,7 +569,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void getTheNextNearestDropOff(boolean fetchOrdersAgain){
         double totalDistance = 0;
         boolean isAllOrdersCompleted = true;
-        if(CURRENT_SHARED_RIDE == null)
+        if(currentSharedRide == null)
             return;
         if(fetchOrdersAgain)
             goFetchOrderById();
@@ -601,7 +604,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void goFetchOrderById(){
         ORDERS_IN_SHARED_RIDE = new ArrayList<>();
-        orderIDs = CURRENT_SHARED_RIDE.getOrderIDs();
+        orderIDs = currentSharedRide.getOrderIDs();
+        if(currentSharedRide.getGroup_id() == null) {
+            fetchThatGroup();
+            return;
+        }
         for (Map.Entry<String, Boolean> entry : orderIDs.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -631,7 +638,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    private void addOrdersListener(){
+    private void addOrdersListener() throws NullPointerException{
         db_ref_order.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
@@ -706,8 +713,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
-        if(IS_RIDE_SHARED)
-        db_ref_group.child(CURRENT_SHARED_RIDE.getGroup_id()).addChildEventListener(new ChildEventListener() {
+        if(IS_RIDE_SHARED && currentSharedRide != null)
+        db_ref_group.child(currentSharedRide.getGroup_id()).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
@@ -716,7 +723,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(dataSnapshot.exists())
-                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
+                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
             }
 
             @Override

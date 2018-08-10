@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.BuildConfig;
@@ -238,35 +240,41 @@ public class NotificationUtils {
 
 
 
-        if(isAppIsInBackground(context)){
+            if(isAppIsInBackground(context)){
 
-        }
-
+            }
 
             switch (notificationPayload.getType()) {
                 case Helper.NOTI_TYPE_ORDER_CREATED:
-
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForFriendRequest(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_ACCEPTED:
-
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_WAITING:
-
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     playsound(context,"beep.mp3");
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_WAITING_LONG:
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     playsound(context,"beep_beep_beep.mp3");
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_COMPLETED:
                     // friend requested=
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
             }
         }
+    }
+
+    private static void saveDataToFirebase(NotificationPayload notificationPayload, String userId) {
+        FirebaseDatabase.getInstance().getReference()
+                .child(Helper.REF_NOTIFICATIONS).child(userId).push().setValue(notificationPayload);
     }
 
     private static void playsound(Context context, String soundWithFileFormat){
