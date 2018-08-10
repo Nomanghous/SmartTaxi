@@ -11,6 +11,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -51,6 +52,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
@@ -519,7 +521,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         String driverId = (String) marker.getTag();
         if(driverId != null &&  !driverId.isEmpty()){
             // do whatever with driver id.
-            show_driverDetail(driverId);
+            goCheckDriverStatus(driverId);
+
             return  true;
         }else
             return false;
@@ -797,4 +800,30 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             e.printStackTrace();
         }
     }
+
+    private void goCheckDriverStatus(String driverId){
+        DatabaseReference db_driver_order_vault =
+                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                   if(dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER) || dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                       Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
+                   }else{
+                       show_driverDetail(driverId);
+                   }
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+
 }

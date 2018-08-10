@@ -186,6 +186,14 @@ public class DriverMainActivity extends AppCompatActivity {
         IS_FIRST_TIME = true;
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(CURRENT_ORDER_ID != null)
+            goFetchOrderByID(CURRENT_ORDER_ID,true);
+    }
+
     private void goFetchOrderByID(String orderId, boolean isAlreadyAccepted) {
         db_ref_order.child(orderId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -194,11 +202,11 @@ public class DriverMainActivity extends AppCompatActivity {
                     CURRENT_ORDER = dataSnapshot.getValue(Order.class);
                     if(CURRENT_ORDER != null){
                         if(CURRENT_ORDER.getStatus() == Order.OrderStatusCompleted ){
-
                             db_ref_order_to_driver.child(USER_ME.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     Toast.makeText(DriverMainActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                                    CURRENT_ORDER = null;
                                 }
                             });
                             return;
@@ -207,6 +215,7 @@ public class DriverMainActivity extends AppCompatActivity {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     Toast.makeText(DriverMainActivity.this, "Your Order has been Cancelled", Toast.LENGTH_SHORT).show();
+                                    CURRENT_ORDER = null;
                                 }
                             });
 
