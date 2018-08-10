@@ -15,6 +15,8 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -191,6 +193,26 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     CURRENT_ORDER = dataSnapshot.getValue(Order.class);
                     if(CURRENT_ORDER != null){
+                        if(CURRENT_ORDER.getStatus() == Order.OrderStatusCompleted ){
+
+                            db_ref_order_to_driver.child(USER_ME.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(DriverMainActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            return;
+                        }else if(CURRENT_ORDER.getStatus() == Order.OrderStatusCancelled){
+                            db_ref_order_to_driver.child(USER_ME.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(DriverMainActivity.this, "Your Order has been Cancelled", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            return;
+                        }
+
                         CURRENT_USER_ID = CURRENT_ORDER.getUser_id();
                         CURRENT_ORDER_ID = CURRENT_ORDER.getOrder_id();
                         goFetchCustomerById(isAlreadyAccepted);

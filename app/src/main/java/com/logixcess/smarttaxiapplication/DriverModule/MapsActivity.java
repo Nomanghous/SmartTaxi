@@ -35,6 +35,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -563,6 +565,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void getTheNextNearestDropOff(boolean fetchOrdersAgain){
         double totalDistance = 0;
+        boolean isAllOrdersCompleted = true;
         if(CURRENT_SHARED_RIDE == null)
             return;
         if(fetchOrdersAgain)
@@ -573,6 +576,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Location dropOff = new Location("dropoff");
                     dropOff.setLatitude(order.getDropoffLat());
                     dropOff.setLongitude(order.getDropoffLong());
+                    isAllOrdersCompleted = true;
                     if(totalDistance == 0) {
                         totalDistance = myLocation.distanceTo(dropOff);
                         currentOrder = order;
@@ -583,7 +587,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
-
+        if(isAllOrdersCompleted){
+            DatabaseReference db_ref_order_to_driver;
+            db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+            db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     private void goFetchOrderById(){
@@ -658,7 +671,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             if (order.getStatus() == Order.OrderStatusInProgress) {
 
                             }else if (order.getStatus() == Order.OrderStatusCompleted){
-                                Toast.makeText(MapsActivity.this, "Order is Completed Succesffuly.", Toast.LENGTH_SHORT).show();
+                                DatabaseReference db_ref_order_to_driver;
+                                db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+                                db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                                 finish();
                             }else if (order.getStatus() == Order.OrderStatusPending){
 
