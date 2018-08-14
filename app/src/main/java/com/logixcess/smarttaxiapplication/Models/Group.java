@@ -4,17 +4,18 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Group {
-    String group_id, user_id;
+    String group_id, user_id,driver_id;
     long time;
     String order_id;
     String region_name;
 
     public Group(){}
 
-    public Group(String group_id, String user_id, long time) {
+    public Group(String group_id, String user_id, long time,String driver_id) {
         this.group_id = group_id;
         this.user_id = user_id;
         this.time = time;
+        this.driver_id = driver_id;
     }
 
     protected Group(Parcel in) {
@@ -23,6 +24,7 @@ public class Group {
         time = in.readLong();
         order_id =in.readString();
         region_name =in.readString();
+        driver_id =in.readString();
     }
 
     public String getGroup_id() {
@@ -64,5 +66,13 @@ public class Group {
 
     public void setRegion_name(String region_name) {
         this.region_name = region_name;
+    }
+
+    public String getDriver_id() {
+        return driver_id;
+    }
+
+    public void setDriver_id(String driver_id) {
+        this.driver_id = driver_id;
     }
 }

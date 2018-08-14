@@ -605,6 +605,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void goFetchOrderById(){
         ORDERS_IN_SHARED_RIDE = new ArrayList<>();
         orderIDs = currentSharedRide.getOrderIDs();
+
         if(currentSharedRide.getGroup_id() == null) {
             fetchThatGroup();
             return;

@@ -7,15 +7,15 @@ import android.os.Parcelable;
 public class User implements Parcelable
 {
     private String user_id ;
-    private String name;
-    private String phone;
-    private String Address;
-    private String user_type;
-    private String join_date;
-    private String user_image_url;
-    private String user_token;
-    private String password;
-    private String email;
+    private String name="";
+    private String phone="";
+    private String Address="";
+    private String user_type="";
+    private String join_date="";
+    private String user_image_url="";
+    private String user_token="";
+    private String password="";
+    private String email="";
 
     public User(){
 

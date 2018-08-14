@@ -65,6 +65,7 @@ import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
@@ -247,7 +248,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 }
                 if(new_order != null)
                     new_order.setVehicle_id("Chingchi");
-                getDriverList();
+                getDriverList(getContext());
                 ct_address.setVisibility(View.VISIBLE);
                 ct_vehicles.setVisibility(View.GONE);
                 btn_confirm.setVisibility(View.VISIBLE);
@@ -290,15 +291,24 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         return mine.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
 
     }
-    public void getDriverList()
+    public void getDriverList(Context context)
     {
-        MainActivity mainActivity = ((MainActivity)getContext());
+        MainActivity mainActivity = ((MainActivity)context);
         if(mainActivity == null)
+            return;
+        if(driverList == null)
             return;
         for(Driver driver : mainActivity.getDrivers())
         {
-            driverList.add(driver);
-            addDriverMarker(driver);
+
+
+
+            if(new_order.getShared())
+                goCheckSharedRideDriver(driver.getFk_user_id(),driver);
+            else {
+                driverList.add(driver);
+                addDriverMarker(driver);
+            }
         }
         /*valueEventListener = new ValueEventListener() {
             @Override
@@ -397,6 +407,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
         return total_cost;
     }
+    /*public void getRegionName(Context context, double lati, double longi) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+                if(!TextUtils.isEmpty(regioName))
+                {
+                    String region_name = "region_name";
+                    Constants.region_name =regioName;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }*/
     public void  show_driverDetail(String driverId)
     {
         final CharSequence[] items = { "SELECT", "OPEN PROFILE",
@@ -430,6 +457,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 }
                 else if (items[item].equals("OPEN PROFILE"))
                 {
+
                 }
                 else if (items[item].equals("CANCEL")) {
                     dialog.dismiss();
@@ -437,6 +465,26 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         });
         builder.show();
+    }
+    public void getDriverDetail(String driver_id)
+    {
+        DatabaseReference db_driver =
+                firebase_db.getReference().child(Helper.REF_DRIVERS);
+        db_driver.child(driver_id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
     public void checkRidePassengers(String region_name,String driver_id) {
         valueEventListener = new ValueEventListener() {
@@ -459,10 +507,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                                 total_cost = (cost / 100.0f) * 10; //give 10% discount
                             else if(passengers_count > 2)
                                 total_cost = (cost / 100.0f) * 5; //give
+
+                            new_order.setEstimated_cost(String.valueOf(total_cost));
                             //Display Cost
                             if(layout_cost_detail.getVisibility() == View.GONE)
                             {
                                 layout_cost_detail.setVisibility(View.VISIBLE);
+                                if(btn_confirm.getVisibility()==View.VISIBLE)
+                                btn_confirm.setVisibility(View.GONE);
                                 txtLocation.setText(new_order.getPickup());
                                 txtDestination.setText(new_order.getDropoff());
                                 txt_cost.setText(String.valueOf(total_cost));
@@ -831,7 +883,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     addSelectedRoute(polyline);
                 }
                 polyLineList.add(polyline);
-                getDriverList();
+                getDriverList(getContext());
             }
         }
     }
@@ -869,15 +921,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     {
         @Override
         public void run() {
+            MY_LOCATION = LocationManagerService.mLastLocation;
             // markers driver clear <driverId, marker>
             // place markers again
-            count_for_region ++;
-            if(count_for_region == 60)
-            {
+//            count_for_region ++;
+//            if(count_for_region == 60)
+//            {
                 count_for_region = 0;
                 if(MY_LOCATION != null)
                     getRegionName(getActivity(),MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
-            }
+           // }
         }
     }
     public void getRegionName(Context context, double lati, double longi) {
@@ -891,7 +944,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 {
                     String region_name = "region_name";
                     Constants.region_name = regioName;
-                    db_ref_user.child(USER_ME.getUid()).child(region_name).setValue(regioName);
+                   // db_ref_user.child(USER_ME.getUid()).child(region_name).setValue(regioName);
                 }
             }
         } catch (Exception e) {
@@ -910,6 +963,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                        Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
                        return;
                    }else if( dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                       String groupDI = dataSnapshot.getValue().toString();
                        if(new_order.getShared()){
                            show_driverDetail(driverId);
                        }else {
@@ -919,6 +973,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                    }
                 }
                 show_driverDetail(driverId);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+private void goCheckSharedRideDriver(String driverId,Driver driver){
+        DatabaseReference db_driver_order_vault =
+                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                   if(dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER) || dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                       return;
+                   }else if( dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
+                       String groupID = dataSnapshot.getValue().toString();
+                       Constants.group_id = groupID;
+                       driverList.add(driver);
+                       addDriverMarker(driver);
+                   }
+                }
+                ////show_driverDetail(driverId);
 
             }
 

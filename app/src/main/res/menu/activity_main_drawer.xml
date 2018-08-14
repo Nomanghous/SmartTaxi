@@ -21,7 +21,7 @@
             <!--android:icon="@drawable/ic_menu_manage"-->
             <!--android:title="Tools" />-->
         <item
-            android:id="@+id/nav_user_profile"
+            android:id="@+id/nav_add_ride"
             android:icon="@drawable/ic_menu_camera"
             android:title="Add Ride" />
         <item
@@ -29,7 +29,7 @@
             android:icon="@drawable/ic_menu_gallery"
             android:title="Ride History" />
         <item
-            android:id="@+id/nav_add_ride"
+            android:id="@+id/nav_user_profile"
             android:icon="@drawable/ic_menu_slideshow"
             android:title="Profile" />
         <item
@@ -41,6 +41,7 @@
             android:icon="@drawable/ic_menu_camera"
             android:title="Feedback" />
         <item
+            android:visible="false"
             android:id="@+id/nav_find_user"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Find User" />

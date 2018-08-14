@@ -1,10 +1,39 @@
 package com.logixcess.smarttaxiapplication.Models;
 
-public class NotificationPayload {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class NotificationPayload implements Parcelable {
     private String user_id, driver_id, percentage_left, group_id, order_id;
     private String title, description;
     private int type;
+    public NotificationPayload()
+    {
 
+    }
+
+    public NotificationPayload(Parcel in) {
+        user_id = in.readString();
+        driver_id = in.readString();
+        percentage_left = in.readString();
+        group_id = in.readString();
+        order_id = in.readString();
+        title = in.readString();
+        description = in.readString();
+        type = in.readInt();
+    }
+
+    public static final Creator<NotificationPayload> CREATOR = new Creator<NotificationPayload>() {
+        @Override
+        public NotificationPayload createFromParcel(Parcel in) {
+            return new NotificationPayload(in);
+        }
+
+        @Override
+        public NotificationPayload[] newArray(int size) {
+            return new NotificationPayload[size];
+        }
+    };
 
     public String getTitle() {
         return title;
@@ -68,5 +97,22 @@ public class NotificationPayload {
 
     public void setOrder_id(String order_id) {
         this.order_id = order_id;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(user_id);
+        parcel.writeString(driver_id);
+        parcel.writeString(percentage_left);
+        parcel.writeString(group_id);
+        parcel.writeString(order_id);
+        parcel.writeString(title);
+        parcel.writeString(description);
+        parcel.writeInt(type);
     }
 }

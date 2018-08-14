@@ -212,7 +212,7 @@ public class Register_Next_Step extends AppCompatActivity {
                             FirebaseUser user = auth.getCurrentUser();
                             if(user!=null){
                                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                        .setDisplayName(username).build();
+                                        .setDisplayName(username).setPhotoUri(user.getPhotoUrl()).build();
                                 user.updateProfile(profileUpdates);
                                 user_data.setUser_id(user.getUid());
                                 if(user_data.getUser_type().equals("Passenger"))

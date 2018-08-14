@@ -22,4 +22,6 @@ public class Constants
     public static final int SECONDARY_USER = 2;
     public static final int TERTIARY_USER = 3;
     public static double BASE_FAIR_PER_KM = 40;
+    public static String user_image_path = "";
+    public static String group_id = "";
 }

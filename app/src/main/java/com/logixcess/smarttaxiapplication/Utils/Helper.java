@@ -15,6 +15,7 @@ public class Helper {
     public static final int NOTI_TYPE_ORDER_COMPLETED = 103;
     public static final int NOTI_TYPE_ORDER_WAITING = 104;
     public static final int NOTI_TYPE_ORDER_WAITING_LONG = 105;
+    public static final int NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE = 106;
     public static final String REF_ORDERS = "Order";
     public static final String REF_USERS = "User";
     public static final String REF_GROUPS = "Group";

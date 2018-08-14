@@ -118,11 +118,11 @@ public class FirebaseHelper
                     User old_user = null;
                     //firebase_instance.child("users").child(user.getUser_id()).setValue(user);
                     //Toast.makeText(my_context,"You are Registered already",Toast.LENGTH_SHORT).show();
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
-                    {
-                        old_user = snapshot.getValue(User.class);
+                    //for (DataSnapshot snapshot : dataSnapshot.getChildren())
+                   // {
+                        old_user = dataSnapshot.getValue(User.class);
                         //activeUsers.add(snapshot.getValue(User.class));
-                    }
+                   // }
                     if(user.getPassword()=="")
                     {
                         user.setPassword(old_user.getPassword());
@@ -132,8 +132,8 @@ public class FirebaseHelper
                 }
                 else
                 {
-                    firebase_instance.child("User").child(user.getUser_id()).setValue(user);
-                    Toast.makeText(my_context,"You are Registered Successfully",Toast.LENGTH_SHORT).show();
+                    //firebase_instance.child("User").child(user.getUser_id()).setValue(user);
+                    Toast.makeText(my_context,"Something Went Wrong",Toast.LENGTH_SHORT).show();
                 }
 
             }

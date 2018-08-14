@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.UserProfileFragment">
+    tools:context=".Fragments.UserProfileFragment">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -15,7 +15,7 @@
             android:layout_height="100dp"
             android:layout_gravity="center"
             android:layout_marginTop="15dp"
-            android:src="@drawable/ic_profile" />
+            android:background="@drawable/ic_profile" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -81,10 +81,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/phone"
-                    android:textColor="@color/white"
+                    android:textColor="@color/black"
                     android:singleLine="true"
                     android:maxLength="13"
-                    android:textColorHint="@color/white"
+                    android:textColorHint="@color/black"
                     android:inputType="number"
                     tools:ignore="TextFields" />
             </android.support.design.widget.TextInputLayout>
@@ -102,8 +102,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/password"
-                    android:textColorHint="@color/white"
-                    android:textColor="@color/white"
+                    android:textColorHint="@color/black"
+                    android:textColor="@color/black"
                     android:inputType="textWebPassword"
                     android:singleLine="true" />
             </android.support.design.widget.TextInputLayout>
@@ -132,6 +132,7 @@
 
             </android.support.design.widget.TextInputLayout>
             <Spinner
+                android:id="@+id/sp_user_types"
                 android:paddingLeft="8dp"
                 android:layout_marginTop="10dp"
                 android:layout_width="match_parent"

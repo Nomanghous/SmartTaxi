@@ -5,12 +5,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -25,9 +31,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -62,8 +72,15 @@ import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
+import com.mikhaellopez.circularimageview.CircularImageView;
 import com.schibstedspain.leku.LocationPickerActivity;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -130,6 +147,24 @@ public class MainActivity extends BaseActivity
         //Ahmads
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+        mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        View hView =  navigationView.getHeaderView(0);
+        if(mFirebaseUser!=null)
+        {
+            TextView nav_user_name = (TextView)hView.findViewById(R.id.tv_person_name);
+            nav_user_name.setText(mFirebaseUser.getDisplayName());
+            TextView nav_user_status = (TextView)hView.findViewById(R.id.tv_person_status);
+            nav_user_status.setText(mFirebaseUser.getEmail());
+            ImageView nav_user_image = (ImageView) hView.findViewById(R.id.iv_person_pic);
+            //Glide.with(this).load("http://goo.gl/gEgYUd")
+            RequestOptions requestOptions = new RequestOptions();
+            requestOptions.placeholder(R.drawable.user_placeholder);
+            requestOptions.circleCrop();
+            Glide.with(this).setDefaultRequestOptions(requestOptions).load(mFirebaseUser.getPhotoUrl())
+                    .into(nav_user_image);
+        }
+
+
         // load toolbar titles from string resources
         activityTitles = getResources().getStringArray(R.array.nav_item_activity_titles);
         mHandler = new Handler();
@@ -161,7 +196,6 @@ public class MainActivity extends BaseActivity
                 }
             }
         };
-        mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         displayFirebaseRegId();
         new FetchDriversBasedOnRadius(this, mLastLocation,this);
         if(bundle != null){
@@ -176,6 +210,12 @@ public class MainActivity extends BaseActivity
             }
         }
         getAllOrders();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if(user!=null)
+        {
+            getAllNotificaations(user.getUid());
+        }
+
     }
 
     public Location getCurrentLocation(){
@@ -347,7 +387,8 @@ AlertDialog builder;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_LOCATION) {
+        if (requestCode == REQUEST_CODE_LOCATION)
+        {
             if(resultCode == RESULT_OK){
                 double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
@@ -371,7 +412,8 @@ AlertDialog builder;
                 //Write your code if there's no result
             }
         }
-        if (requestCode == REQUEST_CODE_LOCATION_DROP_OFF) {
+        if (requestCode == REQUEST_CODE_LOCATION_DROP_OFF)
+        {
             if(resultCode == RESULT_OK){
                 double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
@@ -411,9 +453,75 @@ AlertDialog builder;
             else if (resultCode == RESULT_CANCELED) {
                 //Write your code if there's no result
             }
+
+        }
+            if(requestCode == UserProfileFragment.GALLERY_REQUEST)
+            {
+                if(resultCode == RESULT_OK){
+                    Constants.FilePathUri = data.getData();
+                    onSelectFromGalleryResult(data);}
+            }
+            else if (requestCode ==UserProfileFragment.CAMERA_REQUEST) {
+                if(resultCode == RESULT_OK){
+                Constants.FilePathUri = data.getData();
+                onCaptureImageResult(data);}
+            }
+
+
+    }
+    private void onSelectFromGalleryResult(Intent data) {
+        Bitmap bm=null;
+        if (data != null) {
+            try {
+                bm = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                bm.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+                byte[] bitmapdata = bos.toByteArray();
+                ByteArrayInputStream is = new ByteArrayInputStream(bitmapdata);
+                //InputStream is =
+                Bitmap bmImg = BitmapFactory.decodeStream(is);
+                Drawable background = new BitmapDrawable(bmImg);
+                CircularImageView user_image_layout = profileFragment.getView().findViewById(R.id.profile_image);
+                user_image_layout.setBackground(background);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
-
+    private void onCaptureImageResult(Intent data) {
+        Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
+        File destination = new File(Environment.getExternalStorageDirectory(),
+                System.currentTimeMillis() + ".jpg");
+        FileOutputStream fo;
+        try {
+            destination.createNewFile();
+            fo = new FileOutputStream(destination);
+            fo.write(bytes.toByteArray());
+            fo.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Imagebitmap=thumbnail;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        thumbnail.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+        byte[] bitmapdata = bos.toByteArray();
+        ByteArrayInputStream is = new ByteArrayInputStream(bitmapdata);
+        //InputStream is =
+        Bitmap bmImg = BitmapFactory.decodeStream(is);
+        Drawable background = new BitmapDrawable(bmImg);
+        CircularImageView user_image_layout = profileFragment.getView().findViewById(R.id.profile_image);
+        user_image_layout.setBackground(background);
+    }
+    public Uri getImageUri(Context inContext, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
+    }
     MapFragment mapFragment;
     public void openScheduleActivity(View view) {
         mapFragment.showDateTimePicker();
@@ -576,6 +684,7 @@ AlertDialog builder;
     private static final String TAG_RIDE_HISTORY = "ride_history";
     public static String CURRENT_TAG = TAG_ADD_RIDE;
     RideHistoryFragment rideHistoryFragment;
+    UserProfileFragment profileFragment;
     private Fragment getHomeFragment() {
         switch (navItemIndex) {
             case 0:
@@ -592,21 +701,25 @@ AlertDialog builder;
                 return rideHistoryFragment;
             case 2:
                 // home user profile
-                UserProfileFragment homeFragment = new UserProfileFragment();
-                return homeFragment;
+                profileFragment = new UserProfileFragment();
+                return profileFragment;
             case 3:
                 // notifications fragment
                 NotificationsFragment notificationsFragment = new NotificationsFragment();
+                if(notificationPayloads != null){
+                    Bundle args = new Bundle();
+                    args.putParcelableArrayList("history_notifications", notificationPayloads );
+                    notificationsFragment.setArguments(args);}
                 return notificationsFragment;
 
             case 4:
                 // feedback fragment
                 FeedbackFragment feedbackFragment = new FeedbackFragment();
                 return feedbackFragment;
-            case 5:
-                // find user fragment
-                FindUserFragment findUserFragment = new FindUserFragment();
-                return findUserFragment;
+//            case 5:
+//                // find user fragment
+//                FindUserFragment findUserFragment = new FindUserFragment();
+//                return findUserFragment;
 
 
 
@@ -642,17 +755,17 @@ AlertDialog builder;
                 //Check to see which item was being clicked and perform appropriate action
                 switch (menuItem.getItemId()) {
                     //Replacing the main content with ContentFragment Which is our Inbox View
-                    case R.id.nav_user_profile:
+                    case R.id.nav_add_ride:
                         navItemIndex = 0;
-                        CURRENT_TAG = TAG_USER_PROFILE;
+                        CURRENT_TAG = TAG_ADD_RIDE;
                         break;
                     case R.id.nav_ride_history:
                         navItemIndex = 1;
                         CURRENT_TAG = TAG_RIDE_HISTORY;
                         break;
-                    case R.id.nav_add_ride:
+                    case R.id.nav_user_profile:
                         navItemIndex = 2;
-                        CURRENT_TAG = TAG_ADD_RIDE;
+                        CURRENT_TAG = TAG_USER_PROFILE;
                         break;
                     case R.id.nav_notifications:
                         navItemIndex = 3;
@@ -685,7 +798,7 @@ AlertDialog builder;
                 return true;
             }
         });
-        loadHomeFragment();
+        loadHomeFragment();//by default
     }
 
     @Override
@@ -777,7 +890,7 @@ AlertDialog builder;
         // drivers refreshed
 
         if (mapFragment != null)
-            mapFragment.getDriverList();
+            mapFragment.getDriverList(MainActivity.this );
 
     }
     private void goFechOrder() {
@@ -837,5 +950,28 @@ ArrayList<Order> my_orders;
         });
     }
 
+    ArrayList<NotificationPayload> notificationPayloads;
+    private void getAllNotificaations(String user_id) {
+        notificationPayloads = new ArrayList<>();
+        FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference db_ref_notifications = FirebaseDatabase.getInstance().getReference().child(Helper.REF_NOTIFICATIONS).child(user_id);
+        db_ref_notifications.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+                    for (DataSnapshot snapshot:dataSnapshot.getChildren())
+                    {
+                        NotificationPayload notificationPayload = snapshot.getValue(NotificationPayload.class);
+                        notificationPayloads.add(notificationPayload);
+                    }
 
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 }
