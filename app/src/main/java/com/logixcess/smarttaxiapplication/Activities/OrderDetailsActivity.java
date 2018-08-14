@@ -13,6 +13,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 // import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -26,7 +28,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
@@ -43,6 +47,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.CREATE_NEW_GROUP;
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
+
 public class OrderDetailsActivity extends AppCompatActivity {
     TextView tv_pickup, tv_destination, tv_shared, tv_distance, tv_cost, tv_time, tv_vehicle;
     public static List<LatLng> SELECTED_ROUTE = null;
@@ -51,13 +58,18 @@ public class OrderDetailsActivity extends AppCompatActivity {
     private DatabaseReference db_ref_group;
     private Query db_ref_group2;
     String my_region_name;
-
+    private SharedRide currentSharedRide;
+    private HashMap<String, Boolean> mPassengerList;
+    private HashMap<String, Boolean> mOrderList;
+    private DatabaseReference db_ref_order_to_driver;
+    DatabaseReference db_ref;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_details);
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
-        db_ref_group = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS);
+        db_ref = FirebaseDatabase.getInstance().getReference();
+        db_ref_group = db_ref.child(Helper.REF_GROUPS);
         tv_pickup = findViewById(R.id.tv_pickup);
         tv_destination = findViewById(R.id.tv_destination);
         tv_distance = findViewById(R.id.tv_distance);
@@ -66,14 +78,15 @@ public class OrderDetailsActivity extends AppCompatActivity {
         tv_shared = findViewById(R.id.tv_shared);
         tv_time = findViewById(R.id.tv_time);
 
-        if(Helper.CURRENT_ORDER != null){
-            tv_pickup.setText(Helper.CURRENT_ORDER.getPickup());
-            tv_destination.setText(Helper.CURRENT_ORDER.getDropoff());
-            tv_distance.setText(Helper.CURRENT_ORDER.getTotal_kms());
-            tv_cost.setText(Helper.CURRENT_ORDER.getEstimated_cost());
-            tv_vehicle.setText(Helper.CURRENT_ORDER.getVehicle_id());
-            tv_shared.setText(Helper.CURRENT_ORDER.getShared() ? "Yes" : "No");
-            tv_time.setText(Helper.CURRENT_ORDER.getPickup_time());
+        if(new_order != null){
+            new_order.setUser_id(MainActivity.mFirebaseUser.getUid());
+            tv_pickup.setText(new_order.getPickup());
+            tv_destination.setText(new_order.getDropoff());
+            tv_distance.setText(new_order.getTotal_kms());
+            tv_cost.setText(new_order.getEstimated_cost());
+            tv_vehicle.setText(new_order.getVehicle_id());
+            tv_shared.setText(new_order.getShared() ? "Yes" : "No");
+            tv_time.setText(new_order.getPickup_time());
 
         }else{
             Toast.makeText(this, "No Order Details Found", Toast.LENGTH_SHORT).show();
@@ -85,54 +98,107 @@ public class OrderDetailsActivity extends AppCompatActivity {
     public void goConfirmBooking(View view)
     {
         saveOrderOnline();
-
     }
 
     private void saveOrderOnline() {
-
-        Helper.CURRENT_ORDER.setUser_id(FirebaseAuth.getInstance().getCurrentUser().getUid());
-        FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS)
-                .push().setValue(Helper.CURRENT_ORDER, new DatabaseReference.CompletionListener() {
+        db_ref.child(Helper.REF_ORDERS)
+                .push().setValue(new_order, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                Helper.CURRENT_ORDER.setOrder_id(databaseReference.getKey());
-                //if(Helper.CURRENT_ORDER.getShared()){
-                    //checkifgroupExist(Helper.CURRENT_ORDER.getDriver_id());
-                //sendNotificationTo Passsenger
-               // }
-                if(Helper.CURRENT_ORDER.getShared())
-                {
-                    HashMap<String, Boolean> passengersIds_new = new HashMap<>();
-                    passengersIds_new.put(Helper.CURRENT_ORDER.getUser_id(),true);
-                    db_ref_group.child(Constants.group_id).child("passengers").setValue(passengersIds_new);
+                new_order.setOrder_id(databaseReference.getKey());
+                if(new_order.getShared()) {
+                    if(!CREATE_NEW_GROUP) {
+                        goFetchGroupByID(Constants.group_id);
+                    }else{
+                        db_ref_order_to_driver = db_ref.child(Helper.REF_ORDER_TO_DRIVER);
+                        goCreateGroupForSharedRide();
+                    }
+                }else
+                    sendNotificationToken();
+            }
+        });
+    }
+
+    private void goFetchGroupByID(String groupId) {
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
+                    if(currentSharedRide != null){
+                        mPassengerList = currentSharedRide.getPassengers();
+                        mOrderList = currentSharedRide.getOrderIDs();
+                        mPassengerList.put(MainActivity.mFirebaseUser.getUid(), true);
+                        mOrderList.put(new_order.getOrder_id(), true);
+                        currentSharedRide.setPassengers(mPassengerList);
+                        currentSharedRide.setOrderIDs(mOrderList);
+                        updateThatSpecificOrderToAccepted(new_order.getOrder_id());
+                    }
                 }
-                sendNotificationToken();
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
         });
     }
 
+    private void updateThatSpecificOrderToAccepted(String order_id) {
+        Order order = new_order;
+        order.setStatus(Order.OrderStatusInProgress);
+        db_ref.child(Helper.REF_ORDERS).child(order_id).setValue(order).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    new_order = order;
+                    updateSharedRideInfo();
+
+                }
+            }
+        });
+
+
+    }
+
+    private void updateSharedRideInfo() {
+        db_ref.child(Helper.REF_GROUPS).child(Constants.group_id).setValue(currentSharedRide).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    Toast.makeText(OrderDetailsActivity.this, "Your Order has been Placed Successfully.", Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
+    }
 
     public void sendNotificationToken()
     {
 
-        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
-        db_ref_user.child(Helper.CURRENT_ORDER.getDriver_id()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+        DatabaseReference db_ref_user = db_ref.child(Helper.REF_USERS);
+        db_ref_user.child(new_order.getDriver_id()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     User driver = dataSnapshot.getValue(User.class);
+                    if(driver == null)
+                        return;
                     String token = driver.getUser_token();
                     NotificationPayload notificationPayload = new NotificationPayload();
-                    if(Helper.CURRENT_ORDER.getShared())
+
+                    if(new_order.getShared()) {
                         notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
-                    else
+                        notificationPayload.setTitle("\"New Passenger Request\"");
+                        notificationPayload.setDescription("\"Do you want to accept it\"");
+                    }
+                    else {
                         notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED);
-                    notificationPayload.setTitle("\"Order Created\"");
-                    notificationPayload.setDescription("\"Do you want to accept it\"");
-                    notificationPayload.setUser_id("\""+Helper.CURRENT_ORDER.getUser_id()+"\"");
-                    notificationPayload.setDriver_id("\""+Helper.CURRENT_ORDER.getDriver_id()+"\"");
-                    notificationPayload.setOrder_id("\""+Helper.CURRENT_ORDER.getOrder_id()+"\"");
+                        notificationPayload.setTitle("\"Order Created\"");
+                        notificationPayload.setDescription("\"Do you want to accept it\"");
+                    }
+                    notificationPayload.setUser_id("\""+new_order.getUser_id()+"\"");
+                    notificationPayload.setDriver_id("\""+new_order.getDriver_id()+"\"");
+                    notificationPayload.setOrder_id("\""+new_order.getOrder_id()+"\"");
                     notificationPayload.setPercentage_left("\""+-1+"\"");
                     String str = new Gson().toJson(notificationPayload);
                     try {
@@ -142,7 +208,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
-                    if(Helper.CURRENT_ORDER.getShared())
+                    if(new_order.getShared())
                         goCreateGroupForSharedRide();
                     else
                         CloseActivity();
@@ -184,7 +250,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         SharedRide sharedRide = snapshot.getValue(SharedRide.class);
                         HashMap<String, Boolean> passengersIds_old = sharedRide.getPassengers();
                         HashMap<String, Boolean> passengersIds_new = new HashMap<>();
-                        passengersIds_new.put(Helper.CURRENT_ORDER.getUser_id(),true);
+                        passengersIds_new.put(new_order.getUser_id(),true);
                         //passengersIds_new.put(pa)
                     }
                 }
@@ -203,24 +269,25 @@ public class OrderDetailsActivity extends AppCompatActivity {
     }
 
     private void goCreateGroupForSharedRide() {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        //String groupId = Helper.getConcatenatedID(userId,Helper.CURRENT_ORDER.getOrder_id());
-        String groupId = Helper.getConcatenatedID(Helper.CURRENT_ORDER.getOrder_id(),Helper.CURRENT_ORDER.getDriver_id());
+        String userId = MainActivity.mFirebaseUser.getUid();
+        String groupId = Helper.getConcatenatedID(new_order.getOrder_id(),new_order.getDriver_id());
         SharedRide sharedRide = new SharedRide();
-        sharedRide.setDriver_id(Helper.CURRENT_ORDER.getDriver_id());
+        sharedRide.setDriver_id(new_order.getDriver_id());
         sharedRide.setGroup_id(groupId);
         getRegionName(OrderDetailsActivity.this,LocationManagerService.mLastLocation.getLatitude(),LocationManagerService.mLastLocation.getLongitude(),groupId);
         sharedRide.setTime(System.currentTimeMillis());
         sharedRide.setUser_id(userId);
-        sharedRide.setOrder_id(Helper.CURRENT_ORDER.getOrder_id());
+        sharedRide.setOrder_id(new_order.getOrder_id());
         HashMap<String, Boolean> ordersIds = new HashMap<>();
-        ordersIds.put(Helper.CURRENT_ORDER.getOrder_id(), false);
+        ordersIds.put(new_order.getOrder_id(), false);
         sharedRide.setOrderIDs(ordersIds);
         HashMap<String, Boolean> passengersIds = new HashMap<>();
         passengersIds.put(userId,true);
         //passengersIds.put(userId,true);
         sharedRide.setPassengers(passengersIds);
         db_ref_group.child(groupId).setValue(sharedRide);
+        db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
+        db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
         CloseActivity();
     }
     public void getRegionName(Context context, double lati, double longi,String group_id) {

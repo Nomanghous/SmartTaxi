@@ -56,25 +56,26 @@ public class DriverMainActivity extends AppCompatActivity {
     protected Order currentOrder = null;
     protected User currentUser = null;
     protected String CURRENT_ORDER_ID;
-    protected String CURRENT_GROUP_ID;
-    private boolean IS_FIRST_TIME = false;
+    protected String CURRENT_GROUP_ID = null;
     protected SharedRide currentSharedRide;
     protected String currentUserId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_driver_main);
-        setupBroadcastReceivers();
-        firebase_db = FirebaseDatabase.getInstance();
-        db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-        db_ref_drivers = firebase_db.getReference().child(Helper.REF_DRIVERS);
-        db_ref_users = firebase_db.getReference().child(Helper.REF_USERS);
-        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
-        db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
-        userMe = FirebaseAuth.getInstance().getCurrentUser();
-        checkAssignedSingleOrder();
-        everyTenSecondsTask();
+        if(!Helper.IS_FROM_CHILD) {
+            setContentView(R.layout.activity_driver_main);
+            setupBroadcastReceivers();
+            firebase_db = FirebaseDatabase.getInstance();
+            db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
+            db_ref_drivers = firebase_db.getReference().child(Helper.REF_DRIVERS);
+            db_ref_users = firebase_db.getReference().child(Helper.REF_USERS);
+            db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
+            db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+            userMe = FirebaseAuth.getInstance().getCurrentUser();
+            checkAssignedSingleOrder();
+            everyTenSecondsTask();
+        }
     }
 
     private void checkAssignedSingleOrder() {
@@ -99,9 +100,11 @@ public class DriverMainActivity extends AppCompatActivity {
 
     private void checkAssignedGroupOrder(){
         db_ref_order_to_driver.child(userMe.getUid())
-                .child(Helper.REF_GROUP_ORDER).addListenerForSingleValueEvent(new ValueEventListener() {
+                .child(Helper.REF_GROUP_ORDER).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(CURRENT_GROUP_ID == null)
+                    return;
                 if(dataSnapshot.exists()){
                     CURRENT_GROUP_ID = (String) dataSnapshot.getValue();
                     goFetchGroupByID(CURRENT_GROUP_ID);
@@ -183,7 +186,6 @@ public class DriverMainActivity extends AppCompatActivity {
         db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
         goFetchOrderByID(orderId,false);
-        IS_FIRST_TIME = true;
     }
 
 
@@ -226,7 +228,7 @@ public class DriverMainActivity extends AppCompatActivity {
                         CURRENT_ORDER_ID = currentOrder.getOrder_id();
                         goFetchCustomerById(isAlreadyAccepted);
                         String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
-                        if(currentOrder.getShared())
+                        if(CURRENT_GROUP_ID == null && currentOrder.getShared())
                             goFetchGroupByID(groupId);
                         if(!isAlreadyAccepted) {
                             Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
@@ -252,7 +254,8 @@ public class DriverMainActivity extends AppCompatActivity {
                             sendPushNotification();
                         }
                         openOrderActivity();
-                        db_ref_order_to_driver.child(userMe.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(CURRENT_ORDER_ID);
+                        if(!currentOrder.getShared())
+                            db_ref_order_to_driver.child(userMe.getUid()).child(Helper.REF_SINGLE_ORDER).setValue(CURRENT_ORDER_ID);
                     }
                 }
             }

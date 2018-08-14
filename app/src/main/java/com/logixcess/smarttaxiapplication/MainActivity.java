@@ -55,7 +55,6 @@ import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
-import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.Fragments.FeedbackFragment;
 import com.logixcess.smarttaxiapplication.Fragments.FindUserFragment;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
@@ -84,8 +83,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
 
@@ -106,7 +103,7 @@ public class MainActivity extends BaseActivity
     private ProgressBar progressbar;
     private DrawerLayout drawer;
     BroadcastReceiver mRegistrationBroadcastReceiver;
-    private FirebaseUser mFirebaseUser;
+    public static FirebaseUser mFirebaseUser;
     private int CURRENT_ORDER_STATUS = 0;
     private String CURRENT_ORDER_ID = "";
     private boolean IS_FOR_ORDER_VIEW = false;
@@ -149,14 +146,13 @@ public class MainActivity extends BaseActivity
         navigationView = findViewById(R.id.nav_view);
         mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         View hView =  navigationView.getHeaderView(0);
-        if(mFirebaseUser!=null)
+        if(mFirebaseUser != null)
         {
-            TextView nav_user_name = (TextView)hView.findViewById(R.id.tv_person_name);
+            TextView nav_user_name = hView.findViewById(R.id.tv_person_name);
             nav_user_name.setText(mFirebaseUser.getDisplayName());
-            TextView nav_user_status = (TextView)hView.findViewById(R.id.tv_person_status);
+            TextView nav_user_status = hView.findViewById(R.id.tv_person_status);
             nav_user_status.setText(mFirebaseUser.getEmail());
-            ImageView nav_user_image = (ImageView) hView.findViewById(R.id.iv_person_pic);
-            //Glide.with(this).load("http://goo.gl/gEgYUd")
+            ImageView nav_user_image = hView.findViewById(R.id.iv_person_pic);
             RequestOptions requestOptions = new RequestOptions();
             requestOptions.placeholder(R.drawable.user_placeholder);
             requestOptions.circleCrop();
@@ -295,6 +291,10 @@ public class MainActivity extends BaseActivity
     }
 
 
+    public FirebaseUser getmFirebaseUser(){
+        return mFirebaseUser;
+    }
+
 /*
 AlertDialog builder;
     public void user_selection_dialog()
@@ -390,6 +390,7 @@ AlertDialog builder;
         if (requestCode == REQUEST_CODE_LOCATION)
         {
             if(resultCode == RESULT_OK){
+                mapFragment.getgMap().clear();
                 double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
                 double longitude = data.getDoubleExtra("longitude", 0);
@@ -415,6 +416,7 @@ AlertDialog builder;
         if (requestCode == REQUEST_CODE_LOCATION_DROP_OFF)
         {
             if(resultCode == RESULT_OK){
+                mapFragment.getgMap().clear();
                 double latitude = data.getDoubleExtra("latitude", 0);
                 Log.d("LATITUDE****", String.valueOf(latitude));
                 double longitude = data.getDoubleExtra("longitude", 0);
@@ -439,11 +441,11 @@ AlertDialog builder;
                         Double pickupLng = Double.valueOf(MapFragment.new_order.getPickupLong());
                         options.position(new LatLng(pickupLat,pickupLng));
                         options.position(new LatLng(latitude,longitude));
-                        MapFragment.gMap.addMarker(options);
+                        mapFragment.getgMap().addMarker(options);
                         String url = mapFragment.getMapsApiDirectionsUrl();
 
 
-                        MapFragment.gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat,pickupLng),
+                        mapFragment.getgMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat,pickupLng),
                                 13));
                         mapFragment.addMarkers();
                     }
@@ -739,7 +741,6 @@ AlertDialog builder;
     }
 
     public void openOrderDetailsActivity(View view) {
-        Helper.CURRENT_ORDER = MapFragment.new_order;
         startActivity(new Intent(this, OrderDetailsActivity.class));
     }
     private void setUpNavigationView()
@@ -806,8 +807,9 @@ AlertDialog builder;
 
     }
 
-    public List<Driver> getDrivers(){
-        return this.DriversInRadius;
+    public void getDrivers(Location location){
+        new FetchDriversBasedOnRadius(this, location,this);
+//        return this.DriversInRadius;
     }
 
     public void showCurrentOrder() {
@@ -888,10 +890,8 @@ AlertDialog builder;
     public void DriversListAdded(List<Driver> drivers) {
         DriversInRadius = drivers;
         // drivers refreshed
-
         if (mapFragment != null)
-            mapFragment.getDriverList(MainActivity.this );
-
+            mapFragment.getDriverList(DriversInRadius);
     }
     private void goFechOrder() {
         DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(notificationPayload.getOrder_id());

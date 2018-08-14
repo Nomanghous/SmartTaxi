@@ -16,6 +16,7 @@ public class Helper {
     public static final int NOTI_TYPE_ORDER_WAITING = 104;
     public static final int NOTI_TYPE_ORDER_WAITING_LONG = 105;
     public static final int NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE = 106;
+    public static final int NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE = 107;
     public static final String REF_ORDERS = "Order";
     public static final String REF_USERS = "User";
     public static final String REF_GROUPS = "Group";
@@ -25,12 +26,12 @@ public class Helper {
     public static final String REF_GROUP_ORDER = "GroupOrder";
     public static final String REF_ORDER_TO_DRIVER = "OrderToDriver";
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
+    public static final String BROADCAST_DRIVER_RESPONSE = "BROADCAST_DRIVER_RESPONSE";
     public static final String REF_NOTIFICATIONS = "notifications";
 
-    public static Order CURRENT_ORDER = null;
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000;
-
+    public static boolean IS_FROM_CHILD = false;
 
     public static boolean checkWithinRadius(Location mine, LatLng other) {
         if(mine == null)

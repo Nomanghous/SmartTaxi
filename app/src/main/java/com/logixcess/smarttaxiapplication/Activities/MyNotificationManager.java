@@ -4,12 +4,22 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
+import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MyNotificationManager extends BroadcastReceiver {
 
@@ -33,10 +43,54 @@ public class MyNotificationManager extends BroadcastReceiver {
         if(notificationPayload != null) {
             if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED)
                 startMainActivity(data);
-            else
+            else if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE
+                    && action.equals(INTENT_FILTER_ACCEPT_ORDER)){
+                sendNotificationToRequestGroupRide(notificationPayload.getUser_id(),context,notificationPayload);
+                Toast.makeText(context, "New Passenger has added to Trip", Toast.LENGTH_SHORT).show();
+            }else
                 fuelUpTheBroadcastReceiver(action, data);
         }
 
+    }
+
+    public void sendNotificationToRequestGroupRide(String passengerID,Context context, NotificationPayload payload)
+    {
+        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
+        db_ref_user.child(passengerID).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    User driver = dataSnapshot.getValue(User.class);
+                    if(driver == null)
+                        return;
+                    String token = driver.getUser_token();
+                    NotificationPayload notificationPayload = new NotificationPayload();
+                    notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
+                    notificationPayload.setTitle("\"Request Accepted\"");
+                    notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
+                    notificationPayload.setUser_id("\""+payload.getUser_id()+"\"");
+                    notificationPayload.setDriver_id("\""+payload.getDriver_id()+"\"");
+                    notificationPayload.setOrder_id("\""+payload.getOrder_id()+"\"");
+                    notificationPayload.setPercentage_left("\""+-1+"\"");
+                    String str = new Gson().toJson(notificationPayload);
+                    try {
+                        JSONObject json = new JSONObject(str);
+                        new PushNotifictionHelper(context).execute(token,json);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else
+                {
+                    Toast.makeText(context,"Driver not found!",Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void fuelUpTheBroadcastReceiver(String action, String data) {

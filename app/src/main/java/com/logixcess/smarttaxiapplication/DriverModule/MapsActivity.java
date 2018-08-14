@@ -100,6 +100,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        Helper.IS_FROM_CHILD = true;
         super.onCreate(savedInstanceState);
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);

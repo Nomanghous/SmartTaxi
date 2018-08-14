@@ -10,7 +10,6 @@ public class Constants
     public static String PREFERENCES_KEY = "";
     public static String Database_Path = "https://smarttaxi-c57c4.firebaseio.com/";
     public static String USER_TOKEN = "";
-    public static String USER_ID = "";
     public static Uri FilePathUri ;
     public static Uri FilePathUri2 ;
     public static String Storage_Path = "images" ;

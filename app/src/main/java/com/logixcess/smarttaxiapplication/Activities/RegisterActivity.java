@@ -48,8 +48,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static com.logixcess.smarttaxiapplication.Utils.Constants.FilePathUri;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.Storage_Path;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.USER_ID;
+
 
 
 public class RegisterActivity extends AppCompatActivity {

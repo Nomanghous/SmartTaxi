@@ -15,6 +15,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
@@ -249,6 +250,14 @@ public class NotificationUtils {
                     saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForFriendRequest(context,payload,notificationPayload);
                     break;
+                case Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE:
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
+                    preparePendingIntentForFriendRequest(context,payload,notificationPayload);
+                    break;
+                case Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE:
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
+                    fuelUpTheBroadcastReceiver(context,Helper.BROADCAST_DRIVER_RESPONSE,payload);
+                    break;
                 case Helper.NOTI_TYPE_ORDER_ACCEPTED:
                     saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForMessage(context,payload,notificationPayload);
@@ -271,6 +280,17 @@ public class NotificationUtils {
             }
         }
     }
+
+
+    private static void fuelUpTheBroadcastReceiver(Context context, String action, String data) {
+        Intent intent = null;
+        intent = new Intent(action);
+        intent.putExtra("action", action);
+        intent.putExtra("data", data);
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+
+    }
+
 
     private static void saveDataToFirebase(NotificationPayload notificationPayload, String userId) {
         FirebaseDatabase.getInstance().getReference()
