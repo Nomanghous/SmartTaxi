@@ -6,17 +6,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.multidex.MultiDex;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.Registry;
+import com.bumptech.glide.annotation.GlideModule;
+import com.bumptech.glide.module.AppGlideModule;
 import com.firebase.client.Firebase;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.StorageReference;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
+
+import java.io.InputStream;
 
 public class SmartTaxiApp extends Application
 {
     private static SmartTaxiApp mInstance;
     private static SharedPreferences sharedPreferences;
     private static Firebase firebase_instance;
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,5 +61,7 @@ public class SmartTaxiApp extends Application
     public SharedPreferences getSharedPreferences(){
         return this.sharedPreferences;
     }
+
+
 
 }

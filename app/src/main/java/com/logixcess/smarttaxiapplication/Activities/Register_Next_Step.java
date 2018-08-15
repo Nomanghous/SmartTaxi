@@ -163,7 +163,7 @@ public class Register_Next_Step extends AppCompatActivity {
             passenger.setInOnline(true);
             passenger.setLatitude(0);
             passenger.setLongitude(0);
-            SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName());
+            SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName(),user_data.getUser_image_url());
             //firebaseHelper.pushUser(user_data,passenger);
         }
         else if(user_data.getUser_type().equals("Driver"))
@@ -181,11 +181,14 @@ public class Register_Next_Step extends AppCompatActivity {
         }
 
     }
-    private void SaveUser(String email , String password , String username)
+    private void SaveUser(String email , String password , String username,String profile_image)
     {
-
+        progressDialog = new ProgressDialog(Register_Next_Step.this);
+        progressDialog.setMessage("Wait..");
         if (password.length() < 6) {
             Toast.makeText(getApplicationContext(), "Password too short, enter minimum 6 characters!", Toast.LENGTH_SHORT).show();
+            if(progressDialog.isShowing())
+                progressDialog.dismiss();
             return;
         }
 //        if(progressBar!=null && progressBar.getVisibility() != View.VISIBLE)
@@ -203,6 +206,8 @@ public class Register_Next_Step extends AppCompatActivity {
                         // If sign in fails, display a message to the user. If sign in succeeds
                         // the auth state listener will be notified and logic to handle the
                         // signed in user can be handled in the listener.
+                        if(progressDialog.isShowing())
+                            progressDialog.dismiss();
                         if (!task.isSuccessful())
                         {
                             Toast.makeText(Register_Next_Step.this, "Authentication failed." + task.getException(),
@@ -212,7 +217,7 @@ public class Register_Next_Step extends AppCompatActivity {
                             FirebaseUser user = auth.getCurrentUser();
                             if(user!=null){
                                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                        .setDisplayName(username).setPhotoUri(user.getPhotoUrl()).build();
+                                        .setDisplayName(username).setPhotoUri(Uri.parse(profile_image)).build();
                                 user.updateProfile(profileUpdates);
                                 user_data.setUser_id(user.getUid());
                                 if(user_data.getUser_type().equals("Passenger"))
@@ -269,7 +274,7 @@ public class Register_Next_Step extends AppCompatActivity {
         if (FilePathUrii != null) {
 
             // Setting progressDialog Title.
-            progressDialog.setTitle("Image is Uploading...");
+            progressDialog.setTitle("NIC is Uploading...");
 
             // Showing progressDialog.
             progressDialog.show();
@@ -308,8 +313,8 @@ public class Register_Next_Step extends AppCompatActivity {
                             // Showing exception erro message.
                             Toast.makeText(Register_Next_Step.this, exception.getMessage(), Toast.LENGTH_LONG).show();
                         }
-                    })
-
+                    });
+/*
                     // On progress change upload time.
                     .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
                         @Override
@@ -319,7 +324,7 @@ public class Register_Next_Step extends AppCompatActivity {
                             progressDialog.setTitle("Image is Uploading...");
 
                         }
-                    });
+                    });*/
         }
         else {
 
@@ -335,7 +340,7 @@ public class Register_Next_Step extends AppCompatActivity {
         if (FilePathUrii != null) {
 
             // Setting progressDialog Title.
-            progressDialog.setTitle("Image is Uploading...");
+            progressDialog.setTitle("License is Uploading...");
 
             // Showing progressDialog.
             progressDialog.show();
@@ -374,8 +379,9 @@ public class Register_Next_Step extends AppCompatActivity {
                             // Showing exception erro message.
                             Toast.makeText(Register_Next_Step.this, exception.getMessage(), Toast.LENGTH_LONG).show();
                         }
-                    })
+                    });
 
+                    /*
                     // On progress change upload time.
                     .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
                         @Override
@@ -385,7 +391,7 @@ public class Register_Next_Step extends AppCompatActivity {
                             progressDialog.setTitle("Image is Uploading...");
 
                         }
-                    });
+                    });*/
         }
         else {
 
@@ -412,7 +418,7 @@ public class Register_Next_Step extends AppCompatActivity {
             // firebaseHelper.pushUser(user_data,driver);
             uploadNIC(Constants.FilePathUri);
             uploadLicence(Constants.FilePathUri2);
-            SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName());
+            SaveUser(user_data.getEmail(),user_data.getPassword(),user_data.getName(),user_data.getUser_image_url());
             //firebaseHelper.pushUser(user_data,driver);
         }
     }

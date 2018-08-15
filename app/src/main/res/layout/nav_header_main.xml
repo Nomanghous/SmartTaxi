@@ -13,27 +13,31 @@
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
     <ImageView
-        android:paddingLeft="0dp"
+        android:layout_marginLeft="16dp"
         android:id="@+id/iv_person_pic"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
-        android:layout_gravity="center_horizontal"
+        android:layout_width="100dp"
+        android:layout_height="80dp"
+        android:layout_gravity="start"
         android:contentDescription="@string/nav_header_desc"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
         app:srcCompat="@mipmap/ic_launcher_round" />
 
     <TextView
+        android:layout_marginLeft="20dp"
         android:id="@+id/tv_person_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
         android:text="No User"
+        android:textColor="@color/black"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
     <TextView
+        android:layout_marginLeft="20dp"
         android:id="@+id/tv_person_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Online" />
+        android:textColor="@color/leku_strong_grey"
+        android:text="" />
 
 </LinearLayout>

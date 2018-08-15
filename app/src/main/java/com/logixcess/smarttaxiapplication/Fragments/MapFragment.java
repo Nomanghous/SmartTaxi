@@ -110,6 +110,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     CheckBox cb_shared;
     public static HashMap<Integer,String> route_details;
     public static HashMap<String,Marker> driver_in_map = new HashMap<>(); // driver_id,
+    public static HashMap<String,Integer> driver_list_index = new HashMap<>();
     private ArrayList<Polyline> polyLineList;
     private UserLocationManager gps;
     private GregorianCalendar SELECTED_DATE_TIME;
@@ -326,7 +327,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 goCheckSharedRideDriver(driver.getFk_user_id(),driver);
             else {
                 driverList.add(driver);
-                addDriverMarker(driver);
+                addDriverMarker(driver,driverList.indexOf(driver));
             }
         }
         /*valueEventListener = new ValueEventListener() {
@@ -387,7 +388,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         firebase_instance.child(Helper.REF_DRIVERS).orderByChild("inOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
         */
     }
-    public void addDriverMarker(Driver driver1)
+    public void addDriverMarker(Driver driver1,int index)
     {
         //now update the routes and remove markers if already present in it.
         LatLng driverLatLng = new LatLng(driver1.getLatitude(), driver1.getLongitude());
@@ -404,6 +405,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
                     marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
                     marker.setTag(driver1.getFk_user_id());
+                    driver_list_index.put(driver1.getFk_user_id(),index);
                     driver_in_map.put(driver1.getFk_user_id(),marker);
                 }
 
@@ -445,7 +447,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }*/
     public void  show_driverDetail(String driverId)
     {
-        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
+//        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
+//                "CANCEL" };
+        final CharSequence[] items = { "SELECT",
                 "CANCEL" };
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
@@ -477,7 +481,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 }
                 else if (items[item].equals("OPEN PROFILE"))
                 {
-
+//                    int index = driver_list_index.get(driverId);
+//                    Driver driver = driverList.get(index);
+//                    open_profile(driver.getFk_user_id(),driver.getRegion_name(),driver.get);
+                   // Toast.makeText(getActivity(),driver.getRegion_name(),Toast.LENGTH_SHORT).show();
                 }
                 else if (items[item].equals("CANCEL")) {
                     dialog.dismiss();
@@ -487,6 +494,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         builder.show();
     }
 
+    private void open_profile()
+    {
+
+        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
+                "CANCEL" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Driver Detail");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item)
+            {
+                boolean result= PermissionHandler.checkPermission(getActivity());
+                if (items[item].equals("SELECT"))
+                {
+
+                }
+                else if (items[item].equals("OPEN PROFILE"))
+                {
+
+                }
+                else if (items[item].equals("CANCEL")) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.show();
+    }
     public void checkRidePassengers(String region_name,String driver_id) {
         valueEventListener = new ValueEventListener() {
             @Override
@@ -1008,7 +1042,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                        getActivity().runOnUiThread(new Runnable() {
                            @Override
                            public void run() {
-                               addDriverMarker(driver);
+                               addDriverMarker(driver,driverList.indexOf(driver));
                            }
                        });
                    }
@@ -1017,7 +1051,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            addDriverMarker(driver);
+                            addDriverMarker(driver,driverList.indexOf(driver));
                         }
                     });
                 }

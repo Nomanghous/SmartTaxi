@@ -37,7 +37,7 @@
     <string-array name="nav_item_activity_titles">
         <item>Add Ride</item>
         <item>Ride History</item>
-        <item>Add Profile</item>
+        <item>Update Profile</item>
         <item>Notifications</item>
         <item>Feedback</item>
         <item>Find User</item>

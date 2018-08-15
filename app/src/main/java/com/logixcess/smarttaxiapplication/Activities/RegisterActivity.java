@@ -29,6 +29,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
@@ -82,8 +83,7 @@ public class RegisterActivity extends AppCompatActivity {
         btn_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(Constants.FilePathUri != null && !TextUtils.isEmpty(Constants.FilePathUri.toString()))
-                    UploadImageFileToFirebaseStorage(Constants.FilePathUri);
+
                 if(!TextUtils.isEmpty(Constants.USER_TOKEN))
                     user.setUser_token(Constants.USER_TOKEN);
                 if(!TextUtils.isEmpty(et_address.getText().toString()))
@@ -99,10 +99,20 @@ public class RegisterActivity extends AppCompatActivity {
                     user.setPhone(et_phone.getText().toString());
 
                 user.setUser_type(sp_user_types.getSelectedItem().toString());
-                Intent intent;
-                intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
-                intent.putExtra("user_data",user);
-                startActivity(intent);
+                if(Constants.FilePathUri != null && !TextUtils.isEmpty(Constants.FilePathUri.toString()))
+                    UploadImageFileToFirebaseStorage(Constants.FilePathUri);
+                else
+                {
+                    Intent intent;
+                    intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
+                    intent.putExtra("user_data",user);
+                    startActivity(intent);
+                }
+
+//                Intent intent;
+//                intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
+//                intent.putExtra("user_data",user);
+//                startActivity(intent);
             }
         });
     }
@@ -286,6 +296,10 @@ public class RegisterActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                             //Uri image_pa = task.getResult().getStorage().getDownloadUrl().getResult();
+                            Intent intent;
+                            intent = new Intent(RegisterActivity.this,Register_Next_Step.class);
+                            intent.putExtra("user_data",user);
+                            startActivity(intent);
                         }
                     })
                     // If something goes wrong .

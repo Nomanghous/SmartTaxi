@@ -37,10 +37,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.Registry;
+import com.bumptech.glide.annotation.GlideModule;
+import com.bumptech.glide.module.AppGlideModule;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -50,6 +55,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
@@ -80,6 +87,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -95,6 +103,7 @@ public class MainActivity extends BaseActivity
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
+    Order order_pending;
 
 
 
@@ -153,11 +162,30 @@ public class MainActivity extends BaseActivity
             TextView nav_user_status = hView.findViewById(R.id.tv_person_status);
             nav_user_status.setText(mFirebaseUser.getEmail());
             ImageView nav_user_image = hView.findViewById(R.id.iv_person_pic);
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(mFirebaseUser.getPhotoUrl().toString());
+           // String path_url = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).toString();//storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getPath();
+           // Uri uri = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getDownloadUrl().getResult();
             RequestOptions requestOptions = new RequestOptions();
             requestOptions.placeholder(R.drawable.user_placeholder);
             requestOptions.circleCrop();
-            Glide.with(this).setDefaultRequestOptions(requestOptions).load(mFirebaseUser.getPhotoUrl())
-                    .into(nav_user_image);
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri) {
+                   String  imageURL = uri.toString();
+
+                    Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
+                            .into(nav_user_image);
+                    //Glide.with(getApplicationContext()).load(imageURL).into(i1);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle any errors
+                    Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load("")
+                            .into(nav_user_image);
+                }
+            });
+
         }
 
 
@@ -212,6 +240,7 @@ public class MainActivity extends BaseActivity
             getAllNotificaations(user.getUid());
         }
 
+        order_pending = new Order();
     }
 
     public Location getCurrentLocation(){
@@ -923,6 +952,7 @@ AlertDialog builder;
         });
     }
 ArrayList<Order> my_orders;
+
     private void getAllOrders() {
         my_orders = new ArrayList<>();
         FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
@@ -932,12 +962,14 @@ ArrayList<Order> my_orders;
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists())
                 {
-                    for (DataSnapshot snapshot:dataSnapshot.getChildren())
-                    {
+                    for (DataSnapshot snapshot:dataSnapshot.getChildren()) {
                         Order order = snapshot.getValue(Order.class);
-                        if(order.getStatus() == Order.OrderStatusCompleted)
-                        {
+                        if (order.getStatus() == Order.OrderStatusCompleted) {
                             my_orders.add(order);
+                        }
+                        else if (order.getStatus() == Order.OrderStatusInProgress)
+                        {
+                            order_pending = order;
                         }
                     }
 
@@ -948,6 +980,10 @@ ArrayList<Order> my_orders;
 
             }
         });
+    }
+    private void getDriver(String driver_id)
+    {
+        //db_
     }
 
     ArrayList<NotificationPayload> notificationPayloads;

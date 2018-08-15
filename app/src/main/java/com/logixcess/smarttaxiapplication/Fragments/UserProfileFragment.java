@@ -11,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -22,6 +23,7 @@ import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -55,6 +57,7 @@ import java.io.IOException;
 import static android.content.ContentValues.TAG;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.FilePathUri;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.Storage_Path;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.user_image_path;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -113,6 +116,7 @@ public class UserProfileFragment extends Fragment {
     Button btn_update;
     String user_id;
     Spinner sp_user_types;
+    ProgressBar pb_image;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -125,6 +129,7 @@ public class UserProfileFragment extends Fragment {
         profile_image = (CircularImageView) view.findViewById(R.id.profile_image);
         ed_first_name = view.findViewById(R.id.ed_first_name);
         sp_user_types = view.findViewById(R.id.sp_user_types);
+        pb_image = view.findViewById(R.id.pb_image);
         ed_email = view.findViewById(R.id.ed_email);
         ed_phone = view.findViewById(R.id.ed_phone);
         ed_password = view.findViewById(R.id.ed_password);
@@ -371,12 +376,16 @@ public class UserProfileFragment extends Fragment {
                         sp_user_types.setSelection(1);
                     }
                     if (!old_user.getUser_image_url().equals("")) {
+
+                        if(pb_image.getVisibility()==View.GONE)
+                            pb_image.setVisibility(View.VISIBLE);
                         Constants.user_image_path = old_user.getUser_image_url();
                         FirebaseStorage storage = FirebaseStorage.getInstance();
                         // Create a storage reference from our app
                         StorageReference storageRefer = storage.getReference();
                         // Create a reference with an initial file path and name
-                        StorageReference storageReff = storageRefer.child(Storage_Path + old_user.getUser_id() + ".jpg");
+                        //StorageReference storageReff = storageRefer.child(Storage_Path + old_user.getUser_id() + ".jpg");
+                        StorageReference storageReff = storageRefer.child(user_image_path);
 //                            Glide.with(getContext())
 //                                    .using(new FirebaseImageLoader())
 //                                    .load(storageRef)
@@ -397,12 +406,17 @@ public class UserProfileFragment extends Fragment {
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
                                     Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
                                     //.setImageBitmap(bitmap);
+                                    if(pb_image.getVisibility()== View.VISIBLE)
+                                        pb_image.setVisibility(View.GONE);
                                     BitmapDrawable background = new BitmapDrawable(bitmap);
                                     profile_image.setBackground(background);
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
-                                public void onFailure(@NonNull Exception exception) {
+                                public void onFailure(@NonNull Exception exception)
+                                {
+                                    if(pb_image.getVisibility()== View.VISIBLE)
+                                        pb_image.setVisibility(View.GONE);
                                 }
                             });
                         } catch (IOException e) {
