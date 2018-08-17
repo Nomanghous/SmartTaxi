@@ -8,14 +8,19 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
+import com.logixcess.smarttaxiapplication.Models.Requests;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
 import org.json.JSONException;
@@ -41,57 +46,75 @@ public class MyNotificationManager extends BroadcastReceiver {
             notificationManager.cancel(123);
         NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
         if(notificationPayload != null) {
-            if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED)
+            if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED) {
+
                 startMainActivity(data);
-            else if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE
-                    && action.equals(INTENT_FILTER_ACCEPT_ORDER)){
-                sendNotificationToRequestGroupRide(notificationPayload.getUser_id(),context,notificationPayload);
-                Toast.makeText(context, "New Passenger has added to Trip", Toast.LENGTH_SHORT).show();
-            }else
+            } else if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE) {
+                sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
+                Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
+            }else if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED) {
+                sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
+            } else
                 fuelUpTheBroadcastReceiver(action, data);
         }
 
     }
 
-    public void sendNotificationToRequestGroupRide(String passengerID,Context context, NotificationPayload payload)
+    public void sendNotificationToRequestGroupRide(String passengerID, Context context, NotificationPayload payload, String action)
     {
-        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
-        db_ref_user.child(passengerID).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+        boolean isAccepted = action.equals(INTENT_FILTER_ACCEPT_ORDER);
+        udpateRequest(payload.getDriver_id(),passengerID,isAccepted ? Requests.STATUS_ACCEPTED : Requests.STATUS_REJECTED);
+//        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
+//        db_ref_user.child(passengerID).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+//                if(dataSnapshot.exists()){
+//                    User passenger = dataSnapshot.getValue(User.class);
+//                    if(passenger == null)
+//                        return;
+//
+//                    String token = passenger.getUser_token();
+//                    NotificationPayload notificationPayload = new NotificationPayload();
+//                    notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
+//                    notificationPayload.setTitle("\"Request Accepted\"");
+//                    notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
+//                    notificationPayload.setUser_id("\""+payload.getUser_id()+"\"");
+//                    notificationPayload.setDriver_id("\""+payload.getDriver_id()+"\"");
+//                    notificationPayload.setOrder_id("\""+payload.getOrder_id()+"\"");
+//                    notificationPayload.setPercentage_left("\""+-1+"\"");
+//                    String str = new Gson().toJson(notificationPayload);
+//                    try {
+//                        JSONObject json = new JSONObject(str);
+//                        new PushNotifictionHelper(context).execute(token,json);
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                else
+//                {
+//                    Toast.makeText(context,"Passenger not found!",Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
+    }
+    private void udpateRequest(String driverId, String userId,int status){
+        Requests requests = new Requests(driverId,userId,status);
+        String res_id = Helper.getConcatenatedID(userId,driverId);
+        FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
+        DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
+        db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    User driver = dataSnapshot.getValue(User.class);
-                    if(driver == null)
-                        return;
-                    String token = driver.getUser_token();
-                    NotificationPayload notificationPayload = new NotificationPayload();
-                    notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
-                    notificationPayload.setTitle("\"Request Accepted\"");
-                    notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
-                    notificationPayload.setUser_id("\""+payload.getUser_id()+"\"");
-                    notificationPayload.setDriver_id("\""+payload.getDriver_id()+"\"");
-                    notificationPayload.setOrder_id("\""+payload.getOrder_id()+"\"");
-                    notificationPayload.setPercentage_left("\""+-1+"\"");
-                    String str = new Gson().toJson(notificationPayload);
-                    try {
-                        JSONObject json = new JSONObject(str);
-                        new PushNotifictionHelper(context).execute(token,json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else
-                {
-                    Toast.makeText(context,"Driver not found!",Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            public void onComplete(@NonNull Task<Void> task) {
 
             }
         });
     }
+
 
     private void fuelUpTheBroadcastReceiver(String action, String data) {
         Intent intent = null;

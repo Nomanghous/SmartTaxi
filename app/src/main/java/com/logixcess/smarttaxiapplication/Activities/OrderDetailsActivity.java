@@ -1,5 +1,6 @@
 package com.logixcess.smarttaxiapplication.Activities;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Address;
@@ -20,14 +21,11 @@ import com.google.firebase.database.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.ValueEventListener;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -56,7 +54,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
     ValueEventListener valueEventListener;
     Firebase firebase_instance;
     private DatabaseReference db_ref_group;
-    private Query db_ref_group2;
     String my_region_name;
     private SharedRide currentSharedRide;
     private HashMap<String, Boolean> mPassengerList;
@@ -97,6 +94,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     public void goConfirmBooking(View view)
     {
+        db_ref_order_to_driver = db_ref.child(Helper.REF_ORDER_TO_DRIVER);
         saveOrderOnline();
     }
 
@@ -110,11 +108,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     if(!CREATE_NEW_GROUP) {
                         goFetchGroupByID(Constants.group_id);
                     }else{
-                        db_ref_order_to_driver = db_ref.child(Helper.REF_ORDER_TO_DRIVER);
+
                         goCreateGroupForSharedRide();
                     }
-                }else
-                    sendNotificationToken();
+                }else {
+                    db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_SINGLE_ORDER).setValue(new_order.getOrder_id());
+                    db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
+                    CloseActivity();
+                }
             }
         });
     }
@@ -132,7 +133,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         mOrderList.put(new_order.getOrder_id(), true);
                         currentSharedRide.setPassengers(mPassengerList);
                         currentSharedRide.setOrderIDs(mOrderList);
-                        updateThatSpecificOrderToAccepted(new_order.getOrder_id());
+                        updateThatSpecificOrderToAccepted(currentSharedRide.getGroup_id());
                     }
                 }
             }
@@ -143,15 +144,12 @@ public class OrderDetailsActivity extends AppCompatActivity {
         });
     }
 
-    private void updateThatSpecificOrderToAccepted(String order_id) {
-        Order order = new_order;
-        order.setStatus(Order.OrderStatusInProgress);
-        db_ref.child(Helper.REF_ORDERS).child(order_id).setValue(order).addOnCompleteListener(new OnCompleteListener<Void>() {
+    private void updateThatSpecificOrderToAccepted(String group_id) {
+        db_ref_group.child(group_id).setValue(currentSharedRide).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
-                    new_order = order;
-                    updateSharedRideInfo();
+                    updateOrderForSharedRide();
 
                 }
             }
@@ -160,13 +158,13 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     }
 
-    private void updateSharedRideInfo() {
-        db_ref.child(Helper.REF_GROUPS).child(Constants.group_id).setValue(currentSharedRide).addOnCompleteListener(new OnCompleteListener<Void>() {
+    private void updateOrderForSharedRide() {
+        new_order.setStatus(Order.OrderStatusInProgress);
+        db_ref.child(Helper.REF_ORDERS).child(currentSharedRide.getOrder_id()).setValue(new_order).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
-                    Toast.makeText(OrderDetailsActivity.this, "Your Order has been Placed Successfully.", Toast.LENGTH_SHORT).show();
-
+                    CloseActivity();
                 }
             }
         });
@@ -174,11 +172,10 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     public void sendNotificationToken()
     {
-
         DatabaseReference db_ref_user = db_ref.child(Helper.REF_USERS);
         db_ref_user.child(new_order.getDriver_id()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     User driver = dataSnapshot.getValue(User.class);
                     if(driver == null)
@@ -226,16 +223,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
         });
     }
 
-    // group DI
-    /*
-    * TODO: GET SHARED RIDE ON BASIS OF GROUPID
-     * TODO: PUSH NOTIfication to driver
-     *
-    * TODO: INSERT THIS USER DATA INSIDE THAT If Passsenger limit allow
-    * TODO:DONE
-    *
 
-    * */
 
     private void checkifgroupExist(String driver_id)
     {
@@ -310,7 +298,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     private void CloseActivity() {
         Toast.makeText(OrderDetailsActivity.this, "Order Placed Successfully", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(OrderDetailsActivity.this, MapsActivity.class));
+        Intent returnIntent = new Intent();
+        setResult(Activity.RESULT_OK,returnIntent);
         finish();
     }
 

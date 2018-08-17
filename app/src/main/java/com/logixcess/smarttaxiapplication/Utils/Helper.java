@@ -4,8 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+
 import com.google.android.gms.maps.model.LatLng;
-import com.logixcess.smarttaxiapplication.Models.Order;
 
 import java.util.Arrays;
 
@@ -25,12 +25,14 @@ public class Helper {
     public static final String REF_SINGLE_ORDER = "SingleOrder";
     public static final String REF_GROUP_ORDER = "GroupOrder";
     public static final String REF_ORDER_TO_DRIVER = "OrderToDriver";
+    public static final String REF_REQUESTS = "requests";
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
     public static final String BROADCAST_DRIVER_RESPONSE = "BROADCAST_DRIVER_RESPONSE";
     public static final String REF_NOTIFICATIONS = "notifications";
 
+
     public static String polylinesSeparator = "___and___";
-    public static double SELECTED_RADIUS = 10000;
+    public static double SELECTED_RADIUS = 10000; // it's in meters
     public static boolean IS_FROM_CHILD = false;
 
     public static boolean checkWithinRadius(Location mine, LatLng other) {

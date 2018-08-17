@@ -47,6 +47,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
@@ -58,6 +60,7 @@ import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.Requests;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
@@ -87,7 +90,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.SELECTED_RADIUS;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
 /**
@@ -98,44 +100,81 @@ import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener,View.OnClickListener {
+public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    private DatabaseReference db_ref_user;
-    public GoogleMap gMap;
-    public static EditText et_drop_off,et_pickup;
+    public static EditText et_drop_off, et_pickup;
     public static Order new_order;
+    public static HashMap<Integer, String> route_details;
+    public static HashMap<String, Marker> driver_in_map = new HashMap<>(); // driver_id,
+    public static HashMap<String, Integer> driver_list_index = new HashMap<>();
+    public static boolean CREATE_NEW_GROUP = false;
+    static boolean isOrderAccepted = false, isDriverResponded = false;
+    public GoogleMap gMap;
     CheckBox cb_shared;
-    public static HashMap<Integer,String> route_details;
-    public static HashMap<String,Marker> driver_in_map = new HashMap<>(); // driver_id,
-    public static HashMap<String,Integer> driver_list_index = new HashMap<>();
-    private ArrayList<Polyline> polyLineList;
-    private UserLocationManager gps;
-    private GregorianCalendar SELECTED_DATE_TIME;
     Firebase firebase_instance;
     ValueEventListener valueEventListener;
     ArrayList<Driver> driverList;
     Location DRIVER_LOCATION;
     Location MY_LOCATION;
-    double total_cost = 0 ;
-    // TODO: Rename and change types of parameters
+    double total_cost = 0;
+    Button btn_select_vehicle, btn_hide_details;
+    android.app.AlertDialog builder;
+    LinearLayout ct_address;
+    RelativeLayout ct_vehicles;
+    Button btn_confirm;
+    LinearLayout layout_cost_detail;
+    TextView txtLocation, txtDestination, txt_cost;
+    View vehicle1, vehicle2, vehicle3, vehicle4, vehicle5;
+    int count_for_region = 0;
+    BroadcastReceiver driverResponseReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String data = intent.getExtras().getString("data");
+            String action = intent.getExtras().getString("action");
+            NotificationPayload notificationPayload = new Gson().fromJson(data, NotificationPayload.class);
+            isDriverResponded = true;
+            if (notificationPayload != null) {
+                if (!notificationPayload.getDriver_id().equals("-1")) {
+                    // it's accepted
+                    new_order.setDriver_id(notificationPayload.getDriver_id());
+                    isOrderAccepted = true;
+                } else {
+                    isOrderAccepted = false;
+                }
+            }
+        }
+    };
+    private DatabaseReference db_ref_user;
+    private ArrayList<Polyline> polyLineList;
+    private UserLocationManager gps;
+    private GregorianCalendar SELECTED_DATE_TIME;
     private String mParam1;
     private String mParam2;
-
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
-    Button btn_select_vehicle,btn_hide_details;
     private FirebaseUser USER_ME;
-    static boolean isOrderAccepted = false,isDriverResponded = false;
     private SharedRide currentSharedRide;
-    private DatabaseReference db_ref_group;
+    private DatabaseReference db_ref_group, db_ref_requests;
     private HashMap<String, Boolean> mPassengerList;
-    public static boolean CREATE_NEW_GROUP = false;
-
+    private boolean thereIsActiveOrder = false;
+    private boolean dialog_already_showing = false;
+    private FirebaseDatabase firebase_db;
     public MapFragment() {
         // Required empty public constructor
+
+        /*
+        * TODO: SINGLE TRIP ISSUE
+        * TODO: RADIUS should be resolved.
+        * TODO: SCHEDULE TRIP : for now it's only saving the given date from user. Rest of the functionality is remaining to be implemented
+        * TODO: Color change according to the distance remaining from the pickup location
+        * TODO: FEEDBACK System
+        * TODO: Driver Profile should be handled
+        * TODO: Cost should be calculated properly
+        * */
+
     }
 
     /**
@@ -166,11 +205,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
-
-
-    android.app.AlertDialog builder;
-    public void user_selection_dialog()
-    {
+    public void user_selection_dialog() {
         Context mContext = getActivity();
 
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -185,14 +220,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         builder.show();
         btn_done.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
-                if(TextUtils.isEmpty(edt_user_numbers.getText().toString()))
-                {
+            public void onClick(View view) {
+                if (TextUtils.isEmpty(edt_user_numbers.getText().toString())) {
                     Snackbar snackbar = Snackbar.make(getActivity().findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
                     snackbar.show();
-                }
-                else {
+                } else {
                     builder.dismiss();
                     builder.cancel();
                     builder = null;
@@ -201,14 +233,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         });
     }
-    LinearLayout ct_address;
-    RelativeLayout ct_vehicles;
-    Button btn_confirm;
 
-    private FirebaseDatabase firebase_db;
-    LinearLayout layout_cost_detail;
-    TextView txtLocation,txtDestination,txt_cost;
-    View vehicle1,vehicle2,vehicle3,vehicle4,vehicle5;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -220,9 +245,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         db_ref_user = firebase_db.getReference().child(Helper.REF_PASSENGERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
+        db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         driverList = new ArrayList<>();
 
-    LinearLayout layout_vehicle1,layout_vehicle2,layout_vehicle3,layout_vehicle4,layout_vehicle5;
+        LinearLayout layout_vehicle1, layout_vehicle2, layout_vehicle3, layout_vehicle4, layout_vehicle5;
         mapFragment = view.findViewById(R.id.map);
 
         vehicle1 = view.findViewById(R.id.vehicle1);
@@ -259,7 +285,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 //                    user_selection_dialog();
 //                }
 
-                if(new_order != null) {
+                if (new_order != null) {
                     new_order.setVehicle_id("Chingchi");
                     new_order.setShared(cb_shared.isChecked());
                 }
@@ -282,7 +308,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         });
 
 
-
         mapFragment.onCreate(savedInstanceState);
         mapFragment.getMapAsync(this);
         new_order = new Order();
@@ -290,13 +315,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         et_drop_off = view.findViewById(R.id.et_dropoff);
         cb_shared = view.findViewById(R.id.cb_shared);
         new_order.setShared(false);
-        new_order.setUser_id(((MainActivity)getContext()).getmFirebaseUser().getUid());
+        new_order.setUser_id(((MainActivity) getContext()).getmFirebaseUser().getUid());
 
         btn_hide_details.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 layout_cost_detail.setVisibility(View.GONE);
-                if(btn_confirm.getVisibility()==View.GONE)
+                if (btn_confirm.getVisibility() == View.GONE)
                     btn_confirm.setVisibility(View.VISIBLE);
             }
         });
@@ -309,125 +334,61 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         });
         everyTenSecondsTask();
-        return  view;
+        return view;
     }
-    private boolean checkWithinRadius(LatLng latLng,Location mine) {
-        DRIVER_LOCATION = new Location("driver");
-        DRIVER_LOCATION.setLatitude(latLng.latitude);
-        DRIVER_LOCATION.setLongitude(latLng.longitude);
-        return mine.distanceTo(DRIVER_LOCATION) < SELECTED_RADIUS;//distance in meters
-    }
-    public void getDriverList(List<Driver> drivers)
-    {
-        if(new_order == null)
+
+    public void getDriverList(List<Driver> drivers) {
+        if (new_order == null)
             return;
-        for(Driver driver : drivers)
-        {
-            if(new_order.getShared())
-                goCheckSharedRideDriver(driver.getFk_user_id(),driver);
-            else {
-                driverList.add(driver);
-                addDriverMarker(driver,driverList.indexOf(driver));
-            }
-        }
-        /*valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot)
-            {
-                if(dataSnapshot.exists())//check if user exist
-                {
-                    Driver driver = null;
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
-                    {
-                        //PolyUtil.isLocationOnEdge();
-                        driver = snapshot.getValue(Driver.class);
+        for (Driver driver : drivers)
+            goCheckSharedRideDriver(driver.getFk_user_id(), driver);
 
-                        LatLng driver_location = new LatLng(driver.getLatitude(), driver.getLongitude());
-                        if(new_order != null && new_order.getShared())
-                        {
-                            for (Polyline polyline : polyLineList) {
-                                //polyline.
-                                //if (PolyUtil.isLocationOnEdge(driver_location, polyline.getPoints(), false)) {
-                                //if(PolyUtil.isLocationOnPath(driver_location, polyline.getPoints(), true))
-                                if(PolyUtil.containsLocation(driver_location, polyline.getPoints(), true)
-                                        || checkWithinRadius(driver_location, ((MainActivity)getContext()).getCurrentLocation()))
-                                {
-                                    //means that driver location is inside that path/route
-                                    driverList.add(driver);
-                                    addDriverMarker(driver);
-//                                    Boolean within_radius = checkWithinRadius(driver_location);
-//                                    if (within_radius) {
-//                                        driverList.add(driver);
-//                                        addDriverMarker(driver);
-//                                    }
-                                } else {
-
-                                }
-                            }
-                        }else{
-                            Boolean within_radius = checkWithinRadius(driver_location,((MainActivity)getContext()).getCurrentLocation());
-                            if(within_radius){
-                                driverList.add(driver);
-                                addDriverMarker(driver);
-                            }
-
-                        }
-                    }
-
-                }
-                else
-                {
-                    Toast.makeText(getActivity(),"No Data Found !",Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-            }
-        };
-        firebase_instance.child(Helper.REF_DRIVERS).orderByChild("inOnline").equalTo(true).addValueEventListener(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
-        */
     }
-    public void addDriverMarker(Driver driver1,int index)
-    {
+
+    public void addDriverMarker(Driver driver1, int index) {
         //now update the routes and remove markers if already present in it.
         LatLng driverLatLng = new LatLng(driver1.getLatitude(), driver1.getLongitude());
-            if(driver_in_map.containsKey(driver1.getFk_user_id()))
-            {
-                Marker marker = driver_in_map.get(driver1.getFk_user_id());
-                marker.setPosition(driverLatLng);
+        if (driver_in_map.containsKey(driver1.getFk_user_id())) {
+            Marker marker = driver_in_map.get(driver1.getFk_user_id());
+            marker.setPosition(driverLatLng);
+            marker.remove();
+            driver_in_map.remove(driver1.getFk_user_id());
+            if (gMap != null) {
+                marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
+                        .title("Driver: ".concat(driver1.getFk_user_id())));
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                marker.setTag(driver1.getFk_user_id());
+                driver_in_map.put(driver1.getFk_user_id(), marker);
             }
-            else
-            {
-                if (gMap != null) {
-                    Marker marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
-                            .title("Driver: ".concat(driver1.getFk_user_id())));
+        } else {
+            if (gMap != null) {
+                Marker marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
+                        .title("Driver: ".concat(driver1.getFk_user_id())));
 
-                    marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
-                    marker.setTag(driver1.getFk_user_id());
-                    driver_list_index.put(driver1.getFk_user_id(),index);
-                    driver_in_map.put(driver1.getFk_user_id(),marker);
-                }
-
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                marker.setTag(driver1.getFk_user_id());
+                driver_list_index.put(driver1.getFk_user_id(), index);
+                driver_in_map.put(driver1.getFk_user_id(), marker);
             }
+
+        }
 
     }
-    public double check_cost(int shared_user_status,double base_fair_per_km)
-    {
-        if(shared_user_status == 1)//primary
+
+    public double check_cost(int shared_user_status, double base_fair_per_km) {
+        if (shared_user_status == 1)//primary
         {
             total_cost = (base_fair_per_km / 100.0f) * 20; //give 20% discount
-        }
-        else if(shared_user_status == 2) // secondary
+        } else if (shared_user_status == 2) // secondary
         {
             total_cost = (base_fair_per_km / 100.0f) * 10; //give 10% discount
-        }
-        else if(shared_user_status == 3) //tertiary
+        } else if (shared_user_status == 3) //tertiary
         {
             total_cost = (base_fair_per_km / 100.0f) * 5; //give
         }
         return total_cost;
     }
+
     /*public void getRegionName(Context context, double lati, double longi) {
         String regioName = "";
         Geocoder gcd = new Geocoder(context, Locale.getDefault());
@@ -445,124 +406,77 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             e.printStackTrace();
         }
     }*/
-    public void  show_driverDetail(String driverId)
-    {
-//        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
-//                "CANCEL" };
-        final CharSequence[] items = { "SELECT",
-                "CANCEL" };
+    public void show_driverDetail(String driverid) {
+
+        if (dialog_already_showing)
+            return;
+        String driverId = driverid;
+        final CharSequence[] items = {"SELECT", "OPEN PROFILE",
+                "CANCEL"};
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
+
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
-                boolean result= PermissionHandler.checkPermission(getActivity());
-                if (items[item].equals("SELECT"))
-                {
+                boolean result = PermissionHandler.checkPermission(getActivity());
+                if (items[item].equals("SELECT")) {
 
-                    if(new_order.getShared()) {
+//                    if (new_order.getShared()) {
+                        new_order.setDriver_id(driverId);
                         sendNotificationToRequestGroupRide(driverId);
-                    }
-                    else {//non shared
-                    double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                        //Display Cost
-                        if(layout_cost_detail.getVisibility() == View.GONE)
-                        {
-                            if(btn_confirm.getVisibility()==View.VISIBLE)
-                                btn_confirm.setVisibility(View.GONE);
-                            layout_cost_detail.setVisibility(View.VISIBLE);
-                            txtLocation.setText("Location : "+new_order.getPickup());
-                            txtDestination.setText("Destination : "+new_order.getDropoff());
-                            txt_cost.setText(String.valueOf(total_cost));
-                            new_order.setEstimated_cost(String.valueOf(total_cost));
-                        }
-                    }
+//                    } else {//non shared
+
+//                    }
+                    dialog_already_showing = false;
+                    dialog.dismiss();
                     //check_cost(0,0.0);
-                }
-                else if (items[item].equals("OPEN PROFILE"))
-                {
-//                    int index = driver_list_index.get(driverId);
-//                    Driver driver = driverList.get(index);
-//                    open_profile(driver.getFk_user_id(),driver.getRegion_name(),driver.get);
-                   // Toast.makeText(getActivity(),driver.getRegion_name(),Toast.LENGTH_SHORT).show();
-                }
-                else if (items[item].equals("CANCEL")) {
+                } else if (items[item].equals("OPEN PROFILE")) {
+
+                } else if (items[item].equals("CANCEL")) {
                     dialog.dismiss();
+                    dialog_already_showing = false;
                 }
             }
         });
         builder.show();
+        dialog_already_showing = true;
     }
 
-    private void open_profile()
-    {
-
-        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
-                "CANCEL" };
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Driver Detail");
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int item)
-            {
-                boolean result= PermissionHandler.checkPermission(getActivity());
-                if (items[item].equals("SELECT"))
-                {
-
-                }
-                else if (items[item].equals("OPEN PROFILE"))
-                {
-
-                }
-                else if (items[item].equals("CANCEL")) {
-                    dialog.dismiss();
-                }
-            }
-        });
-        builder.show();
-    }
-    public void checkRidePassengers(String region_name,String driver_id) {
+    public void checkRidePassengers(String region_name, String driver_id) {
         valueEventListener = new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot)
-            {
-                if(dataSnapshot.exists())
-                {
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
                     SharedRide sharedRide = null;
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren())
-                    {
-                        if(snapshot.getKey().contains(driver_id))
-                        {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        if (snapshot.getKey().contains(driver_id)) {
                             sharedRide = snapshot.getValue(SharedRide.class);
                             int passengers_count = sharedRide.getPassengers().size();
                             double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                            if(passengers_count == 0)
+                            if (passengers_count == 0)
                                 total_cost = (cost / 100.0f) * 20; //give 20% discount
-                            else if(passengers_count == 1)
+                            else if (passengers_count == 1)
                                 total_cost = (cost / 100.0f) * 10; //give 10% discount
-                            else if(passengers_count > 2)
+                            else if (passengers_count > 2)
                                 total_cost = (cost / 100.0f) * 5; //give
 
                             new_order.setEstimated_cost(String.valueOf(total_cost));
                             //Display Cost
-                            if(layout_cost_detail.getVisibility() == View.GONE)
-                            {
+                            if (layout_cost_detail.getVisibility() == View.GONE) {
                                 layout_cost_detail.setVisibility(View.VISIBLE);
-                                if(btn_confirm.getVisibility()==View.VISIBLE)
-                                btn_confirm.setVisibility(View.GONE);
+                                if (btn_confirm.getVisibility() == View.VISIBLE)
+                                    btn_confirm.setVisibility(View.GONE);
                                 txtLocation.setText(new_order.getPickup());
                                 txtDestination.setText(new_order.getDropoff());
                                 txt_cost.setText(String.valueOf(total_cost));
                             }
                         }
                     }
-                }
-                else
-                {
-                    Toast.makeText(getActivity(),"No Rides are going nearby, we will create your new Ride.",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getActivity(), "No Rides are going nearby, we will create your new Ride.", Toast.LENGTH_SHORT).show();
                     double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                    if(layout_cost_detail.getVisibility() == View.GONE)
-                    {
+                    if (layout_cost_detail.getVisibility() == View.GONE) {
                         layout_cost_detail.setVisibility(View.VISIBLE);
                         txtLocation.setText(new_order.getPickup());
                         txtDestination.setText(new_order.getDropoff());
@@ -578,6 +492,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         };
         firebase_instance.child("Group").orderByChild("region_name").equalTo(region_name).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
     }
+
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -601,7 +516,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         mListener = null;
     }
 
-
     @Override
     public void onPause() {
         super.onPause();
@@ -617,7 +531,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(mapFragment != null)
+        if (mapFragment != null)
             mapFragment.onDestroy();
     }
 
@@ -630,82 +544,80 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public boolean onMarkerClick(Marker marker) {
         String driverId = (String) marker.getTag();
-        if(driverId != null &&  !driverId.isEmpty()){
+        if (driverId != null && !driverId.isEmpty()) {
             // do whatever with driver id.
             goCheckDriverStatus(driverId);
 
-            return  true;
-        }else
+            return true;
+        } else
             return false;
     }
 
     @Override
-    public void onClick(View view)
-    {
-        switch (view.getId())
-        {
+    public void onClick(View view) {
+        switch (view.getId()) {
             case R.id.layout_vehicle1:
-                if(vehicle1.getVisibility()==View.GONE)
+                if (vehicle1.getVisibility() == View.GONE)
                     vehicle1.setVisibility(View.VISIBLE);
-                if(vehicle2.getVisibility() == View.VISIBLE)
+                if (vehicle2.getVisibility() == View.VISIBLE)
                     vehicle2.setVisibility(View.GONE);
-                if(vehicle3.getVisibility() == View.VISIBLE)
-                vehicle3.setVisibility(View.GONE);
-                if(vehicle4.getVisibility() == View.VISIBLE)
-                vehicle4.setVisibility(View.GONE);
-                if(vehicle5.getVisibility() == View.VISIBLE)
+                if (vehicle3.getVisibility() == View.VISIBLE)
+                    vehicle3.setVisibility(View.GONE);
+                if (vehicle4.getVisibility() == View.VISIBLE)
+                    vehicle4.setVisibility(View.GONE);
+                if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = 50;//car
-            break;
+                break;
             case R.id.layout_vehicle2:
-                if(vehicle2.getVisibility()==View.GONE)
+                if (vehicle2.getVisibility() == View.GONE)
                     vehicle2.setVisibility(View.VISIBLE);
-                if(vehicle5.getVisibility() == View.VISIBLE)
+                if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
-                if(vehicle3.getVisibility() == View.VISIBLE)
+                if (vehicle3.getVisibility() == View.VISIBLE)
                     vehicle3.setVisibility(View.GONE);
-                if(vehicle4.getVisibility() == View.VISIBLE)
+                if (vehicle4.getVisibility() == View.VISIBLE)
                     vehicle4.setVisibility(View.GONE);
-                if(vehicle1.getVisibility() == View.VISIBLE)
+                if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = 30;//option mini
                 break;
             case R.id.layout_vehicle3:
-                if(vehicle3.getVisibility()==View.GONE)
+                if (vehicle3.getVisibility() == View.GONE)
                     vehicle3.setVisibility(View.VISIBLE);
-                if(vehicle2.getVisibility() == View.VISIBLE)
+                if (vehicle2.getVisibility() == View.VISIBLE)
                     vehicle2.setVisibility(View.GONE);
-                if(vehicle5.getVisibility() == View.VISIBLE)
+                if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
-                if(vehicle4.getVisibility() == View.VISIBLE)
+                if (vehicle4.getVisibility() == View.VISIBLE)
                     vehicle4.setVisibility(View.GONE);
-                if(vehicle1.getVisibility() == View.VISIBLE)
+                if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = 20;//option nano
                 break;
             case R.id.layout_vehicle4:
-                if(vehicle4.getVisibility()==View.GONE)
+                if (vehicle4.getVisibility() == View.GONE)
                     vehicle4.setVisibility(View.VISIBLE);
-                if(vehicle2.getVisibility() == View.VISIBLE)
+                if (vehicle2.getVisibility() == View.VISIBLE)
                     vehicle2.setVisibility(View.GONE);
-                if(vehicle3.getVisibility() == View.VISIBLE)
+                if (vehicle3.getVisibility() == View.VISIBLE)
                     vehicle3.setVisibility(View.GONE);
-                if(vehicle5.getVisibility() == View.VISIBLE)
+                if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
-                if(vehicle1.getVisibility() == View.VISIBLE)
+                if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = 60;//option vip
                 break;
             case R.id.layout_vehicle5:
-                if(vehicle5.getVisibility()==View.GONE)
+                if (vehicle5.getVisibility() == View.GONE)
                     vehicle5.setVisibility(View.VISIBLE);
-                if(vehicle2.getVisibility() == View.VISIBLE)
+                if (vehicle2.getVisibility() == View.VISIBLE)
                     vehicle2.setVisibility(View.GONE);
-                if(vehicle3.getVisibility() == View.VISIBLE)
+                if (vehicle3.getVisibility() == View.VISIBLE)
                     vehicle3.setVisibility(View.GONE);
-                if(vehicle4.getVisibility() == View.VISIBLE)
+                if (vehicle4.getVisibility() == View.VISIBLE)
                     vehicle4.setVisibility(View.GONE);
-                if(vehicle1.getVisibility() == View.VISIBLE)
+                if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
                 break;
@@ -713,22 +625,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-
-        void onFragmentInteraction(Uri uri);
+    public boolean getThereIsActiveOrder() {
+        return this.thereIsActiveOrder;
     }
 
-
+    public void setThereIsActiveOrder(boolean thereIsActiveOrder) {
+        this.thereIsActiveOrder = thereIsActiveOrder;
+    }
 
     public void showDateTimePicker() {
         // Initialize
@@ -748,7 +651,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         dateTimeFragment.set24HoursMode(true);
         dateTimeFragment.setMinimumDateTime(new GregorianCalendar(2018, Calendar.JANUARY, 1).getTime());
         dateTimeFragment.setMaximumDateTime(new GregorianCalendar(2025, Calendar.DECEMBER, 31).getTime());
-        if(SELECTED_DATE_TIME == null)
+        if (SELECTED_DATE_TIME == null)
             dateTimeFragment.setDefaultDateTime(new GregorianCalendar(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)).getTime());
         else
             dateTimeFragment.setDefaultDateTime(SELECTED_DATE_TIME.getTime());
@@ -778,7 +681,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         dateTimeFragment.show(getActivity().getSupportFragmentManager(), "dialog_time");
     }
 
-
     /*
      *
      * MAP JOB
@@ -796,32 +698,420 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         gMap.setOnMarkerClickListener(this);
 
     }
+
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
                 + new_order.getPickupLat().toString().concat(",") + new_order.getPickupLong()
-                + "&destination=" + new_order.getDropoffLat()+ ","
+                + "&destination=" + new_order.getDropoffLat() + ","
                 + new_order.getDropoffLong();
         String sensor = "sensor=false";
         String params = addresses + "&" + sensor;
         String output = "json";
         String url = "https://maps.googleapis.com/maps/api/directions/"
-                + output + "?" + params +"&alternatives=true&key="+ getString(R.string.google_maps_api);
+                + output + "?" + params + "&alternatives=true&key=" + getString(R.string.google_maps_api);
         ReadTask downloadTask = new ReadTask();
         downloadTask.execute(url);
         return url;
     }
 
     public void addMarkers() {
-        if (gMap != null) {;
+        if (gMap != null) {
+            ;
             Double pickupLat = new_order.getPickupLat();
             Double pickupLng = new_order.getPickupLong();
             Double dropOffLat = new_order.getDropoffLat();
-            Double dropOffLng =new_order.getDropoffLong();
-            gMap.addMarker(new MarkerOptions().position(new LatLng(pickupLat,pickupLng))
+            Double dropOffLng = new_order.getDropoffLong();
+            gMap.addMarker(new MarkerOptions().position(new LatLng(pickupLat, pickupLng))
                     .title("First Point"));
-            gMap.addMarker(new MarkerOptions().position(new LatLng(dropOffLat,dropOffLng))
+            gMap.addMarker(new MarkerOptions().position(new LatLng(dropOffLat, dropOffLng))
                     .title("Second Point"));
         }
+    }
+
+    private void refreshDrivers() {
+        MainActivity mainActivity = ((MainActivity) getContext());
+        if (mainActivity == null)
+            return;
+        if (driverList == null)
+            driverList = new ArrayList<>();
+        if (new_order.getPickupLat() != null) {
+            Location pickup = new Location("pickup");
+            pickup.setLatitude(new_order.getPickupLat());
+            pickup.setLongitude(new_order.getPickupLong());
+            mainActivity.getDrivers(pickup);
+        }
+    }
+
+    private void addSelectedRoute(Polyline polyline) {
+        ArrayList<RoutePoints> pointsList = new ArrayList<>();
+        for (LatLng latLng : polyline.getPoints()) {
+            pointsList.add(new RoutePoints(latLng.latitude, latLng.longitude));
+        }
+        new_order.setSELECTED_ROUTE(pointsList);
+    }
+
+    @Override
+    public void onPolylineClick(Polyline polyline) {
+        Log.i("POLYLINE", polyline.toString());
+        for (Polyline pline : polyLineList) {
+            if (pline.getId().equals(polyline.getId())) {
+                pline.setWidth(20);
+                pline.setColor(Color.BLUE);
+            } else {
+                pline.setWidth(10);
+                pline.setColor(Color.DKGRAY);
+            }
+        }
+        addSelectedRoute(polyline);
+        String[] value = ((String) polyline.getTag()).split("--");
+        Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
+    }
+
+    private void everyTenSecondsTask() {
+        new Timer().schedule(new TenSecondsTask(), 5000, 10000);
+    }
+
+    public String getRegionName(Context context, double lati, double longi) {
+        String regioName = "";
+        Geocoder gcd = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
+            if (addresses.size() > 0) {
+                regioName = addresses.get(0).getLocality();
+                if (!TextUtils.isEmpty(regioName)) {
+                    return regioName;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "--NA--";
+    }
+
+    private void goCheckDriverStatus(String driverId) {
+        DatabaseReference db_driver_order_vault =
+                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    if (dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER)) {
+                        Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
+                        return;
+                    } else if (dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)) {
+                        group_id = dataSnapshot.child(Helper.REF_GROUP_ORDER).getValue().toString();
+                        if (new_order.getShared()) {
+                            show_driverDetail(driverId);
+                            return;
+                        } else {
+                            Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+                }
+                show_driverDetail(driverId);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    private void goCheckSharedRideDriver(String driverId, Driver driver) {
+        if (isOrderAccepted && firebase_db == null)
+            return;
+        DatabaseReference db_driver_order_vault =
+                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    if (new_order.getShared() && dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)) {
+                        driverList.add(driver);
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                addDriverMarker(driver, driverList.indexOf(driver));
+                            }
+                        });
+                    }
+                } else {
+                    driverList.add(driver);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            addDriverMarker(driver, driverList.indexOf(driver));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    public void sendNotificationToRequestGroupRide(String driverId) {
+        if (isOrderAccepted) {
+            Toast.makeText(getContext(), "Your order is already accepted by driver", Toast.LENGTH_SHORT).show();
+            return;
+        } else if (isDriverResponded) {
+
+        }
+        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
+        db_ref_user.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    User driver = dataSnapshot.getValue(User.class);
+                    if (driver == null)
+                        return;
+                    String token = driver.getUser_token();
+                    NotificationPayload notificationPayload = new NotificationPayload();
+                    notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
+                    if(new_order.getShared()) {
+                        notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
+                        notificationPayload.setTitle("\"New Passenger Request\"");
+                        notificationPayload.setDescription("\"Do you want to accept it\"");
+                    }
+                    else {
+                        notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED);
+                        notificationPayload.setTitle("\"Order Created\"");
+                        notificationPayload.setDescription("\"Do you want to accept it\"");
+                    }
+                    notificationPayload.setUser_id("\"" + new_order.getUser_id() + "\"");
+                    notificationPayload.setDriver_id("\"" + driver.getUser_id() + "\"");
+                    notificationPayload.setOrder_id("\"" + new_order.getOrder_id() + "\"");
+                    notificationPayload.setPercentage_left("\"" + -1 + "\"");
+                    String str = new Gson().toJson(notificationPayload);
+                    try {
+                        JSONObject json = new JSONObject(str);
+                        new PushNotifictionHelper(getContext()).execute(token, json);
+                        generateNewRequest(driverId, new_order.getUser_id());
+                        listenForDriverResponse(driverId, new_order.getUser_id());
+                        isOrderAccepted = false;
+                        waitForDriverResponse();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Driver not found!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void waitForDriverResponse() {
+        ProgressDialog progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage("Waiting for Driver Response");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        new CountDownTimer(30000, 5000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                checkForResponse(progressDialog,this);
+            }
+
+            @Override
+            public void onFinish() {
+                checkForResponse(progressDialog,this);
+            }
+        }.start();
+    }
+
+    private void checkForResponse(ProgressDialog progressDialog, CountDownTimer timer) {
+        if (isOrderAccepted && new_order.getShared()) {
+            progressDialog.dismiss();
+            goFetchGroupByID(group_id);
+            Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
+            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
+            timer.cancel();
+        }else if(isOrderAccepted){
+            progressDialog.dismiss();
+
+            double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+            if (layout_cost_detail.getVisibility() == View.GONE) {
+                if (btn_confirm.getVisibility() == View.VISIBLE)
+                    btn_confirm.setVisibility(View.GONE);
+                layout_cost_detail.setVisibility(View.VISIBLE);
+                txtLocation.setText("Location : " + new_order.getPickup());
+                txtDestination.setText("Destination : " + new_order.getDropoff());
+                txt_cost.setText(String.valueOf(total_cost));
+                new_order.setEstimated_cost(String.valueOf(total_cost));
+            }
+            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
+            timer.cancel();
+
+        }
+        else if (isDriverResponded) {
+            progressDialog.dismiss();
+            Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
+            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
+            timer.cancel();
+        }
+    }
+
+    private void goFetchGroupByID(String groupId) {
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
+                    if (currentSharedRide != null) {
+                        mPassengerList = currentSharedRide.getPassengers();
+                        calculateTheCosts();
+                    }
+                } else {
+                    CREATE_NEW_GROUP = true;
+                    showRadiusInputField();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void showRadiusInputField() {
+        getActivity().findViewById(R.id.radius_input_container).setVisibility(View.VISIBLE);
+    }
+
+    private void calculateTheCosts() {
+        int passengers_count = mPassengerList.size();
+        double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+        if (passengers_count == 0)
+            total_cost = (cost / 100.0f) * 20; //give 20% discount
+        else if (passengers_count == 1)
+            total_cost = (cost / 100.0f) * 10; //give 10% discount
+        else if (passengers_count > 2)
+            total_cost = (cost / 100.0f) * 5; //give
+
+        new_order.setEstimated_cost(String.valueOf(total_cost));
+        //Display Cost
+        if (layout_cost_detail.getVisibility() == View.GONE) {
+            layout_cost_detail.setVisibility(View.VISIBLE);
+            if (btn_confirm.getVisibility() == View.VISIBLE)
+                btn_confirm.setVisibility(View.GONE);
+            txtLocation.setText(new_order.getPickup());
+            txtDestination.setText(new_order.getDropoff());
+            txt_cost.setText(String.valueOf(total_cost));
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(driverResponseReceiver);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(driverResponseReceiver, new IntentFilter(Helper.BROADCAST_DRIVER_RESPONSE));
+    }
+
+    public GoogleMap getgMap() {
+        return gMap;
+    }
+
+    public void resetUI() {
+        et_pickup.setText("");
+        et_drop_off.setText("");
+        gMap.clear();
+        new_order = null;
+        currentSharedRide = null;
+        btn_confirm.setVisibility(View.GONE);
+        layout_cost_detail.setVisibility(View.GONE);
+        btn_select_vehicle.setVisibility(View.VISIBLE);
+
+    }
+
+    private void listenForDriverResponse(String driverId, String userId) {
+        db_ref_requests.child(Helper.getConcatenatedID(userId, driverId)).addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    Requests request = dataSnapshot.getValue(Requests.class);
+                    if (request != null) {
+                        if (request.getStatus() == Requests.STATUS_ACCEPTED) {
+                            isDriverResponded = true;
+                            isOrderAccepted = true;
+                            new_order.setDriver_id(request.getDriverId());
+                        } else if (request.getStatus() == Requests.STATUS_REJECTED) {
+                            isDriverResponded = true;
+                            isOrderAccepted = false;
+                        }
+                        goRemoveRequest(request.getDriverId(),userId);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void goRemoveRequest(String driverId, String userId) {
+        String res_id = Helper.getConcatenatedID(userId, driverId);
+        db_ref_requests.child(res_id).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+
+            }
+        });
+
+    }
+
+    private void generateNewRequest(String driverId, String userId) {
+        Requests requests = new Requests(driverId, userId, Requests.STATUS_PENDING);
+        String res_id = Helper.getConcatenatedID(userId, driverId);
+        db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful())
+                    Toast.makeText(getContext(), "Request Sent Successfully", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void saveRadiusInputForGroupRide() {
+        if(getActivity() == null)
+            return;
+        EditText editText = getActivity().findViewById(R.id.radius_input);
+        RelativeLayout container = getActivity().findViewById(R.id.radius_input_container);
+        currentSharedRide.setRadius_constraint(Integer.parseInt(editText.getText().toString()));
+        container.setVisibility(View.GONE);
+    }
+
+    /**
+     * This interface must be implemented by activities that contain this
+     * fragment to allow an interaction in this fragment to be communicated
+     * to the activity and potentially other fragments contained in that
+     * activity.
+     * <p>
+     * See the Android Training lesson <a href=
+     * "http://developer.android.com/training/basics/fragments/communicating.html"
+     * >Communicating with Other Fragments</a> for more information.
+     */
+    public interface OnFragmentInteractionListener {
+
+        void onFragmentInteraction(Uri uri);
     }
 
     private class ReadTask extends AsyncTask<String, Void, String> {
@@ -859,8 +1149,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 route_details = new HashMap<>();
                 PathJsonParser parser = new PathJsonParser();
                 routes = parser.parse(jObject);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return routes;
@@ -868,7 +1157,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
         @Override
         protected void onPostExecute(List<List<HashMap<String, String>>> routes) {
-            if(routes == null)
+            if (routes == null)
                 return;
             ArrayList<LatLng> points = null;
             PolylineOptions polyLineOptions = null;
@@ -878,16 +1167,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 points = new ArrayList<LatLng>();
                 polyLineOptions = new PolylineOptions();
                 List<HashMap<String, String>> path = routes.get(i);
-                String distance = route_details.get(i+1).split("--")[0];
-                String duration = route_details.get(i+1).split("--")[1];
+                String distance = route_details.get(i + 1).split("--")[0];
+                String duration = route_details.get(i + 1).split("--")[1];
 
-                distance = distance.replaceAll("\\D+\\.\\D+","");
-                if(distance.contains("mi"))
-                    distance = String.valueOf(Double.valueOf(distance.replace("mi","")) * 1.609344);
-                else if( distance.contains(("km")))
-                    distance = String.valueOf(Double.valueOf(distance.replace("km","")) * 1.609344);
-                else if(distance.contains("m"))
-                    distance = String.valueOf(Double.valueOf(distance.replace("m","")) * 1.609344);
+                distance = distance.replaceAll("\\D+\\.\\D+", "");
+                if (distance.contains("mi"))
+                    distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
+                else if (distance.contains(("km")))
+                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")) * 1.609344);
+                else if (distance.contains("m"))
+                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) * 1.609344);
                 new_order.setTotal_kms(distance);
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
@@ -901,20 +1190,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 }
 
                 polyLineOptions.addAll(points);
-                if(i == 0) {
+                if (i == 0) {
                     polyLineOptions.width(20);
                     polyLineOptions.color(Color.BLUE);
 
-                }else {
+                } else {
                     polyLineOptions.width(10);
                     polyLineOptions.color(Color.DKGRAY);
                 }
                 polyLineOptions.clickable(true);
-                if(polyLineList == null)
+                if (polyLineList == null)
                     polyLineList = new ArrayList<Polyline>();
                 Polyline polyline = gMap.addPolyline(polyLineOptions);
-                polyline.setTag(route_details.get(i+1));
-                if(i == 0){
+                polyline.setTag(route_details.get(i + 1));
+                if (i == 0) {
                     addSelectedRoute(polyline);
                 }
                 polyLineList.add(polyline);
@@ -923,51 +1212,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
-    private void refreshDrivers() {
-        MainActivity mainActivity = ((MainActivity)getContext());
-        if(mainActivity == null)
-            return;
-        if(driverList == null)
-            driverList = new ArrayList<>();
-        if(new_order.getPickupLat() != null){
-            Location pickup = new Location("pickup");
-            pickup.setLatitude(new_order.getPickupLat());
-            pickup.setLongitude(new_order.getPickupLong());
-            mainActivity.getDrivers(pickup);
-        }
-    }
-
-    private void addSelectedRoute(Polyline polyline) {
-        ArrayList<RoutePoints> pointsList = new ArrayList<>();
-        for(LatLng latLng : polyline.getPoints()){
-            pointsList.add(new RoutePoints(latLng.latitude,latLng.longitude));
-        }
-        new_order.setSELECTED_ROUTE(pointsList);
-    }
-
-    @Override
-    public void onPolylineClick(Polyline polyline) {
-        Log.i("POLYLINE",polyline.toString());
-        for (Polyline pline : polyLineList){
-            if(pline.getId().equals(polyline.getId())){
-                pline.setWidth(20);
-                pline.setColor(Color.BLUE);
-            }else{
-                pline.setWidth(10);
-                pline.setColor(Color.DKGRAY);
-            }
-        }
-        addSelectedRoute(polyline);
-        String[] value = ((String) polyline.getTag()).split("--");
-        Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
-    }
-    private void everyTenSecondsTask()
-    {
-        new Timer().schedule(new TenSecondsTask(),5000,10000);
-    }
-    int count_for_region = 0;
-    private class TenSecondsTask extends TimerTask
-    {
+    private class TenSecondsTask extends TimerTask {
         @Override
         public void run() {
             MY_LOCATION = LocationManagerService.mLastLocation;
@@ -979,252 +1224,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
         }
     }
-    public String getRegionName(Context context, double lati, double longi) {
-        String regioName = "";
-        Geocoder gcd = new Geocoder(context, Locale.getDefault());
-        try {
-            List<Address> addresses = gcd.getFromLocation(lati, longi, 1);
-            if (addresses.size() > 0) {
-                regioName = addresses.get(0).getLocality();
-                if(!TextUtils.isEmpty(regioName))
-                {
-                    return regioName;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "--NA--";
-    }
-
-    private void goCheckDriverStatus(String driverId){
-        DatabaseReference db_driver_order_vault =
-                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
-        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                   if(dataSnapshot.hasChild(Helper.REF_SINGLE_ORDER)){
-                       Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
-                       return;
-                   }else if(dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
-                       group_id = dataSnapshot.child(Helper.REF_GROUP_ORDER).getValue().toString();
-                       if(new_order.getShared()){
-                           show_driverDetail(driverId);
-                       }else {
-                           Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
-                           return;
-                       }
-                   }
-                }
-                show_driverDetail(driverId);
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-    private void goCheckSharedRideDriver(String driverId,Driver driver){
-        if(isOrderAccepted && firebase_db == null)
-            return;
-        DatabaseReference db_driver_order_vault =
-                firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
-        db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                   if( dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)){
-                       driverList.add(driver);
-                       getActivity().runOnUiThread(new Runnable() {
-                           @Override
-                           public void run() {
-                               addDriverMarker(driver,driverList.indexOf(driver));
-                           }
-                       });
-                   }
-                }else{
-                    driverList.add(driver);
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            addDriverMarker(driver,driverList.indexOf(driver));
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-    public void sendNotificationToRequestGroupRide(String driverId)
-    {
-        if(isOrderAccepted) {
-            Toast.makeText(getContext(),    "Your order is already accepted by driver", Toast.LENGTH_SHORT).show();
-            return;
-        }else if(isDriverResponded){
-
-        }
-        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
-        db_ref_user.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    User driver = dataSnapshot.getValue(User.class);
-                    if(driver == null)
-                        return;
-                    String token = driver.getUser_token();
-                    NotificationPayload notificationPayload = new NotificationPayload();
-                    notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
-                    notificationPayload.setTitle("\"New Passenger Request\"");
-                    notificationPayload.setDescription("\"Do you want to accept it\"");
-                    notificationPayload.setUser_id("\""+new_order.getUser_id()+"\"");
-                    notificationPayload.setDriver_id("\""+driver.getUser_id()+"\"");
-                    notificationPayload.setOrder_id("\""+new_order.getOrder_id()+"\"");
-                    notificationPayload.setPercentage_left("\""+-1+"\"");
-                    String str = new Gson().toJson(notificationPayload);
-                    try {
-                        JSONObject json = new JSONObject(str);
-                        new PushNotifictionHelper(getContext()).execute(token,json);
-                        isOrderAccepted = false;
-                        waitForDriverResponse();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else
-                {
-                    Toast.makeText(getContext(),"Driver not found!",Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void waitForDriverResponse(){
-        ProgressDialog progressDialog = new ProgressDialog(getContext());
-        progressDialog.setMessage("Waiting for Driver Response");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-        new CountDownTimer(30000, 5000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                if(isOrderAccepted){
-                    progressDialog.dismiss();
-                    goFetchGroupByID(group_id);
-                    Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
-                    this.cancel();
-                }else if(isDriverResponded){
-                    Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
-                    progressDialog.dismiss();
-                    this.cancel();
-                }
-            }
-
-            @Override
-            public void onFinish() {
-                if(isOrderAccepted){
-                    goFetchGroupByID(group_id);
-                    Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
-                }else if(isDriverResponded){
-                    Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
-                }else
-                    Toast.makeText(getContext(), "Driver is not responding", Toast.LENGTH_SHORT).show();
-                progressDialog.dismiss();
-                this.cancel();
-            }
-        }.start();
-    }
 
 
-    BroadcastReceiver driverResponseReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String data = intent.getExtras().getString("data");
-            String action = intent.getExtras().getString("action");
-            NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
-            isDriverResponded = true;
-            if(notificationPayload != null){
-                if(!notificationPayload.getDriver_id().equals("-1")){
-                    // it's accepted
-                    new_order.setDriver_id(notificationPayload.getDriver_id());
-                    isOrderAccepted = true;
-                }else{
-                    isOrderAccepted = false;
-                }
-            }
-        }
-    };
-
-    private void goFetchGroupByID(String groupId) {
-        db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
-                    if(currentSharedRide != null){
-                        mPassengerList = currentSharedRide.getPassengers();
-                        calculateTheCosts();
-                    }
-                }else{
-                    CREATE_NEW_GROUP = true;
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void calculateTheCosts() {
-        int passengers_count = mPassengerList.size();
-        double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-        if(passengers_count == 0)
-            total_cost = (cost / 100.0f) * 20; //give 20% discount
-        else if(passengers_count == 1)
-            total_cost = (cost / 100.0f) * 10; //give 10% discount
-        else if(passengers_count > 2)
-            total_cost = (cost / 100.0f) * 5; //give
-
-        new_order.setEstimated_cost(String.valueOf(total_cost));
-        //Display Cost
-        if(layout_cost_detail.getVisibility() == View.GONE)
-        {
-            layout_cost_detail.setVisibility(View.VISIBLE);
-            if(btn_confirm.getVisibility()==View.VISIBLE)
-                btn_confirm.setVisibility(View.GONE);
-            txtLocation.setText(new_order.getPickup());
-            txtDestination.setText(new_order.getDropoff());
-            txt_cost.setText(String.valueOf(total_cost));
-        }
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(driverResponseReceiver);
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(driverResponseReceiver,new IntentFilter(Helper.BROADCAST_DRIVER_RESPONSE));
-    }
-
-
-    public GoogleMap getgMap() {
-        return gMap;
-    }
 }

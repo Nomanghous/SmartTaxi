@@ -2,6 +2,7 @@ package com.logixcess.smarttaxiapplication.DriverModule;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -48,6 +49,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
@@ -95,7 +97,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
     List<Order> ORDERS_IN_SHARED_RIDE = null;
     private HashMap<String, Boolean> orderIDs;
-
+    private HashMap<String, Marker> PickupMarkers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -136,8 +138,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
-            db_ref_driver = db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id());
-            db_ref_driver.addListenerForSingleValueEvent(new ValueEventListener() {
+            db_ref_driver = db_ref.child(Helper.REF_DRIVERS);
+            db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
@@ -334,7 +336,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
         Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
         options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
-        mMap.addMarker(options);
+        options.title(currentOrder.getPickup());
+        if(PickupMarkers == null)
+            PickupMarkers = new HashMap<>();
+        if(!PickupMarkers.containsKey(currentOrder.getOrder_id()))
+           PickupMarkers.put(currentOrder.getOrder_id(),mMap.addMarker(options));
         // End marker
         options = new MarkerOptions();
         options.position(end);
@@ -454,13 +460,15 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(currentSharedRide != null)
             return;
         String groupId = Helper.getConcatenatedID(currentOrder.getOrder_id(), userMe.getUid());
-        db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
+        db_ref_group.child(groupId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 currentSharedRide = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
                 if(currentSharedRide == null || currentSharedRide.getGroup_id() == null){
                     Toast.makeText(MapsActivity.this, "Something went Wrong.", Toast.LENGTH_SHORT).show();
                     finish();
+                }else{
+                    addMarkersForNewRiders();
                 }
             }
 
@@ -580,7 +588,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     Location dropOff = new Location("dropoff");
                     dropOff.setLatitude(order.getDropoffLat());
                     dropOff.setLongitude(order.getDropoffLong());
-                    isAllOrdersCompleted = true;
+                    isAllOrdersCompleted = false;
+                    if(myLocation == null)
+                        continue;
                     if(totalDistance == 0) {
                         totalDistance = myLocation.distanceTo(dropOff);
                         currentOrder = order;
@@ -627,6 +637,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                                 ORDERS_IN_SHARED_RIDE.add(order);
                         }
                     }
+                    addMarkersForNewRiders();
                     if(orderIDs.size() == ORDERS_IN_SHARED_RIDE.size())
                         getTheNextNearestDropOff(false);
                 }
@@ -651,6 +662,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(order.getStatus() == Order.OrderStatusInProgress &&
                             order.getDriver_id().equals(userMe.getUid())){
                         getTheNextNearestDropOff(true);
+                        fetchThatGroup();
                     }
                 }
             }
@@ -745,5 +757,25 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
 
     }
+
+    private void addMarkersForNewRiders(){
+        if(PickupMarkers == null)
+            PickupMarkers = new HashMap<>();
+        if(ORDERS_IN_SHARED_RIDE != null){
+            for(Order order : ORDERS_IN_SHARED_RIDE){
+                if(!PickupMarkers.containsKey(order.getOrder_id())){
+                    Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
+                    Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
+                    MarkerOptions options = new MarkerOptions().
+                            icon(BitmapDescriptorFactory.fromBitmap(pickupPin))
+                            .title(order.getPickup()).position(new LatLng(order.getPickupLat(),order.getPickupLong()));
+                    PickupMarkers.put(order.getOrder_id(),mMap.addMarker(options));
+                }
+            }
+        }
+    }
+
+
+
 
 }

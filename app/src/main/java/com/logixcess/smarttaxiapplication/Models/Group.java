@@ -8,7 +8,7 @@ public class Group {
     long time;
     String order_id;
     String region_name;
-
+    int radius_constraint;
     public Group(){}
 
     public Group(String group_id, String user_id, long time,String driver_id) {
@@ -18,13 +18,12 @@ public class Group {
         this.driver_id = driver_id;
     }
 
-    protected Group(Parcel in) {
-        group_id = in.readString();
-        user_id = in.readString();
-        time = in.readLong();
-        order_id =in.readString();
-        region_name =in.readString();
-        driver_id =in.readString();
+    public int getRadius_constraint() {
+        return radius_constraint;
+    }
+
+    public void setRadius_constraint(int radius_constraint) {
+        this.radius_constraint = radius_constraint;
     }
 
     public String getGroup_id() {

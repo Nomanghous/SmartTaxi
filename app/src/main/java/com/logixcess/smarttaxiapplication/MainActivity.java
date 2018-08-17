@@ -37,10 +37,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.Registry;
-import com.bumptech.glide.annotation.GlideModule;
-import com.bumptech.glide.module.AppGlideModule;
 import com.bumptech.glide.request.RequestOptions;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.location.places.AutocompleteFilter;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -79,7 +81,6 @@ import com.logixcess.smarttaxiapplication.Utils.FetchDriversBasedOnRadius;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.mikhaellopez.circularimageview.CircularImageView;
-import com.schibstedspain.leku.LocationPickerActivity;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -87,7 +88,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -103,10 +103,8 @@ public class MainActivity extends BaseActivity
 
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
+    private static final int REQUEST_CODE_ORDER_CREATION = 1023;
     Order order_pending;
-
-
-
     Handler mHandler;
     NavigationView navigationView;
     private ProgressBar progressbar;
@@ -117,6 +115,7 @@ public class MainActivity extends BaseActivity
     private String CURRENT_ORDER_ID = "";
     private boolean IS_FOR_ORDER_VIEW = false;
     private NotificationPayload notificationPayload = null;
+
     public static String getRegionName(Context context, double lati, double longi) {
         String regioName = "";
         Geocoder gcd = new Geocoder(context, Locale.getDefault());
@@ -130,6 +129,7 @@ public class MainActivity extends BaseActivity
         }
         return regioName;
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -162,30 +162,31 @@ public class MainActivity extends BaseActivity
             TextView nav_user_status = hView.findViewById(R.id.tv_person_status);
             nav_user_status.setText(mFirebaseUser.getEmail());
             ImageView nav_user_image = hView.findViewById(R.id.iv_person_pic);
-            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(mFirebaseUser.getPhotoUrl().toString());
-           // String path_url = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).toString();//storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getPath();
-           // Uri uri = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getDownloadUrl().getResult();
-            RequestOptions requestOptions = new RequestOptions();
-            requestOptions.placeholder(R.drawable.user_placeholder);
-            requestOptions.circleCrop();
-            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                @Override
-                public void onSuccess(Uri uri) {
-                   String  imageURL = uri.toString();
+            if(mFirebaseUser.getPhotoUrl() != null) {
+                StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(mFirebaseUser.getPhotoUrl().toString());
+                // String path_url = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).toString();//storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getPath();
+                // Uri uri = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getDownloadUrl().getResult();
+                RequestOptions requestOptions = new RequestOptions();
+                requestOptions.placeholder(R.drawable.user_placeholder);
+                requestOptions.circleCrop();
+                storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        String imageURL = uri.toString();
 
-                    Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
-                            .into(nav_user_image);
-                    //Glide.with(getApplicationContext()).load(imageURL).into(i1);
-                }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception exception) {
-                    // Handle any errors
-                    Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load("")
-                            .into(nav_user_image);
-                }
-            });
-
+                        Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
+                                .into(nav_user_image);
+                        //Glide.with(getApplicationContext()).load(imageURL).into(i1);
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle any errors
+                        Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load("")
+                                .into(nav_user_image);
+                    }
+                });
+            }
         }
 
 
@@ -239,6 +240,7 @@ public class MainActivity extends BaseActivity
         {
             getAllNotificaations(user.getUid());
         }
+        getCurrentOrderId(true);
 
         order_pending = new Order();
     }
@@ -375,6 +377,10 @@ AlertDialog builder;
     }
 
     public void openPickupActivity(View view) {
+        if(mapFragment.getThereIsActiveOrder()){
+            Toast.makeText(this, "There is already an order in Progress.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Double latitude = LocationManagerService.mLastLocation.getLatitude();
         Double longitude = LocationManagerService.mLastLocation.getLongitude();
 //        if(gps.canGetLocation()){
@@ -394,22 +400,36 @@ AlertDialog builder;
 //                .withGoogleTimeZoneEnabled()
 //                .withVoiceSearchHidden()
 //                .build(applicationContext)
-        Intent intent = new LocationPickerActivity.Builder()
-                .withLocation(latitude,longitude)
-                .withGeolocApiKey(getResources().getString(R.string.google_maps_api))
-                //.withSearchZone("es_ES")
-                //.withSearchZone("ur-PK")
-                .shouldReturnOkOnBackPressed()
-                .withStreetHidden()
-                .withGooglePlacesEnabled()
-                .withCityHidden()
-                .withZipCodeHidden()
-                .withSatelliteViewHidden()
-                .build(getApplicationContext());
-        if(view.getId() == R.id.et_pickup)
-            startActivityForResult(intent, REQUEST_CODE_LOCATION);
-        else
-            startActivityForResult(intent, REQUEST_CODE_LOCATION_DROP_OFF);
+//        Intent intent = new LocationPickerActivity.Builder()
+//                .withLocation(latitude,longitude)
+//                .withGeolocApiKey(getResources().getString(R.string.google_maps_api))
+//                //.withSearchZone("es_ES")
+//                .withSearchZone("en-SL")
+//                .shouldReturnOkOnBackPressed()
+//                .withGooglePlacesEnabled()
+//
+//                .withSatelliteViewHidden()
+//                .build(getApplicationContext());
+
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
+                .build();
+
+        try {
+            Intent intent =
+                    new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                            .setFilter(typeFilter)
+                            .build(this);
+            if(view.getId() == R.id.et_pickup)
+                startActivityForResult(intent, REQUEST_CODE_LOCATION);
+            else
+                startActivityForResult(intent, REQUEST_CODE_LOCATION_DROP_OFF);
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
@@ -420,21 +440,29 @@ AlertDialog builder;
         {
             if(resultCode == RESULT_OK){
                 mapFragment.getgMap().clear();
-                double latitude = data.getDoubleExtra("latitude", 0);
-                Log.d("LATITUDE****", String.valueOf(latitude));
-                double longitude = data.getDoubleExtra("longitude", 0);
-                Log.d("LONGITUDE****", String.valueOf(longitude));
-                String address = data.getStringExtra("location_address");
-                Log.d("ADDRESS****", String.valueOf(address));
-                String postalcode = data.getStringExtra("zipcode");
-                Log.d("POSTALCODE****", String.valueOf(postalcode));
-                Address fullAddress = data.getParcelableExtra("address");
-                if(fullAddress != null) {
-                    Log.d("FULL ADDRESS****", fullAddress.toString());
-                    MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setPickup(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setPickupLat(latitude);
-                    MapFragment.new_order.setPickupLong(longitude);
+//                double latitude = data.getDoubleExtra("latitude", 0);
+//                Log.d("LATITUDE****", String.valueOf(latitude));
+//                double longitude = data.getDoubleExtra("longitude", 0);
+//                Log.d("LONGITUDE****", String.valueOf(longitude));
+//                String address = data.getStringExtra("location_address");
+//                Log.d("ADDRESS****", String.valueOf(address));
+//                String postalcode = data.getStringExtra("zipcode");
+//                Log.d("POSTALCODE****", String.valueOf(postalcode));
+//                Address fullAddress = data.getParcelableExtra("address");
+//                if(fullAddress != null) {
+//                    Log.d("FULL ADDRESS****", fullAddress.toString());
+//                    MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
+//                    MapFragment.new_order.setPickup(fullAddress.getAddressLine(0));
+//                    MapFragment.new_order.setPickupLat(latitude);
+//                    MapFragment.new_order.setPickupLong(longitude);
+//                }
+                Place place = PlaceAutocomplete.getPlace(this, data);
+                if(place != null && place.getAddress() != null) {
+                    Log.d("FULL ADDRESS****", place.toString());
+                    MapFragment.et_pickup.setText(place.getAddress());
+                    MapFragment.new_order.setPickup(place.getAddress().toString());
+                    MapFragment.new_order.setPickupLat(place.getLatLng().latitude);
+                    MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
                 }
             }
             else if (resultCode == RESULT_CANCELED)
@@ -446,35 +474,23 @@ AlertDialog builder;
         {
             if(resultCode == RESULT_OK){
                 mapFragment.getgMap().clear();
-                double latitude = data.getDoubleExtra("latitude", 0);
-                Log.d("LATITUDE****", String.valueOf(latitude));
-                double longitude = data.getDoubleExtra("longitude", 0);
-                Log.d("LONGITUDE****", String.valueOf(longitude));
-                String address = data.getStringExtra("location_address");
-                Log.d("ADDRESS****", String.valueOf(address));
-                String postalcode = data.getStringExtra("zipcode");
-                Log.d("POSTALCODE****", String.valueOf(postalcode));
+                Place place = PlaceAutocomplete.getPlace(this, data);
+                if(place != null && place.getAddress() != null) {
+                    Log.d("FULL ADDRESS****", place.toString());
+                    MapFragment.et_drop_off.setText(place.getAddress());
+                    MapFragment.new_order.setDropoff(place.getAddress().toString());
+                    MapFragment.new_order.setDropoffLat(place.getLatLng().latitude);
+                    MapFragment.new_order.setDropoffLong(place.getLatLng().longitude);
 
-                Address fullAddress = data.getParcelableExtra("address");
-                if(fullAddress != null) {
-                    Log.d("FULL ADDRESS****", fullAddress.toString());
-                    MapFragment.et_drop_off.setText(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setDropoff(fullAddress.getAddressLine(0));
-                    MapFragment.new_order.setDropoffLat(latitude);
-                    MapFragment.new_order.setDropoffLong(longitude);
-
-
-                    if(!TextUtils.isEmpty(MapFragment.et_pickup.getText())){
+                    if (!TextUtils.isEmpty(MapFragment.et_pickup.getText())) {
                         MarkerOptions options = new MarkerOptions();
-                        Double pickupLat = Double.valueOf(MapFragment.new_order.getPickupLat());
-                        Double pickupLng = Double.valueOf(MapFragment.new_order.getPickupLong());
-                        options.position(new LatLng(pickupLat,pickupLng));
-                        options.position(new LatLng(latitude,longitude));
+                        Double pickupLat = MapFragment.new_order.getPickupLat();
+                        Double pickupLng = MapFragment.new_order.getPickupLong();
+                        options.position(new LatLng(pickupLat, pickupLng));
+                        options.position(new LatLng(place.getLatLng().latitude, place.getLatLng().longitude));
                         mapFragment.getgMap().addMarker(options);
                         String url = mapFragment.getMapsApiDirectionsUrl();
-
-
-                        mapFragment.getgMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat,pickupLng),
+                        mapFragment.getgMap().moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(pickupLat, pickupLng),
                                 13));
                         mapFragment.addMarkers();
                     }
@@ -486,20 +502,28 @@ AlertDialog builder;
             }
 
         }
-            if(requestCode == UserProfileFragment.GALLERY_REQUEST)
-            {
-                if(resultCode == RESULT_OK){
-                    Constants.FilePathUri = data.getData();
-                    onSelectFromGalleryResult(data);}
-            }
-            else if (requestCode ==UserProfileFragment.CAMERA_REQUEST) {
-                if(resultCode == RESULT_OK){
+        if (requestCode == UserProfileFragment.GALLERY_REQUEST) {
+            if (resultCode == RESULT_OK) {
                 Constants.FilePathUri = data.getData();
-                onCaptureImageResult(data);}
+                onSelectFromGalleryResult(data);
             }
+        } else if (requestCode == UserProfileFragment.CAMERA_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                Constants.FilePathUri = data.getData();
+                onCaptureImageResult(data);
+            }
+        }else if(requestCode == REQUEST_CODE_ORDER_CREATION){
+            if(resultCode == RESULT_OK){
+                mapFragment.resetUI();
+            }
+        }
+
 
 
     }
+
+
+
     private void onSelectFromGalleryResult(Intent data) {
         Bitmap bm=null;
         if (data != null) {
@@ -687,9 +711,8 @@ AlertDialog builder;
                 CURRENT_TAG = TAG_FIND_USER;
                 break;
             case R.id.nav_current_ride:
-                //navItemIndex = 6;
-                CURRENT_TAG = "current_ride";
-                getCurrentOrderId();
+                navItemIndex = 6;
+                getCurrentOrderId(false);
                 break;
             default:
                 navItemIndex = 0;
@@ -770,7 +793,7 @@ AlertDialog builder;
     }
 
     public void openOrderDetailsActivity(View view) {
-        startActivity(new Intent(this, OrderDetailsActivity.class));
+        startActivityForResult(new Intent(this, OrderDetailsActivity.class),REQUEST_CODE_ORDER_CREATION);
     }
     private void setUpNavigationView()
     {
@@ -812,7 +835,7 @@ AlertDialog builder;
                     case R.id.nav_current_ride:
                         navItemIndex = 6;
                         CURRENT_TAG = "current_ride";
-                        getCurrentOrderId();
+                        getCurrentOrderId(false);
                         break;
                     default:
                         navItemIndex = 0;
@@ -873,7 +896,11 @@ AlertDialog builder;
         return CURRENT_ORDER_STATUS;
     }
 
-    public void getCurrentOrderId(){
+    public void openCurrentOrder(View view){
+        getCurrentOrderId(false);
+    }
+
+    public void getCurrentOrderId(boolean isForConditionCheck){
         progressbar.setVisibility(View.VISIBLE);
         DatabaseReference db_orders = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS);
         Query ref = db_orders.orderByChild("user_id").equalTo(mFirebaseUser.getUid());
@@ -885,17 +912,24 @@ AlertDialog builder;
                         Order order = snapshot.getValue(Order.class);
                         if(order != null){
                             if(order.getStatus() == Order.OrderStatusInProgress){
-                                openOrderActivity(order);
+                                if(!isForConditionCheck)
+                                    openOrderActivity(order);
+                                mapFragment.setThereIsActiveOrder(true);
+                                findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
                                 break;
                             }
                         }
                     }
-
-
+                    if(!mapFragment.getThereIsActiveOrder() ){
+                        if(!isForConditionCheck)
+                            Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                        findViewById(R.id.current_order_view).setVisibility(View.GONE);
+                    }
                 }else{
                     Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                 }
                 progressbar.setVisibility(View.GONE);
+
             }
 
             @Override
@@ -952,7 +986,6 @@ AlertDialog builder;
         });
     }
 ArrayList<Order> my_orders;
-
     private void getAllOrders() {
         my_orders = new ArrayList<>();
         FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
@@ -964,7 +997,8 @@ ArrayList<Order> my_orders;
                 {
                     for (DataSnapshot snapshot:dataSnapshot.getChildren()) {
                         Order order = snapshot.getValue(Order.class);
-                        if (order.getStatus() == Order.OrderStatusCompleted) {
+                        if(order.getStatus() == Order.OrderStatusCompleted)
+                        {
                             my_orders.add(order);
                         }
                         else if (order.getStatus() == Order.OrderStatusInProgress)
@@ -1009,5 +1043,9 @@ ArrayList<Order> my_orders;
 
             }
         });
+    }
+
+    public void saveRadiusInputForGroupRide(View view) {
+        mapFragment.saveRadiusInputForGroupRide();
     }
 }

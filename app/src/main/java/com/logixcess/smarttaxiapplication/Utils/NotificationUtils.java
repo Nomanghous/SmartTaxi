@@ -322,7 +322,7 @@ public class NotificationUtils {
         sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent);
     }
 
-    private static void preparePendingIntentForFriendRequest(Context context, String payload, NotificationPayload userData) {
+    public static void preparePendingIntentForFriendRequest(Context context, String payload, NotificationPayload userData) {
         Intent acceptIntent = new Intent(context, MyNotificationManager.class);
         acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
         acceptIntent.putExtra("data", payload);

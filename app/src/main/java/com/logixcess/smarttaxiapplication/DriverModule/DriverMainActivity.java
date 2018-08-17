@@ -28,11 +28,13 @@ import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.Requests;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
 import org.json.JSONException;
@@ -75,12 +77,51 @@ public class DriverMainActivity extends AppCompatActivity {
             userMe = FirebaseAuth.getInstance().getCurrentUser();
             checkAssignedSingleOrder();
             everyTenSecondsTask();
+            listenForDriverResponse(this,userMe.getUid());
         }
     }
+    public static void listenForDriverResponse(Context context, String driverId){
+        FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
+        DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
+        db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Requests request = snapshot.getValue(Requests.class);
+                        if (request != null) {
+                            if (request.getDriverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
+                                NotificationPayload notificationPayload = new NotificationPayload();
+                                notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
+                                notificationPayload.setTitle("\"Request Accepted\"");
+                                notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
+                                notificationPayload.setUser_id("\"" + request.getUserId() + "\"");
+                                notificationPayload.setDriver_id("\"" + request.getDriverId() + "\"");
+                                notificationPayload.setOrder_id("\"\"");
+                                notificationPayload.setPercentage_left("\"" + -1 + "\"");
+                                String str = new Gson().toJson(notificationPayload);
 
+                                try {
+                                    JSONObject json = new JSONObject(str);
+                                    NotificationUtils.preparePendingIntentForFriendRequest(context, json.toString(), notificationPayload);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     private void checkAssignedSingleOrder() {
         db_ref_order_to_driver.child(userMe.getUid())
-                .child(Helper.REF_SINGLE_ORDER).addListenerForSingleValueEvent(new ValueEventListener() {
+                .child(Helper.REF_SINGLE_ORDER).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
@@ -103,7 +144,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 .child(Helper.REF_GROUP_ORDER).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(CURRENT_GROUP_ID == null)
+                if(CURRENT_GROUP_ID != null)
                     return;
                 if(dataSnapshot.exists()){
                     CURRENT_GROUP_ID = (String) dataSnapshot.getValue();
@@ -220,7 +261,6 @@ public class DriverMainActivity extends AppCompatActivity {
                                     currentOrder = null;
                                 }
                             });
-
                             return;
                         }
 
