@@ -23,4 +23,6 @@ public class Constants
     public static double BASE_FAIR_PER_KM = 40;
     public static String user_image_path = "";
     public static String group_id = "";
+    public static int group_radius = 0;
+
 }

@@ -91,6 +91,7 @@ import java.util.TimerTask;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.group_radius;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -166,14 +167,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         // Required empty public constructor
 
         /*
-        * TODO: SINGLE TRIP ISSUE
-        * TODO: RADIUS should be resolved.
-        * TODO: SCHEDULE TRIP : for now it's only saving the given date from user. Rest of the functionality is remaining to be implemented
-        * TODO: Color change according to the distance remaining from the pickup location
-        * TODO: FEEDBACK System
-        * TODO: Driver Profile should be handled
-        * TODO: Cost should be calculated properly
-        * */
+         * TODO: SINGLE TRIP ISSUE
+         * TODO: RADIUS should be resolved.
+         * TODO: SCHEDULE TRIP : for now it's only saving the given date from user. Rest of the functionality is remaining to be implemented
+         * TODO: Color change according to the distance remaining from the pickup location
+         * TODO: FEEDBACK System
+         * TODO: Driver Profile should be handled
+         * TODO: Cost should be calculated properly
+         * */
 
     }
 
@@ -801,7 +802,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     } else if (dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)) {
                         group_id = dataSnapshot.child(Helper.REF_GROUP_ORDER).getValue().toString();
                         if (new_order.getShared()) {
-                            show_driverDetail(driverId);
+                            new_order.setDriver_id(driverId);
+                            goFetchGroupByID(group_id);
                             return;
                         } else {
                             Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
@@ -934,7 +936,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private void checkForResponse(ProgressDialog progressDialog, CountDownTimer timer) {
         if (isOrderAccepted && new_order.getShared()) {
             progressDialog.dismiss();
-            goFetchGroupByID(group_id);
+            mPassengerList = currentSharedRide.getPassengers();
+            calculateTheCosts();
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
             timer.cancel();
@@ -970,8 +973,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if (dataSnapshot.exists()) {
                     currentSharedRide = dataSnapshot.getValue(SharedRide.class);
                     if (currentSharedRide != null) {
-                        mPassengerList = currentSharedRide.getPassengers();
-                        calculateTheCosts();
+
+                        Location starting = new Location("starting");
+                        starting.setLatitude(currentSharedRide.getStartingLat());
+                        starting.setLongitude(currentSharedRide.getStartingLng());
+                        Location myPickup = new Location("myPickup");
+                        myPickup.setLatitude(new_order.getPickupLat());
+                        myPickup.setLongitude(new_order.getPickupLong());
+                        if(starting.distanceTo(myPickup) > currentSharedRide.getRadius_constraint()){
+                            Toast.makeText(getContext(), "Sorry, You cannot join this ride.", Toast.LENGTH_SHORT).show();
+                            currentSharedRide = null;
+                        }else{
+                            show_driverDetail(new_order.getDriver_id());
+                            new_order.setDriver_id(null);
+                        }
+
                     }
                 } else {
                     CREATE_NEW_GROUP = true;
@@ -1095,7 +1111,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             return;
         EditText editText = getActivity().findViewById(R.id.radius_input);
         RelativeLayout container = getActivity().findViewById(R.id.radius_input_container);
-        currentSharedRide.setRadius_constraint(Integer.parseInt(editText.getText().toString()));
+        if(TextUtils.isEmpty(editText.getText())){
+            editText.setError("this cannot be empty");
+            return;
+        }
+
+        group_radius = Integer.parseInt(editText.getText().toString());
         container.setVisibility(View.GONE);
     }
 

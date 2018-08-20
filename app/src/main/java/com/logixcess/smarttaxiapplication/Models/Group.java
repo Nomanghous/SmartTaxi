@@ -9,6 +9,7 @@ public class Group {
     String order_id;
     String region_name;
     int radius_constraint;
+    double startingLat, startingLng;
     public Group(){}
 
     public Group(String group_id, String user_id, long time,String driver_id) {
@@ -24,6 +25,22 @@ public class Group {
 
     public void setRadius_constraint(int radius_constraint) {
         this.radius_constraint = radius_constraint;
+    }
+
+    public double getStartingLat() {
+        return startingLat;
+    }
+
+    public void setStartingLat(double startingLat) {
+        this.startingLat = startingLat;
+    }
+
+    public double getStartingLng() {
+        return startingLng;
+    }
+
+    public void setStartingLng(double startingLng) {
+        this.startingLng = startingLng;
     }
 
     public String getGroup_id() {
