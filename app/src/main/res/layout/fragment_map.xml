@@ -145,11 +145,11 @@
         />
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="300dp"
         android:layout_alignParentBottom="true"
         android:background="@color/white"
         android:id="@+id/ct_vehicles"
-        android:visibility="gone"
+        android:visibility="visible"
         >
         <TextView
             android:layout_width="match_parent"
@@ -284,15 +284,51 @@
                 </LinearLayout>
             </LinearLayout>
         </HorizontalScrollView>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_above="@+id/contai"
+            android:background="@drawable/btn_grad_orange"
+            android:padding="8dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="8dp"
+            android:textSize="16sp"
+            android:visibility="gone"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:text="Add Members"
+            android:id="@+id/btn_add_members"
 
-        <CheckBox
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Shared Booking"
-            android:checked="false"
-            android:id="@+id/cb_shared"
-            android:layout_above="@+id/btn_select_vehicle"
             />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_centerHorizontal="true"
+            android:id="@+id/contai"
+            android:layout_above="@+id/btn_select_vehicle"
+            >
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Shared Booking"
+                android:checked="false"
+                android:id="@+id/cb_shared"
+                android:layout_marginRight="16dp"
+                />
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scheduled"
+                android:checked="false"
+                android:id="@+id/cb_scheduled"
+
+                />
+        </LinearLayout>
+
 
         <Button
             android:layout_width="match_parent"

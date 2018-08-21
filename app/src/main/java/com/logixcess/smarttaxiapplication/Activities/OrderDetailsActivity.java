@@ -26,6 +26,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -269,10 +270,16 @@ public class OrderDetailsActivity extends AppCompatActivity {
         HashMap<String, Boolean> ordersIds = new HashMap<>();
         ordersIds.put(new_order.getOrder_id(), false);
         sharedRide.setOrderIDs(ordersIds);
-        HashMap<String, Boolean> passengersIds = new HashMap<>();
-        passengersIds.put(userId,true);
-        //passengersIds.put(userId,true);
-        sharedRide.setPassengers(passengersIds);
+        if(MapFragment.IS_RIDE_SCHEDULED){
+            MapFragment.mPassengerList.put(new_order.getUser_id(),true);
+            sharedRide.setPassengers(MapFragment.mPassengerList);
+        }else{
+            HashMap<String, Boolean> passengersIds = new HashMap<>();
+            passengersIds.put(userId,true);
+            //passengersIds.put(userId,true);
+            sharedRide.setPassengers(passengersIds);
+        }
+
         db_ref_group.child(groupId).setValue(sharedRide);
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
         db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_GROUP_ORDER).setValue(groupId);

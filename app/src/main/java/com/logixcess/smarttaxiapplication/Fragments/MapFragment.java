@@ -1,5 +1,7 @@
 package com.logixcess.smarttaxiapplication.Fragments;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -24,6 +26,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -111,10 +114,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public static HashMap<Integer, String> route_details;
     public static HashMap<String, Marker> driver_in_map = new HashMap<>(); // driver_id,
     public static HashMap<String, Integer> driver_list_index = new HashMap<>();
-    public static boolean CREATE_NEW_GROUP = false;
+    public static boolean CREATE_NEW_GROUP = false, IS_RIDE_SCHEDULED = false;
     static boolean isOrderAccepted = false, isDriverResponded = false;
     public GoogleMap gMap;
-    CheckBox cb_shared;
+    CheckBox cb_shared, cb_scheduled;
     Firebase firebase_instance;
     ValueEventListener valueEventListener;
     ArrayList<Driver> driverList;
@@ -130,6 +133,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     TextView txtLocation, txtDestination, txt_cost;
     View vehicle1, vehicle2, vehicle3, vehicle4, vehicle5;
     int count_for_region = 0;
+    private HashMap<String,Boolean> groupMembersForScheduledRide;
+
+
     BroadcastReceiver driverResponseReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -159,10 +165,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private FirebaseUser USER_ME;
     private SharedRide currentSharedRide;
     private DatabaseReference db_ref_group, db_ref_requests;
-    private HashMap<String, Boolean> mPassengerList;
+    public static HashMap<String, Boolean> mPassengerList;
     private boolean thereIsActiveOrder = false;
     private boolean dialog_already_showing = false;
     private FirebaseDatabase firebase_db;
+    private Button btn_add_members;
+
     public MapFragment() {
         // Required empty public constructor
 
@@ -174,7 +182,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
          * TODO: FEEDBACK System
          * TODO: Driver Profile should be handled
          * TODO: Cost should be calculated properly
-         * */
+         */
 
     }
 
@@ -216,6 +224,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 //                (ViewGroup) findViewById(R.id.rating_linear_layout));
         EditText edt_user_numbers = layout.findViewById(R.id.edt_user_numbers);
         Button btn_done = layout.findViewById(R.id.btn_done);
+
         builder = new android.app.AlertDialog.Builder(mContext).create();
         builder.setView(layout);
         builder.show();
@@ -251,7 +260,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
         LinearLayout layout_vehicle1, layout_vehicle2, layout_vehicle3, layout_vehicle4, layout_vehicle5;
         mapFragment = view.findViewById(R.id.map);
-
+        btn_add_members = view.findViewById(R.id.btn_add_members);
         vehicle1 = view.findViewById(R.id.vehicle1);
         vehicle2 = view.findViewById(R.id.vehicle2);
         vehicle3 = view.findViewById(R.id.vehicle3);
@@ -278,6 +287,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         ct_vehicles = view.findViewById(R.id.ct_vehicles);//.setVisibility(View.GONE);
         btn_confirm = view.findViewById(R.id.btn_confirm);//.setVisibility(View.VISIBLE);
         btn_select_vehicle = view.findViewById(R.id.btn_select_vehicle);
+
+        btn_add_members.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAddMemberDialog();
+            }
+        });
+
         btn_select_vehicle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -315,6 +332,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         et_pickup = view.findViewById(R.id.et_pickup);
         et_drop_off = view.findViewById(R.id.et_dropoff);
         cb_shared = view.findViewById(R.id.cb_shared);
+        cb_scheduled = view.findViewById(R.id.cb_scheduled);
         new_order.setShared(false);
         new_order.setUser_id(((MainActivity) getContext()).getmFirebaseUser().getUid());
 
@@ -332,6 +350,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 new_order.setShared(isChecked);
+            }
+        });
+        cb_scheduled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                IS_RIDE_SCHEDULED = isChecked;
+                if(isChecked)
+                    btn_add_members.setVisibility(View.VISIBLE);
+                else
+                    btn_add_members.setVisibility(View.GONE);
             }
         });
         everyTenSecondsTask();
@@ -642,10 +670,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 "Cancel"
         );
 
-
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
-
 
         // Assign values
         dateTimeFragment.startAtCalendarView();
@@ -672,6 +698,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 new_order.setPickup_date(d);
                 SELECTED_DATE_TIME = new GregorianCalendar();
                 SELECTED_DATE_TIME.setTime(date);
+
             }
 
             @Override
@@ -1246,5 +1273,73 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
+    private void showAddMemberDialog() {
+        if(!(IS_RIDE_SCHEDULED && new_order.getShared())){
+            Toast.makeText(getContext(), "Ride is not Shared", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        AddMemberDialog memberDialog = new AddMemberDialog(getActivity());
+        memberDialog.setCancelable(false);
+        memberDialog.show();
+    }
 
+    private void addMember(final String username) {
+        db_ref_user.orderByChild("email").equalTo(username).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    User passenger = dataSnapshot.getValue(User.class);
+                    if(passenger == null)
+                        return;
+                    if(!mPassengerList.containsKey(passenger.getUser_id()))
+                        mPassengerList.put(passenger.getUser_id(),true);
+                } else {
+                    Toast.makeText(getContext(), "Sorry, No User Found.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    public class AddMemberDialog extends Dialog {
+
+        Button yes;
+        EditText tv_username;
+        private Button no;
+
+        public AddMemberDialog(Activity a) {
+            super(a);
+        }
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            setContentView(R.layout.dialog_add_user);
+            yes = findViewById(R.id.btn_dialog_add);
+            no = findViewById(R.id.btn_cancel);
+            tv_username = findViewById(R.id.et_name);
+            yes.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (TextUtils.isEmpty(tv_username.getText())) {
+                        tv_username.setError("Please Enter Email");
+                        return;
+                    }
+                    addMember(tv_username.getText().toString());
+//                    dismiss();
+                }
+            });
+            no.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    dismiss();
+                }
+            });
+        }
+    }
 }
