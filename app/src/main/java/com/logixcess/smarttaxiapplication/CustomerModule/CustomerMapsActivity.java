@@ -80,7 +80,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private DatabaseReference db_ref_user;
     private DatabaseReference db_ref_group;
     private FirebaseUser USER_ME;
-    private Location MY_LOCATION = null;
     private LatLng dropoff, pickup;
     private String CURRENT_ORDER_ID = "";
     private LatLng start, end;
@@ -98,6 +97,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private Driver SELECTED_DRIVER;
     private LatLng driver = null;
     private SharedRide CURRENT_SHARED_RIDE;
+    private Location driverLocation = null  ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -129,7 +129,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
-            MY_LOCATION = LocationManagerService.mLastLocation;
+            driverLocation = LocationManagerService.mLastLocation;
             db_ref = FirebaseDatabase.getInstance().getReference();
             db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(currentOrder.getDriver_id());
             db_ref_driver.addValueEventListener(new ValueEventListener() {
@@ -137,9 +137,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
                         Driver driver = dataSnapshot.getValue(Driver.class);
-                        if(driver != null && mMap != null && MY_LOCATION != null) {
-                            MY_LOCATION.setLatitude(driver.getLatitude());
-                            MY_LOCATION.setLongitude(driver.getLongitude());
+                        if(driver != null && mMap != null && driverLocation != null) {
+                            driverLocation.setLatitude(driver.getLatitude());
+                            driverLocation.setLongitude(driver.getLongitude());
                             if(!IS_ROUTE_ADDED)
                                 requestNewRoute();
                         }
@@ -182,14 +182,14 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 requestNewRoute();
             else {
                 try {
-                    if(mDriverMarker != null && driver != null && MY_LOCATION != null) {
+                    if(mDriverMarker != null && driver != null && driverLocation != null) {
                         Location location = new Location("pickup");
                         location.setLatitude(start.latitude);
                         location.setLongitude(start.longitude);
                         if(totalDistance == 0)
-                            totalDistance = MY_LOCATION.distanceTo(location);
-                        distanceRemaining = MY_LOCATION.distanceTo(location);
-                        driver = new LatLng(MY_LOCATION.getLatitude(),MY_LOCATION.getLongitude());
+                            totalDistance = driverLocation.distanceTo(location);
+                        distanceRemaining = driverLocation.distanceTo(location);
+                        driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
                         if(distanceRemaining > totalDistance)
                             return;
                         runOnUiThread(new Runnable() {
@@ -224,9 +224,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     }
 
     private void requestNewRoute() {
-        if(MY_LOCATION == null || IS_ROUTE_ADDED)
+        if(driverLocation == null || IS_ROUTE_ADDED)
             return;
-        driver = new LatLng(MY_LOCATION.getLatitude(), MY_LOCATION.getLongitude());
+        driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
         if(pickup == null)
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
         List<LatLng> points = new ArrayList<>();
@@ -286,8 +286,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         }
     }
 
-    private MarkerOptions getDesiredMarker(float kind, LatLng posToSet, String title) {
-        return new MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker(kind))
+    private MarkerOptions getDesiredMarker(int kind, LatLng posToSet, String title) {
+        return new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(kind))
                 .position(posToSet).title(title);
     }
 
@@ -348,16 +348,16 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.animateCamera(center);
         PolylineOptions line = new PolylineOptions().addAll(waypoints);
         mMap.addPolyline(line);
-        mDriverMarker = mMap.addMarker(getDesiredMarker(BitmapDescriptorFactory.HUE_YELLOW,start,"driver"));
+        mDriverMarker = mMap.addMarker(getDesiredMarker(R.drawable.ic_option_car,start,"driver"));
         MarkerOptions options = new MarkerOptions();
         options.position(start);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
         mMap.addMarker(options);
 
         // End marker
         options = new MarkerOptions();
         options.position(end);
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
         mMap.addMarker(options);
 
 
@@ -386,34 +386,25 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
 //        polylines = new ArrayList<>();
         //add route(s) to the map.
+        polylines = new ArrayList<>();
+        //add route(s) to the map.
         IS_ROUTE_ADDED = true;
         Route shortestRoute = route.get(shortestRouteIndex);
-        if(totalDistance < 0 || distanceRemaining >= totalDistance)
+        if (totalDistance < 0 || distanceRemaining > totalDistance)
             totalDistance = shortestRoute.getDistanceValue();
-//        int colorIndex = shortestRouteIndex % COLORS.length;
-//        PolylineOptions polyOptions = new PolylineOptions();
-//        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
-//        polyOptions.width(10 + shortestRouteIndex * 3);
-//        polyOptions.addAll(shortestRoute.getPoints());
-//        Polyline polyline = mMap.addPolyline(polyOptions);
-//        polylines.add(polyline);
+        int colorIndex = shortestRouteIndex % COLORS.length;
+        PolylineOptions polyOptions = new PolylineOptions();
+        polyOptions.color(getResources().getColor(COLORS[colorIndex]));
+        polyOptions.width(10 + shortestRouteIndex * 3);
+        polyOptions.addAll(shortestRoute.getPoints());
+        Polyline polyline = mMap.addPolyline(polyOptions);
+        polylines.add(polyline);
+        if (driver == null && driverLocation != null)
+            driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
         distanceRemaining = shortestRoute.getDistanceValue();
-        MarkerOptions options = new MarkerOptions();
-        options.position(driver);
 
-        Bitmap bitmap = getResizedBitmap(getResources().getDrawable(R.drawable.ic_vehicle_grey),50,50);
-        options.icon(BitmapDescriptorFactory.fromBitmap(bitmap));
-        if(mDriverMarker != null)
-            mDriverMarker.remove();
-        mDriverMarker = mMap.addMarker(options);
-        checkForDistanceToSendNotification();
-//        try {
-//
-//            checkForDistanceToSendNotification();
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
-
+        if(mDriverMarker != null && driver != null && driverLocation != null)
+            checkForDistanceToSendNotification();
 
     }
 
@@ -555,10 +546,15 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
 
     private void updateUserLocation(){
-        MY_LOCATION = LocationManagerService.mLastLocation;
-        if(MY_LOCATION != null && USER_ME != null){
 
-        }
+        if(mDriverMarker == null)
+            return;
+
+        if(driverLocation == null)
+            driverLocation = new Location("driver");
+            driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
+            driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
+
     }
 
     private void setupOrderOnMap(){
@@ -577,7 +573,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                //MY_LOCATION = location;
+                //driverLocation = location;
                 //if(driver == null && SELECTED_DRIVER != null)
                   //  requestNewRoute();
             }
