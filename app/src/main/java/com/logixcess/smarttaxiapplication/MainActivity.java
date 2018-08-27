@@ -104,7 +104,7 @@ public class MainActivity extends BaseActivity
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
     private static final int REQUEST_CODE_ORDER_CREATION = 1023;
-    Order order_pending;
+    String order_pending_id,order_pending_driver_name,order_pending_driver_id,pending_dest,pending_pickup;
     Handler mHandler;
     NavigationView navigationView;
     private ProgressBar progressbar;
@@ -242,7 +242,7 @@ public class MainActivity extends BaseActivity
         }
         getCurrentOrderId(true);
 
-        order_pending = new Order();
+       // order_pending = new Order();
     }
 
     public Location getCurrentLocation(){
@@ -769,6 +769,16 @@ AlertDialog builder;
             case 4:
                 // feedback fragment
                 FeedbackFragment feedbackFragment = new FeedbackFragment();
+                if(order_pending_id!=null || (!TextUtils.isEmpty(order_pending_id)))
+                {
+                    Bundle args = new Bundle();
+                    args.putString("order_id",order_pending_id);
+                    args.putString("driver_id",order_pending_driver_id);
+                    args.putString("driver_name",order_pending_driver_name);
+                    args.putString("pending_dest",pending_dest);
+                    args.putString("pending_pickup",pending_pickup);
+                    feedbackFragment.setArguments(args);
+                }
                 return feedbackFragment;
 //            case 5:
 //                // find user fragment
@@ -997,13 +1007,18 @@ ArrayList<Order> my_orders;
                 {
                     for (DataSnapshot snapshot:dataSnapshot.getChildren()) {
                         Order order = snapshot.getValue(Order.class);
-                        if(order.getStatus() == Order.OrderStatusCompleted)
+                        if( (order.getStatus() == Order.OrderStatusCompleted ) || (order.getStatus() == Order.OrderStatusCompleted_Review ))
                         {
                             my_orders.add(order);
+
                         }
-                        else if (order.getStatus() == Order.OrderStatusInProgress)
+                        if (order.getStatus() == Order.OrderStatusCompleted)
                         {
-                            order_pending = order;
+                            order_pending_id = order.getOrder_id();
+                            order_pending_driver_name = order.getDriver_name();
+                            order_pending_driver_id = order.getDriver_id();
+                            pending_dest = order.getDropoff();
+                            pending_pickup = order.getPickup();
                         }
                     }
 

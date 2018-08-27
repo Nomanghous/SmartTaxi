@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -23,6 +24,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,11 +33,14 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
@@ -51,12 +56,16 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.MainActivity;
@@ -89,6 +98,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -155,6 +165,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     };
     private DatabaseReference db_ref_user;
+    private DatabaseReference db_ref_user_general;
     private ArrayList<Polyline> polyLineList;
     private UserLocationManager gps;
     private GregorianCalendar SELECTED_DATE_TIME;
@@ -254,6 +265,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         firebase_db = FirebaseDatabase.getInstance();
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         db_ref_user = firebase_db.getReference().child(Helper.REF_PASSENGERS);
+        db_ref_user_general = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         driverList = new ArrayList<>();
@@ -435,13 +447,35 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             e.printStackTrace();
         }
     }*/
-    public void show_driverDetail(String driverid) {
-
+    public void driver_selected(String driverId)
+    {
+        if (new_order.getShared()) {
+            new_order.setDriver_id(driverId);
+            sendNotificationToRequestGroupRide(driverId);
+        } else {//non shared
+            double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+            //Display Cost
+            if (layout_cost_detail.getVisibility() == View.GONE) {
+                if (btn_confirm.getVisibility() == View.VISIBLE)
+                    btn_confirm.setVisibility(View.GONE);
+                layout_cost_detail.setVisibility(View.VISIBLE);
+                txtLocation.setText("Location : " + new_order.getPickup());
+                txtDestination.setText("Destination : " + new_order.getDropoff());
+                txt_cost.setText(String.valueOf(total_cost));
+                new_order.setEstimated_cost(String.valueOf(total_cost));
+            }
+        }
+    }
+    ProgressDialog progressDialog;
+    public void  show_driverDetail(String driverid)
+    {
         if (dialog_already_showing)
             return;
         String driverId = driverid;
-        final CharSequence[] items = {"SELECT", "OPEN PROFILE",
-                "CANCEL"};
+        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
+                "CANCEL" };
+        //final CharSequence[] items = { "SELECT",
+          //      "CANCEL" };
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
 
@@ -450,26 +484,176 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             public void onClick(DialogInterface dialog, int item) {
                 boolean result = PermissionHandler.checkPermission(getActivity());
                 if (items[item].equals("SELECT")) {
+                    driver_selected(driverId);
+                    //check_cost(0,0.0);
+                }
+                else if (items[item].equals("OPEN PROFILE"))
+                {
+                    progressDialog = new ProgressDialog(getActivity());
+                    progressDialog.setMessage("Please Wait...");
+                    progressDialog.show();
+                    db_ref_user_general.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot)
+                        {
+                            if(dataSnapshot.exists())
+                            {     User driver = dataSnapshot.getValue(User.class);
+                                //int index = driver_list_index.get(driverId);
+                                //Driver driver = driverList.get(index);
+                                open_profile(driver.getUser_id(),driver.getName(),driver.getUser_image_url(),driver.getPhone());
 
-//                    if (new_order.getShared()) {
-                        new_order.setDriver_id(driverId);
-                        sendNotificationToRequestGroupRide(driverId);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+
+                   // Toast.makeText(getActivity(),driver.getRegion_name(),Toast.LENGTH_SHORT).show();
+                }
+                else if (items[item].equals("CANCEL")) {
 //                    } else {//non shared
 
 //                    }
                     dialog_already_showing = false;
                     dialog.dismiss();
-                    //check_cost(0,0.0);
-                } else if (items[item].equals("OPEN PROFILE")) {
-
-                } else if (items[item].equals("CANCEL")) {
-                    dialog.dismiss();
-                    dialog_already_showing = false;
                 }
             }
         });
         builder.show();
-        dialog_already_showing = true;
+    }
+
+    private void open_profile(String user_id,String name,String url,String phone)
+    {
+
+        ImageView image = new ImageView(getActivity());
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(350,300);
+        image.setLayoutParams(layoutParams);
+        if(url!=null || (!TextUtils.isEmpty(url)) )
+        {
+            RequestOptions requestOptions = new RequestOptions();
+            requestOptions.placeholder(R.drawable.user_placeholder);
+            requestOptions.circleCrop();
+            requestOptions.centerInside();
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(url);
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri)
+                {
+                    String imageURL = uri.toString();
+
+                    Glide.with(getActivity()).setDefaultRequestOptions(requestOptions).load(imageURL)
+                            .into(image);
+
+                    //Glide.with(getApplicationContext()).load(imageURL).into(i1);
+                }
+            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                @Override
+                public void onComplete(@NonNull Task<Uri> task) {
+                    if(progressDialog!=null && progressDialog.isShowing())
+                    {
+                        progressDialog.dismiss();
+                    }
+                    String status = "OFFLINE";
+                    if(true)
+                        status = "ONLINE";
+                    final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+                    AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
+                    builder.setTitle("Driver Information :");
+                    builder.setView(image);
+                    builder.setPositiveButton("Request Now", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            driver_selected(user_id);
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            dialog_already_showing = false;
+                        }
+                    });
+
+                    builder.setItems(items, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int item)
+                        {
+//                if (items[item].equals("SendRequest"))
+//                {
+//                    driver_selected(user_id);
+//                }
+                        }
+                    });
+
+                    builder.show();
+                    dialog_already_showing = true;
+                }
+            })
+                    .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle any errors
+                  //  Glide.with(getActivity()).setDefaultRequestOptions(requestOptions).load(url)
+                    //        .into(image);
+
+                }
+            });
+        }
+        else
+        {
+            if(progressDialog!=null && progressDialog.isShowing())
+            {
+                progressDialog.dismiss();
+            }
+            String status = "OFFLINE";
+            if(true)
+                status = "ONLINE";
+            final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+            AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
+            builder.setTitle("Driver Information");
+            builder.setView(image);
+            builder.setPositiveButton("Request Now", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    driver_selected(user_id);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    dialog_already_showing = false;
+                }
+            });
+
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int item)
+                {
+//                if (items[item].equals("SendRequest"))
+//                {
+//                    driver_selected(user_id);
+//                }
+                    if (items[item].equals("CANCEL")) {
+                        dialog.dismiss();
+                        dialog_already_showing = false;
+                    }
+                    else
+                    {
+                    }
+                }
+            });
+
+            builder.show();
+            dialog_already_showing = true;
+        }
+
+
+
     }
 
     public void checkRidePassengers(String region_name, String driver_id) {
@@ -887,7 +1071,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     }
 
-    public void sendNotificationToRequestGroupRide(String driverId) {
+    public void sendNotificationToRequestGroupRide(String driverId)
+    {
         if (isOrderAccepted) {
             Toast.makeText(getContext(), "Your order is already accepted by driver", Toast.LENGTH_SHORT).show();
             return;
@@ -947,7 +1132,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         progressDialog.setMessage("Waiting for Driver Response");
         progressDialog.setCancelable(false);
         progressDialog.show();
-        new CountDownTimer(30000, 5000) {
+        new CountDownTimer(60000, 5000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 checkForResponse(progressDialog,this);
@@ -1035,14 +1220,36 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private void calculateTheCosts() {
         int passengers_count = mPassengerList.size();
+        updateOtherPassengerCosts(passengers_count+1);// passenger count new passenger already included in it
         double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+        for(int i = 0;i<passengers_count;i++)
+        {
+        }
+//        for (HashMap<String,Boolean> passenger:mPassengerList) {
+//
+//        }
+        if(passengers_count==1)
+        {
+            // then now total passenger will be 2 so passenger no 1 fair will have 20% discount and
+            // new passenger have 10% discount
+        }
+        else if(passengers_count == 2)
+        {
+            // then now total passenger will be 3 so passenger no 1 fair will have 20% discount and
+            // passenger no 2 have 10% discount and new Passenger have 5% discount
+        }
+        else if(passengers_count == 3)
+        {
+            // then now total passenger will be 4 so passenger no 1 fair will have 20% discount and
+            // passenger no 2 have 10% discount and Passenger no 3 have 5% discount and new passenger have 5% discount
+        }
+
         if (passengers_count == 0)
             total_cost = (cost / 100.0f) * 20; //give 20% discount
         else if (passengers_count == 1)
             total_cost = (cost / 100.0f) * 10; //give 10% discount
         else if (passengers_count > 2)
             total_cost = (cost / 100.0f) * 5; //give
-
         new_order.setEstimated_cost(String.valueOf(total_cost));
         //Display Cost
         if (layout_cost_detail.getVisibility() == View.GONE) {
@@ -1052,6 +1259,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             txtLocation.setText(new_order.getPickup());
             txtDestination.setText(new_order.getDropoff());
             txt_cost.setText(String.valueOf(total_cost));
+        }
+    }
+
+    private void updateOtherPassengerCosts(int passenger_count)
+    {
+        for (Map.Entry<String, Boolean> entry : mPassengerList.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            // you code here
         }
     }
 
@@ -1220,11 +1436,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
                 distance = distance.replaceAll("\\D+\\.\\D+", "");
                 if (distance.contains("mi"))
-                    distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
+                    distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);//to km
                 else if (distance.contains(("km")))
-                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")) * 1.609344);
+                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")));//to km
                 else if (distance.contains("m"))
-                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) * 1.609344);
+                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) * 0.001);//to km
+//                if (distance.contains("mi"))
+//                    distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
+//                else if (distance.contains(("km")))
+//                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")) * 1.609344);
+//                else if (distance.contains("m"))
+//                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) * 1.609344);
                 new_order.setTotal_kms(distance);
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);

@@ -277,6 +277,7 @@ public class Register_Next_Step extends AppCompatActivity {
             progressDialog.setTitle("NIC is Uploading...");
 
             // Showing progressDialog.
+            if(!progressDialog.isShowing())
             progressDialog.show();
             String image_name = "img-"+ System.currentTimeMillis();
             // Creating second StorageReference.
@@ -343,6 +344,7 @@ public class Register_Next_Step extends AppCompatActivity {
             progressDialog.setTitle("License is Uploading...");
 
             // Showing progressDialog.
+            if(!progressDialog.isShowing())
             progressDialog.show();
             String image_name = "img-"+ System.currentTimeMillis();
             // Creating second StorageReference.

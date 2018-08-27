@@ -15,7 +15,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
 
     @Exclude
     public static final int OrderStatusCompleted = 1, OrderStatusInProgress = 2, OrderStatusPending = 3,
-                    OrderStatusCancelled = 4;
+                    OrderStatusCancelled = 4,OrderStatusCompleted_Review = 5;
 
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
