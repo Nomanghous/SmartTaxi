@@ -377,6 +377,7 @@ AlertDialog builder;
     }
 
     public void openPickupActivity(View view) {
+        if(mapFragment != null)
         if(mapFragment.getThereIsActiveOrder()){
             Toast.makeText(this, "There is already an order in Progress.", Toast.LENGTH_SHORT).show();
             return;

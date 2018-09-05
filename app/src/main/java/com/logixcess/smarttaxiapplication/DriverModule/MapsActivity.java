@@ -118,9 +118,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
 
-                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null)
+                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null
+                        && currentOrder.getShared())
                     IS_RIDE_SHARED = true;
-                else{
+                else if(currentOrder.getShared()){
                     fetchThatGroup();
                 }
 

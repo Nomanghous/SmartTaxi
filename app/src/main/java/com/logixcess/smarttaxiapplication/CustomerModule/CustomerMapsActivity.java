@@ -291,6 +291,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 .position(posToSet).title(title);
     }
 
+    private MarkerOptions getDesiredMarker(Bitmap kind, LatLng posToSet, String title) {
+        return new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(kind))
+                .position(posToSet).title(title);
+    }
     public void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint, final Bitmap bitmap) {
         Marker marker = myMap.addMarker(new MarkerOptions()
                 .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
@@ -348,21 +352,18 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.animateCamera(center);
         PolylineOptions line = new PolylineOptions().addAll(waypoints);
         mMap.addPolyline(line);
-        mDriverMarker = mMap.addMarker(getDesiredMarker(R.drawable.ic_option_car,start,"driver"));
+        Bitmap driverPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.ic_option_car)
+                , 100, 100);
+        mDriverMarker = mMap.addMarker(getDesiredMarker(driverPin,start,"driver"));
         MarkerOptions options = new MarkerOptions();
         options.position(start);
         options.icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
-        mMap.addMarker(options);
-
-        // End marker
-        options = new MarkerOptions();
-        options.position(end);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
-        mMap.addMarker(options);
-
-
-
-
+        Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin)
+                , 80, 100);
+        mMap.addMarker(getDesiredMarker(pickupPin,start,currentOrder.getPickup()));
+        Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin)
+                , 80, 100);
+        mMap.addMarker(getDesiredMarker(dropoffPin,end,"dropoff"));
     }
 
     private void getRoutePoints() {
@@ -546,14 +547,19 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
 
     private void updateUserLocation(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(mDriverMarker == null)
+                    return;
 
-        if(mDriverMarker == null)
-            return;
+                if(driverLocation == null)
+                    driverLocation = new Location("driver");
+                driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
+                driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
 
-        if(driverLocation == null)
-            driverLocation = new Location("driver");
-            driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
-            driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
+            }
+        });
 
     }
 

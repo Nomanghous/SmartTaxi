@@ -149,7 +149,7 @@
         android:layout_alignParentBottom="true"
         android:background="@color/white"
         android:id="@+id/ct_vehicles"
-        android:visibility="visible"
+        android:visibility="gone"
         >
         <TextView
             android:layout_width="match_parent"

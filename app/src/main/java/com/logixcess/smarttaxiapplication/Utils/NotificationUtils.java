@@ -371,7 +371,7 @@ public class NotificationUtils {
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
-                    .setContentIntent(contentIntent);
+                    .setContentIntent(contentIntent);   
             if(actions != null)
                 for (NotificationCompat.Action action : actions) {
                     mBuilder.addAction(action);
