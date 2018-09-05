@@ -159,7 +159,7 @@ public class DriverMainActivity extends AppCompatActivity {
         });
     }
 
-   // int count_for_region = 0;
+    int count_for_region = 0;
     private void everyTenSecondsTask() {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
     }
@@ -168,12 +168,12 @@ public class DriverMainActivity extends AppCompatActivity {
         @Override
         public void run() {
             updateUserLocation();
-            //count_for_region ++;
-     //       if(count_for_region == 60)
-       //     {
-         //       count_for_region = 0;
+            count_for_region ++;
+            if(count_for_region == 60)
+            {
+                count_for_region = 0;
                 getRegionName(DriverMainActivity.this, myLocation.getLatitude(), myLocation.getLongitude());
-          //  }
+            }
         }
     }
 
@@ -247,8 +247,7 @@ public class DriverMainActivity extends AppCompatActivity {
                         if(currentOrder.getStatus() == Order.OrderStatusCompleted ){
                             db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
-                                public void onComplete(@NonNull Task<Void> task)
-                                {
+                                public void onComplete(@NonNull Task<Void> task) {
                                     Toast.makeText(DriverMainActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
                                     currentOrder = null;
                                 }

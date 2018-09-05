@@ -18,7 +18,6 @@ public class Helper {
     public static final int NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE = 106;
     public static final int NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE = 107;
     public static final String REF_ORDERS = "Order";
-    public static final String REF_FEEBACK = "Feedback";
     public static final String REF_USERS = "User";
     public static final String REF_GROUPS = "Group";
     public static final String REF_PASSENGERS = "Passenger";

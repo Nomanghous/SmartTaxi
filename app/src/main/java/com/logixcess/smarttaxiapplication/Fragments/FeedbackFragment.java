@@ -1,36 +1,16 @@
 package com.logixcess.smarttaxiapplication.Fragments;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.RatingBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
-import com.logixcess.smarttaxiapplication.MainActivity;
-import com.logixcess.smarttaxiapplication.Models.Feedback;
-import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
-import com.logixcess.smarttaxiapplication.Utils.Helper;
-
-import java.util.HashMap;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -51,9 +31,7 @@ public class FeedbackFragment extends Fragment {
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
-    HashMap<String,Float> feedback11 = new HashMap<>();
-    HashMap<String,Float> feedback22 = new HashMap<>();
-    HashMap<String,Float> feedback33 = new HashMap<>();
+
     public FeedbackFragment() {
         // Required empty public constructor
     }
@@ -75,24 +53,16 @@ public class FeedbackFragment extends Fragment {
         fragment.setArguments(args);
         return fragment;
     }
-String driver_id,driver_name,order_id,pending_dest,pending_pickup;
-    RatingBar rb_review1,rb_review2,rb_review3;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            driver_id = getArguments().getString("driver_id");
-            driver_name = getArguments().getString("driver_name");
-            order_id = getArguments().getString("order_id");
-            pending_dest = getArguments().getString("pending_dest");
-            pending_pickup = getArguments().getString("pending_pickup");
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
     }
 Button btn_feedback;
-    TextView tv_Destination,tv_Pickup;
-    EditText et_complaint;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -101,68 +71,9 @@ Button btn_feedback;
         //TODO check if there is any order of Passenger
 
         btn_feedback = view.findViewById(R.id.btn_feedback);
-        rb_review1 = view.findViewById(R.id.rb_review1);
-        rb_review2 = view.findViewById(R.id.rb_review2);
-        rb_review3 = view.findViewById(R.id.rb_review3);
-        tv_Destination = view.findViewById(R.id.tv_Destination);
-        et_complaint = view.findViewById(R.id.et_complaint);
-        tv_Pickup = view.findViewById(R.id.tv_Pickup);
-        if(pending_dest!=null && (!TextUtils.isEmpty(pending_dest)))
-        {
-            tv_Destination.setText(pending_dest);
-        }
-        if(pending_pickup!=null && (!TextUtils.isEmpty(pending_pickup)))
-        {
-            tv_Pickup.setText(pending_pickup);
-        }
         btn_feedback.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
-                Feedback feedback = new Feedback();
-                feedback.setFk_driver_id(driver_id);
-                feedback.setFk_order_id(order_id);
-                if(!TextUtils.isEmpty(et_complaint.getText()))
-                feedback.setComplaint(et_complaint.getText().toString());
-                feedback11.put(getString(R.string.review1),rb_review1.getRating());
-                feedback22.put(getString(R.string.review2),rb_review2.getRating());
-                feedback33.put(getString(R.string.review3),rb_review3.getRating());
-                feedback.setFeedback1(feedback11);
-                feedback.setFeedback2(feedback22);
-                feedback.setFeedback3(feedback33);
-                DatabaseReference db_ref_feedback = FirebaseDatabase.getInstance().getReference().child(Helper.REF_FEEBACK).child(order_id);
-                DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(order_id);
-                db_ref_feedback.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if(dataSnapshot.exists())
-                        {
-
-                        }
-                        else
-                        {
-                            db_ref_feedback.setValue(feedback).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful())
-                                        Toast.makeText(getContext(), "Thank you for your Feeback !", Toast.LENGTH_SHORT).show();
-                                    db_ref_order.child("status").setValue(Order.OrderStatusCompleted_Review).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            if (task.isSuccessful())
-                                                Toast.makeText(getContext(), "Order Mark As Complete !", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
+            public void onClick(View view) {
                 Toast.makeText(getActivity(),"Published",Toast.LENGTH_SHORT).show();
             }
         });

@@ -23,11 +23,9 @@ public class Feedback implements Parcelable
     HashMap<String,Float> feedback2;
     HashMap<String,Float> feedback3;
     String fk_order_id;
-    String fk_driver_id;
     String complaint;
 
-    public Feedback()
-    {}
+
     protected Feedback(Parcel in) {
         fk_order_id = in.readString();
     }
@@ -92,13 +90,5 @@ public class Feedback implements Parcelable
 
     public void setComplaint(String complaint) {
         this.complaint = complaint;
-    }
-
-    public String getFk_driver_id() {
-        return fk_driver_id;
-    }
-
-    public void setFk_driver_id(String fk_driver_id) {
-        this.fk_driver_id = fk_driver_id;
     }
 }

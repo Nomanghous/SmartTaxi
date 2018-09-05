@@ -118,8 +118,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
 
-                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null
-                        && currentOrder.getShared())
+                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null)
                     IS_RIDE_SHARED = true;
                 else if(currentOrder.getShared()){
                     fetchThatGroup();
@@ -146,7 +145,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(dataSnapshot.exists()){
                         currentUser = dataSnapshot.getValue(User.class);
                         if(currentUser != null && mMap != null) {
-                            requestNewRoute();
+                            if(currentOrder.getShared())
+                                requestNewRoute();
                         }
                     }
                 }
@@ -156,11 +156,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
             });
             try {
-                if(IS_RIDE_SHARED)
+                if(currentOrder.getShared())
                     addOrdersListener();
-                else{
-                    requestNewRoute();
-                }
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
@@ -194,7 +191,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 return;
             }
         }
-
         mMap.setMyLocationEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         addRoute();
@@ -665,11 +661,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 Order order = dataSnapshot.getValue(Order.class);
                 if(order != null){
                     if(order.getStatus() == Order.OrderStatusInProgress &&
-                            order.getDriver_id().equals(userMe.getUid())){
+                            order.getDriver_id().equals(userMe.getUid()) && order.getShared()){
                         getTheNextNearestDropOff(true);
-                        if(currentOrder.getShared()){
-                            fetchThatGroup();
-                        }
+                        fetchThatGroup();
+                    }else{
+                        // order is single
+
                     }
                 }
             }
