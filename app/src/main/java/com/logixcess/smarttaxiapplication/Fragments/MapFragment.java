@@ -181,6 +181,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private boolean dialog_already_showing = false;
     private FirebaseDatabase firebase_db;
     private Button btn_add_members;
+    private String tempDriverId= "";
 
     public MapFragment() {
         // Required empty public constructor
@@ -453,6 +454,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             new_order.setDriver_id(driverId);
             sendNotificationToRequestGroupRide(driverId);
         } else {//non shared
+            new_order.setDriver_id(driverId);
             double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
             //Display Cost
             if (layout_cost_detail.getVisibility() == View.GONE) {
@@ -1111,6 +1113,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         generateNewRequest(driverId, new_order.getUser_id());
                         listenForDriverResponse(driverId, new_order.getUser_id());
                         isOrderAccepted = false;
+                        tempDriverId = driverId;
                         waitForDriverResponse();
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -1150,12 +1153,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             progressDialog.dismiss();
             mPassengerList = currentSharedRide.getPassengers();
             calculateTheCosts();
+            new_order.setDriver_id(tempDriverId);
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
             timer.cancel();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
-
+            new_order.setDriver_id(tempDriverId);
             double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
             if (layout_cost_detail.getVisibility() == View.GONE) {
                 if (btn_confirm.getVisibility() == View.VISIBLE)

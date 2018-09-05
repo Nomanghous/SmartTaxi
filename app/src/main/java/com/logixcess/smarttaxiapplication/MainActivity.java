@@ -258,11 +258,11 @@ public class MainActivity extends BaseActivity
 
         Log.e("push", "Firebase reg id: " + regId);
 
-        if (!TextUtils.isEmpty(regId))
-            Toast.makeText(getApplicationContext(), "Push notification: " + regId, Toast.LENGTH_LONG).show();
+       // if (!TextUtils.isEmpty(regId))
+       //     Toast.makeText(getApplicationContext(), "Push notification: " + regId, Toast.LENGTH_LONG).show();
             //txtRegId.setText("Firebase Reg Id: " + regId);
-        else
-            Toast.makeText(getApplicationContext(), "Firebase Reg Id is not received yet!", Toast.LENGTH_LONG).show();
+       // else
+         //   Toast.makeText(getApplicationContext(), "Firebase Reg Id is not received yet!", Toast.LENGTH_LONG).show();
             //txtRegId.setText("Firebase Reg Id is not received yet!");
     }
 
@@ -917,12 +917,12 @@ AlertDialog builder;
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    for(DataSnapshot snapshot : dataSnapshot.getChildren()){
+                if(dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         Order order = snapshot.getValue(Order.class);
-                        if(order != null){
-                            if(order.getStatus() == Order.OrderStatusInProgress){
-                                if(!isForConditionCheck)
+                        if (order != null) {
+                            if (order.getStatus() == Order.OrderStatusInProgress) {
+                                if (!isForConditionCheck)
                                     openOrderActivity(order);
                                 mapFragment.setThereIsActiveOrder(true);
                                 findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
@@ -930,14 +930,18 @@ AlertDialog builder;
                             }
                         }
                     }
-                    if(!mapFragment.getThereIsActiveOrder() ){
-                        if(!isForConditionCheck)
-                            Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
-                        findViewById(R.id.current_order_view).setVisibility(View.GONE);
+                    if (mapFragment != null) {
+                        if (!mapFragment.getThereIsActiveOrder())
+                        {
+                            if (!isForConditionCheck)
+                                Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                            findViewById(R.id.current_order_view).setVisibility(View.GONE);
+                        }
                     }
-                }else{
-                    Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
-                }
+                    } else {
+                        Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                    }
+
                 progressbar.setVisibility(View.GONE);
 
             }

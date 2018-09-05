@@ -89,6 +89,7 @@
             android:parentActivityName=".MainActivity" />
         <activity
             android:name=".Activities.OrderDetailsActivity"
+            android:theme="@style/AppTheme.NoActionBar"
              />
         <activity
             android:name=".Activities.Register_Next_Step"

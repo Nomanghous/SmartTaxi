@@ -112,9 +112,16 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         goCreateGroupForSharedRide();
                     }
                 }else {
-                    db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_SINGLE_ORDER).setValue(new_order.getOrder_id());
-                    db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
-                    CloseActivity();
+                    if(new_order.getDriver_id()==null)
+                    Toast.makeText(OrderDetailsActivity.this,"Driver Id is null Please Select the Driver First",Toast.LENGTH_SHORT).show();
+                    else
+                    {
+                        db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_SINGLE_ORDER).setValue(new_order.getOrder_id());
+                        new_order.setStatus(Order.OrderStatusInProgress);
+                        db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
+                        CloseActivity();
+                    }
+
                 }
             }
         });
@@ -227,10 +234,10 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     private void checkifgroupExist(String driver_id)
     {
-       db_ref_group.orderByChild("driver_id").equalTo(driver_id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-           @Override
-           public void onDataChange(@NonNull DataSnapshot dataSnapshot)
-           {
+        db_ref_group.orderByChild("driver_id").equalTo(driver_id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot)
+            {
                 if(dataSnapshot.exists())
                 {
                     for(DataSnapshot snapshot:dataSnapshot.getChildren())
@@ -246,13 +253,13 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 {
 
                 }
-           }
+            }
 
-           @Override
-           public void onCancelled(@NonNull DatabaseError databaseError) {
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-           }
-       });
+            }
+        });
         //.
     }
 
