@@ -156,7 +156,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
             });
             try {
-                addOrdersListener();
+                if(IS_RIDE_SHARED)
+                    addOrdersListener();
+                else{
+                    requestNewRoute();
+                }
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
@@ -663,7 +667,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(order.getStatus() == Order.OrderStatusInProgress &&
                             order.getDriver_id().equals(userMe.getUid())){
                         getTheNextNearestDropOff(true);
-                        fetchThatGroup();
+                        if(currentOrder.getShared()){
+                            fetchThatGroup();
+                        }
                     }
                 }
             }
