@@ -95,9 +95,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private double distanceRemaining = 90;
     private DatabaseReference db_ref, db_ref_driver;
     private LatLng driver = null;
-    private SharedRide CURRENT_SHARED_RIDE;
+//    private SharedRide CURRENT_SHARED_RIDE;
     private Location driverLocation = null  ;
-    private String sharedRideId = "";
+//    private String sharedRideId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -113,10 +113,11 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
-                if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
-                    sharedRideId = bundle.getString(KEY_CURRENT_SHARED_RIDE);
-                    IS_RIDE_SHARED = true;
-                }
+                IS_RIDE_SHARED = true;
+//                if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
+//                    sharedRideId = bundle.getString(KEY_CURRENT_SHARED_RIDE);
+//                    IS_RIDE_SHARED = true;
+//                }
             }else if(currentOrder != null) {
                 IS_RIDE_SHARED = false;
             }else{
@@ -172,13 +173,13 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             // driver id not provided
             finish();
         }
-        if(IS_RIDE_SHARED){
-            if(CURRENT_SHARED_RIDE == null && !TextUtils.isEmpty(sharedRideId))
-                goFetchGroupByID(sharedRideId);
-            else if(CURRENT_SHARED_RIDE == null){
-                finish();
-            }
-        }
+//        if(IS_RIDE_SHARED){
+//            if(CURRENT_SHARED_RIDE == null && !TextUtils.isEmpty(sharedRideId))
+//                goFetchGroupByID(sharedRideId);
+//            else if(CURRENT_SHARED_RIDE == null){
+//                finish();
+//            }
+//        }
     }
 
     private class Every10Seconds extends TimerTask {
@@ -442,7 +443,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
+//                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
                 }
             }
             @Override
@@ -459,10 +460,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         payload.setTitle(escapeValue("Order Completed"));
         payload.setDescription(escapeValue("Congratulations, Your order is completed."));
         payload.setType(Helper.NOTI_TYPE_ORDER_COMPLETED);
-        if(currentOrder.getShared())
-            payload.setGroup_id(escapeValue(CURRENT_SHARED_RIDE.getGroup_id()));
-        else
-            payload.setGroup_id(escapeValue("--NA--"));
+//        if(currentOrder.getShared())
+//            payload.setGroup_id(escapeValue(currentOrder.getGroup_id()));
+//        else
+        payload.setGroup_id(escapeValue("--NA--"));
         payload.setUser_id(escapeValue(USER_ME.getUid()));
         payload.setDriver_id(escapeValue("--NA--"));
         String str = new Gson().toJson(payload);

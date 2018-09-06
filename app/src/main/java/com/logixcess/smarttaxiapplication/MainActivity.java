@@ -93,6 +93,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -942,9 +943,6 @@ AlertDialog builder;
     }
     private void openOrderActivity(Order order) {
         Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
-        if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--")) {
-            intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE, notificationPayload.getGroup_id());
-        }
         intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
         startActivity(intent);
     }
