@@ -1266,7 +1266,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private boolean checkAddresses() {
-        return !TextUtils.isEmpty(et_pickup.getText()) && !TextUtils.isEmpty(et_drop_off.getText());
+        return TextUtils.isEmpty(et_pickup.getText()) && TextUtils.isEmpty(et_drop_off.getText());
     }
 
     private void showToast(String s) {
