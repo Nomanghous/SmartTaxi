@@ -49,7 +49,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
-import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -68,8 +67,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
@@ -97,8 +94,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private double totalDistance = 100, totalTime = 120; // total time in minutes
     private double distanceRemaining = 90;
     private DatabaseReference db_ref, db_ref_driver;
-    private String selectedPassengerId;
-    private Driver SELECTED_DRIVER;
     private LatLng driver = null;
     private SharedRide CURRENT_SHARED_RIDE;
     private Location driverLocation = null  ;
