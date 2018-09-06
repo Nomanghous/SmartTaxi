@@ -182,8 +182,10 @@ public class DriverMainActivity extends AppCompatActivity {
         if(myLocation != null && userMe != null){
             String latitude = "latitude";
             String longitude = "longitude";
-            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(myLocation.getLatitude());
-            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(myLocation.getLongitude());
+            double lat = Helper.roundOffDouble(myLocation.getLatitude());
+            double lng = Helper.roundOffDouble(myLocation.getLongitude());
+            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(lat);
+            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(lng);
         }
     }
     public void getRegionName(Context context, double lati, double longi) {
@@ -222,11 +224,11 @@ public class DriverMainActivity extends AppCompatActivity {
     }
 
     private void acceptOrder(String orderId){
-        db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
-        db_ref_order.child(orderId).child("driver_id").setValue(userMe.getUid());
-        db_ref_order.child(orderId).child("order_id").setValue(orderId);
+//        db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
+//        db_ref_order.child(orderId).child("driver_id").setValue(userMe.getUid());
+//        db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
-        goFetchOrderByID(orderId,false);
+        //goFetchOrderByID(orderId,false);
     }
 
 
@@ -266,7 +268,11 @@ public class DriverMainActivity extends AppCompatActivity {
 
                         currentUserId = currentOrder.getUser_id();
                         CURRENT_ORDER_ID = currentOrder.getOrder_id();
-                        goFetchCustomerById(isAlreadyAccepted);
+
+                        if(TextUtils.isEmpty(currentUserId)){
+                            goFetchCustomerById(isAlreadyAccepted);
+                        }
+
                         String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
                         if(CURRENT_GROUP_ID == null && currentOrder.getShared())
                             goFetchGroupByID(groupId);

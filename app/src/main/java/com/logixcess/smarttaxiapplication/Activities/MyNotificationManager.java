@@ -49,11 +49,14 @@ public class MyNotificationManager extends BroadcastReceiver {
             if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED) {
 
                 startMainActivity(data);
-            } else if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE) {
+            } else if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE
+                    || notificationPayload.getType() == Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE) {
                 sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
                 Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
             }else if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED) {
                 sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
+                Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
+
             } else
                 fuelUpTheBroadcastReceiver(action, data);
         }

@@ -288,7 +288,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
             //passengersIds.put(userId,true);
             sharedRide.setPassengers(passengersIds);
         }
-
+        new_order.setStatus(Order.OrderStatusInProgress);
         db_ref_group.child(groupId).setValue(sharedRide);
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
         db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_GROUP_ORDER).setValue(groupId);

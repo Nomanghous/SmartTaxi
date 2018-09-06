@@ -1015,8 +1015,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         starting.setLatitude(currentSharedRide.getStartingLat());
                         starting.setLongitude(currentSharedRide.getStartingLng());
                         Location myPickup = new Location("myPickup");
-                        myPickup.setLatitude(new_order.getPickupLat());
-                        myPickup.setLongitude(new_order.getPickupLong());
+                        myPickup.setLatitude(currentSharedRide.getStartingLat());
+                        myPickup.setLongitude(currentSharedRide.getStartingLng());
                         if(starting.distanceTo(myPickup) > currentSharedRide.getRadius_constraint()){
                             Toast.makeText(getContext(), "Sorry, You cannot join this ride.", Toast.LENGTH_SHORT).show();
                             currentSharedRide = null;
@@ -1205,7 +1205,51 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
 
         group_radius = Integer.parseInt(editText.getText().toString());
+        if(group_radius < 11){
+            showToast("Radius must be at least 10");
+            return;
+        }
+        currentSharedRide.setRadius_constraint(group_radius);
         container.setVisibility(View.GONE);
+    }
+
+    public boolean validateAll() {
+        // validate data here.
+        if(checkAddresses()){
+            showToast("Please enter Address First");
+            return false;
+        }else if(TextUtils.isEmpty(new_order.getDriver_id())){
+            showToast("Please select driver first");
+            return false;
+        }
+        else if(new_order.getShared()) {
+            if (CREATE_NEW_GROUP) {
+                if(currentSharedRide.getRadius_constraint() < 10) {
+                    showToast("Please enter Radius for Shared Ride");
+                    showRadiusInputField();
+                    return false;
+                }else if(MY_LOCATION == null){
+                    showToast("Location Service is not Running");
+                    return false;
+                }
+                currentSharedRide.setStartingLat(MY_LOCATION.getLatitude());
+                currentSharedRide.setStartingLng(MY_LOCATION.getLongitude());
+            }else{
+                if(TextUtils.isEmpty(Constants.group_id)){
+                    showToast("Group must be selected first");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean checkAddresses() {
+        return !TextUtils.isEmpty(et_pickup.getText()) && !TextUtils.isEmpty(et_drop_off.getText());
+    }
+
+    private void showToast(String s) {
+        Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
     }
 
     /**

@@ -7,6 +7,7 @@ import android.location.Location;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 public class Helper {
@@ -56,4 +57,12 @@ public class Helper {
 
         return mutableBitmap;
     }
+
+
+    public static double roundOffDouble(double value){
+        DecimalFormat f = new DecimalFormat("##.000000");
+        String formattedValue = f.format(value);
+        return Double.valueOf(formattedValue);
+    }
+
 }

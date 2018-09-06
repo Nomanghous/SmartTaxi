@@ -583,8 +583,7 @@ AlertDialog builder;
     }
 
     public void openBookNowActivity(View view) {
-
-
+        openOrderDetailsActivity(null);
 //        if(dialogClass == null) {
 //            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
 //                    new IntentFilter("book_now"));
@@ -793,7 +792,8 @@ AlertDialog builder;
     }
 
     public void openOrderDetailsActivity(View view) {
-        startActivityForResult(new Intent(this, OrderDetailsActivity.class),REQUEST_CODE_ORDER_CREATION);
+        if(mapFragment.validateAll())
+            startActivityForResult(new Intent(this, OrderDetailsActivity.class),REQUEST_CODE_ORDER_CREATION);
     }
     private void setUpNavigationView()
     {
