@@ -1044,7 +1044,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private void calculateTheCosts() {
-        int passengers_count = mOrderList.size();
+        int passengers_count ;
+        if(mOrderList == null)
+            passengers_count = 0;
+        else
+            passengers_count = mOrderList.size();
             updateOtherPassengerCosts(passengers_count);
     }
     HashMap<String,Integer> userStatus = new HashMap<>();
@@ -1058,8 +1062,19 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 //        }
         //give new user cost and discount
         double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-        if (passenger_count == 0)
+        if (passenger_count == 0) {
             total_cost = cost;// this is because for now only 1 user is riding that is you
+            //Display Cost
+            if (layout_cost_detail.getVisibility() == View.GONE) {
+                layout_cost_detail.setVisibility(View.VISIBLE);
+                if (btn_confirm.getVisibility() == View.VISIBLE)
+                    btn_confirm.setVisibility(View.GONE);
+                txtLocation.setText(new_order.getPickup());
+                txtDestination.setText(new_order.getDropoff());
+                txt_cost.setText(String.valueOf(total_cost));
+            }
+            return;
+        }
         else if (passenger_count == 1)
             total_cost = (cost / 100.0f) * 10; //give 1 0% discount
         else if (passenger_count > 2)
