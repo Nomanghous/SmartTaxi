@@ -941,7 +941,10 @@ AlertDialog builder;
         });
     }
     private void openOrderActivity(Order order) {
-        Intent intent = new Intent(this, CustomerMapsActivity.class);
+        Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
+        if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--")) {
+            intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE, notificationPayload.getGroup_id());
+        }
         intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
         startActivity(intent);
     }
