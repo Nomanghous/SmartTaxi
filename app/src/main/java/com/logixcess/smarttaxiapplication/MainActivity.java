@@ -215,7 +215,7 @@ public class MainActivity extends BaseActivity
 
                     String message = intent.getStringExtra("message");
 
-                    Toast.makeText(getApplicationContext(), "Push notification: " + message, Toast.LENGTH_LONG).show();
+                  //  Toast.makeText(getApplicationContext(), "Push notification: " + message, Toast.LENGTH_LONG).show();
 
                     //txtMessage.setText(message);
                 }
@@ -258,11 +258,11 @@ public class MainActivity extends BaseActivity
 
         Log.e("push", "Firebase reg id: " + regId);
 
-        if (!TextUtils.isEmpty(regId))
-            Toast.makeText(getApplicationContext(), "Push notification: " + regId, Toast.LENGTH_LONG).show();
+        //if (!TextUtils.isEmpty(regId))
+          //  Toast.makeText(getApplicationContext(), "Push notification: " + regId, Toast.LENGTH_LONG).show();
             //txtRegId.setText("Firebase Reg Id: " + regId);
-        else
-            Toast.makeText(getApplicationContext(), "Firebase Reg Id is not received yet!", Toast.LENGTH_LONG).show();
+        //else
+          //  Toast.makeText(getApplicationContext(), "Firebase Reg Id is not received yet!", Toast.LENGTH_LONG).show();
             //txtRegId.setText("Firebase Reg Id is not received yet!");
     }
 

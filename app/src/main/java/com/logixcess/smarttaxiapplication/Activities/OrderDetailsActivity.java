@@ -112,9 +112,18 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         goCreateGroupForSharedRide();
                     }
                 }else {
-                    db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_SINGLE_ORDER).setValue(new_order.getOrder_id());
-                    db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
-                    CloseActivity();
+                    new_order.setStatus(Order.OrderStatusInProgress);
+
+                    db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if(task.isSuccessful()){
+                                db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_SINGLE_ORDER).setValue(new_order.getOrder_id());
+                            }
+                            CloseActivity();
+                        }
+                    });
+
                 }
             }
         });

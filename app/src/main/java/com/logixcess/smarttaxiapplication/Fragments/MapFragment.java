@@ -89,6 +89,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -166,23 +167,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private SharedRide currentSharedRide;
     private DatabaseReference db_ref_group, db_ref_requests;
     public static HashMap<String, Boolean> mPassengerList;
+    public static HashMap<String, Boolean> mOrderList;
     private boolean thereIsActiveOrder = false;
     private boolean dialog_already_showing = false;
     private FirebaseDatabase firebase_db;
     private Button btn_add_members;
+    private boolean isTimeout = false;
 
     public MapFragment() {
         // Required empty public constructor
-
-        /*
-         * TODO: SINGLE TRIP ISSUE
-         * TODO: RADIUS should be resolved.
-         * TODO: SCHEDULE TRIP : for now it's only saving the given date from user. Rest of the functionality is remaining to be implemented
-         * TODO: Color change according to the distance remaining from the pickup location
-         * TODO: FEEDBACK System
-         * TODO: Driver Profile should be handled
-         * TODO: Cost should be calculated properly
-         */
 
     }
 
@@ -836,6 +829,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
                             return;
                         }
+                    }else{
+                        if(new_order.getShared()) {
+                            CREATE_NEW_GROUP = true;
+                            showRadiusInputField();
+                        }
+                    }
+                }else{
+                    if(new_order.getShared()) {
+                        CREATE_NEW_GROUP = true;
+                        showRadiusInputField();
                     }
                 }
                 show_driverDetail(driverId);
@@ -924,9 +927,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         JSONObject json = new JSONObject(str);
                         new PushNotifictionHelper(getContext()).execute(token, json);
                         generateNewRequest(driverId, new_order.getUser_id());
-                        listenForDriverResponse(driverId, new_order.getUser_id());
-                        isOrderAccepted = false;
-                        waitForDriverResponse();
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -942,31 +943,38 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         });
     }
 
-    private void waitForDriverResponse() {
+    private void waitForDriverResponse(String driverId, String userId) {
         ProgressDialog progressDialog = new ProgressDialog(getContext());
         progressDialog.setMessage("Waiting for Driver Response");
         progressDialog.setCancelable(false);
         progressDialog.show();
+        isTimeout = false;
         new CountDownTimer(30000, 5000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                checkForResponse(progressDialog,this);
+                listenForDriverResponse(driverId, userId, progressDialog,this);
             }
 
             @Override
             public void onFinish() {
-                checkForResponse(progressDialog,this);
+                isTimeout = true;
+                listenForDriverResponse(driverId, userId, progressDialog,this);
             }
         }.start();
     }
 
+
+
+
     private void checkForResponse(ProgressDialog progressDialog, CountDownTimer timer) {
-        if (isOrderAccepted && new_order.getShared()) {
+            if (isOrderAccepted && new_order.getShared()) {
             progressDialog.dismiss();
-            mPassengerList = currentSharedRide.getPassengers();
+            if(!CREATE_NEW_GROUP) {
+                mPassengerList = currentSharedRide.getPassengers();
+                mOrderList = currentSharedRide.getOrderIDs();
+            }
             calculateTheCosts();
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
-            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
             timer.cancel();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
@@ -981,14 +989,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 txt_cost.setText(String.valueOf(total_cost));
                 new_order.setEstimated_cost(String.valueOf(total_cost));
             }
-            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
             timer.cancel();
 
         }
-        else if (isDriverResponded) {
+        else if (isDriverResponded ||isTimeout) {
             progressDialog.dismiss();
-            Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
-            goRemoveRequest(new_order.getDriver_id(),new_order.getUser_id());
+            if(isTimeout)
+                Toast.makeText(getContext(), "Driver didn't respond.", Toast.LENGTH_SHORT).show();
+            else{
+                Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
+            }
             timer.cancel();
         }
     }
@@ -1034,7 +1044,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private void calculateTheCosts() {
-        int passengers_count = mPassengerList.size();
+        int passengers_count = mOrderList.size();
+        if(passengers_count>1)
+        updateOtherPassengerCosts(passengers_count+1);// passenger count new passenger already included in it
         double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
         if (passengers_count == 0)
             total_cost = (cost / 100.0f) * 20; //give 20% discount
@@ -1055,6 +1067,49 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
+    private void updateOtherPassengerCosts(int passenger_count)
+    {
+
+//        for (Map.Entry<String, Boolean> entry : mPassengerList.entrySet()) {
+//            String key = entry.getKey();
+//            Object value = entry.getValue();
+//            // you code here
+//        }
+        DatabaseReference db_ref_order = firebase_db.getReference(Helper.REF_ORDERS);
+
+        for (Map.Entry<String, Boolean> entry : mOrderList.entrySet())
+        {
+            String key = entry.getKey();
+            Boolean value = (Boolean)entry.getValue();
+
+            if(value)
+            {
+                db_ref_order.child(key).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists())
+                        {
+                            Order order = dataSnapshot.getValue(Order.class);
+                            order.getEstimated_cost();
+                            db_ref_order.child(key).child("estimated_cost").setValue("").addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+
+            }
+            // you code here
+        }
+    }
     @Override
     public void onStop() {
         super.onStop();
@@ -1083,8 +1138,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     }
 
-    private void listenForDriverResponse(String driverId, String userId) {
-        db_ref_requests.child(Helper.getConcatenatedID(userId, driverId)).addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+    private void listenForDriverResponse(String driverId, String userId, ProgressDialog dialog, CountDownTimer timer) {
+        db_ref_requests.child(Helper.getConcatenatedID(userId, driverId)).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -1094,11 +1149,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             isDriverResponded = true;
                             isOrderAccepted = true;
                             new_order.setDriver_id(request.getDriverId());
+                            goRemoveRequest(request.getDriverId(),userId);
+                            checkForResponse(dialog,timer);
                         } else if (request.getStatus() == Requests.STATUS_REJECTED) {
                             isDriverResponded = true;
                             isOrderAccepted = false;
+                            goRemoveRequest(request.getDriverId(),userId);
+                            checkForResponse(dialog,timer);
                         }
-                        goRemoveRequest(request.getDriverId(),userId);
                     }
                 }
             }
@@ -1127,8 +1185,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful())
+                if (task.isSuccessful()) {
                     Toast.makeText(getContext(), "Request Sent Successfully", Toast.LENGTH_SHORT).show();
+                    isOrderAccepted = false;
+                    waitForDriverResponse(driverId, userId);
+                }
             }
         });
     }
