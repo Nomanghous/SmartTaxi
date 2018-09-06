@@ -1072,6 +1072,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 txtLocation.setText(new_order.getPickup());
                 txtDestination.setText(new_order.getDropoff());
                 txt_cost.setText(String.valueOf(total_cost));
+                new_order.setEstimated_cost(String.valueOf(total_cost));
             }
             return;
         }
