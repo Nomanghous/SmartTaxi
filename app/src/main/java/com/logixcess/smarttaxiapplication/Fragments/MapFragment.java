@@ -713,6 +713,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         Double latitude = 7.8731;
         Double longitude = 80.7718;
         LatLng usa = new LatLng(latitude, longitude);
+        if(MY_LOCATION != null){
+            usa = new LatLng(MY_LOCATION.getLatitude(), MY_LOCATION.getLongitude());
+        }
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(usa, 10));
         gMap.setOnPolylineClickListener(this);
@@ -1256,6 +1259,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             return false;
         }else if(TextUtils.isEmpty(new_order.getDriver_id())){
             showToast("Please select driver first");
+            return false;
+        }else if(TextUtils.isEmpty(new_order.getEstimated_cost())){
+            showToast("Cost is not set");
             return false;
         }
         else if(new_order.getShared()) {
