@@ -272,6 +272,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
         sharedRide.setDriver_id(new_order.getDriver_id());
         sharedRide.setGroup_id(groupId);
         sharedRide.setRadius_constraint(Constants.group_radius);
+        sharedRide.setStartingLat(new_order.getPickupLat());
+        sharedRide.setStartingLng(new_order.getPickupLong());
         getRegionName(OrderDetailsActivity.this,LocationManagerService.mLastLocation.getLatitude(),LocationManagerService.mLastLocation.getLongitude(),groupId);
         sharedRide.setTime(System.currentTimeMillis());
         sharedRide.setUser_id(userId);

@@ -1245,7 +1245,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             showToast("Radius must be at least 10");
             return;
         }
-        currentSharedRide.setRadius_constraint(group_radius);
         container.setVisibility(View.GONE);
     }
 
@@ -1260,16 +1259,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
         else if(new_order.getShared()) {
             if (CREATE_NEW_GROUP) {
-                if(currentSharedRide.getRadius_constraint() < 10) {
+                if(group_radius < 10) {
                     showToast("Please enter Radius for Shared Ride");
                     showRadiusInputField();
                     return false;
-                }else if(MY_LOCATION == null){
-                    showToast("Location Service is not Running");
-                    return false;
                 }
-                currentSharedRide.setStartingLat(MY_LOCATION.getLatitude());
-                currentSharedRide.setStartingLng(MY_LOCATION.getLongitude());
             }else{
                 if(TextUtils.isEmpty(Constants.group_id)){
                     showToast("Group must be selected first");
