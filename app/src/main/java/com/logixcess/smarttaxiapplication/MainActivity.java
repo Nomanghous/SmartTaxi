@@ -967,8 +967,9 @@ AlertDialog builder;
                         @Override
                         public void run() {
                             Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
-                            if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--"))
-                                intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE,notificationPayload.getGroup_id());
+                            if(!notificationPayload.getGroup_id().equalsIgnoreCase("--NA--")) {
+                                intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE, notificationPayload.getGroup_id());
+                            }
                             intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
                             startActivity(intent);
                             IS_FOR_ORDER_VIEW = false;

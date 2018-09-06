@@ -15,6 +15,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -48,6 +49,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -66,6 +68,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
@@ -98,6 +102,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private LatLng driver = null;
     private SharedRide CURRENT_SHARED_RIDE;
     private Location driverLocation = null  ;
+    private String sharedRideId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -114,7 +119,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
                 if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
-                    CURRENT_SHARED_RIDE = bundle.getParcelable(KEY_CURRENT_SHARED_RIDE);
+                    sharedRideId = bundle.getString(KEY_CURRENT_SHARED_RIDE);
                     IS_RIDE_SHARED = true;
                 }
             }else if(currentOrder != null) {
@@ -137,7 +142,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
                         Driver driver = dataSnapshot.getValue(Driver.class);
-                        if(driver != null && mMap != null && driverLocation != null) {
+                        if(driver != null && mMap != null && driverLocation != null
+                                ) {
                             driverLocation.setLatitude(driver.getLatitude());
                             driverLocation.setLongitude(driver.getLongitude());
                             if(!IS_ROUTE_ADDED)
@@ -171,7 +177,13 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             // driver id not provided
             finish();
         }
-
+        if(IS_RIDE_SHARED){
+            if(CURRENT_SHARED_RIDE == null && !TextUtils.isEmpty(sharedRideId))
+                goFetchGroupByID(sharedRideId);
+            else if(CURRENT_SHARED_RIDE == null){
+                finish();
+            }
+        }
     }
 
     private class Every10Seconds extends TimerTask {
@@ -348,16 +360,23 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.animateCamera(center);
         PolylineOptions line = new PolylineOptions().addAll(waypoints);
         mMap.addPolyline(line);
-        mDriverMarker = mMap.addMarker(getDesiredMarker(R.drawable.ic_option_car,start,"driver"));
         MarkerOptions options = new MarkerOptions();
-        options.position(start);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
-        mMap.addMarker(options);
+        options.position(new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude()));
+        Bitmap driverPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.ic_option_nano)
+                , 100, 100);
+        options.icon(BitmapDescriptorFactory.fromBitmap(driverPin));
+        mDriverMarker = mMap.addMarker(options);
 
+        Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
+        Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
+        options.title(currentOrder.getPickup()).position(start);
+        options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
+        mMap.addMarker(options);
         // End marker
         options = new MarkerOptions();
         options.position(end);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
+        options.title(currentOrder.getDropoff());
+        options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
         mMap.addMarker(options);
 
 
@@ -410,6 +429,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     public void markOrderAsComplete(View view) {
         // change the order status
+
         db_ref_order.child(currentOrder.getOrder_id()).child("status").setValue(Order.OrderStatusCompleted).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
@@ -422,6 +442,20 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         });
     }
 
+    private void goFetchGroupByID(String groupId) {
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     private void sendPushNotification() {
         NotificationPayload payload = new NotificationPayload();
@@ -533,12 +567,18 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             // show User
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
             dropoff = new LatLng(currentOrder.getDropoffLat(), currentOrder.getDropoffLat());
+            Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
+            Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
             MarkerOptions options = new MarkerOptions();
-            options.title("Pickup").position(pickup).icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
+            options.title(currentOrder.getPickup()).position(start);
+            options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
             mMap.addMarker(options);
-            MarkerOptions options2 = new MarkerOptions();
-            options2.title("Dropoff").position(dropoff).icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
-            mMap.addMarker(options2);
+            // End marker
+            options = new MarkerOptions();
+            options.position(end);
+            options.title(currentOrder.getDropoff());
+            options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
+            mMap.addMarker(options);
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pickup, 12f));
             // show Driver
         }
@@ -549,11 +589,16 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
         if(mDriverMarker == null)
             return;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(driverLocation == null)
+                    driverLocation = new Location("driver");
+                driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
+                driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
 
-        if(driverLocation == null)
-            driverLocation = new Location("driver");
-            driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
-            driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
+            }
+        });
 
     }
 
