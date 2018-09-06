@@ -1045,16 +1045,25 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private void calculateTheCosts() {
         int passengers_count = mOrderList.size();
-        if(passengers_count>1)
-        updateOtherPassengerCosts(passengers_count+1);// passenger count new passenger already included in it
-        double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-        if (passengers_count == 0)
-            total_cost = (cost / 100.0f) * 20; //give 20% discount
-        else if (passengers_count == 1)
-            total_cost = (cost / 100.0f) * 10; //give 10% discount
-        else if (passengers_count > 2)
-            total_cost = (cost / 100.0f) * 5; //give
+            updateOtherPassengerCosts(passengers_count);
+    }
+    HashMap<String,Integer> userStatus = new HashMap<>();
+    private void updateOtherPassengerCosts(int passenger_count)
+    {
 
+//        for (Map.Entry<String, Boolean> entry : mPassengerList.entrySet()) {
+//            String key = entry.getKey();
+//            Object value = entry.getValue();
+//            // you code here
+//        }
+        //give new user cost and discount
+        double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+        if (passenger_count == 0)
+            total_cost = cost;// this is because for now only 1 user is riding that is you
+        else if (passenger_count == 1)
+            total_cost = (cost / 100.0f) * 10; //give 1 0% discount
+        else if (passenger_count > 2)
+            total_cost = (cost / 100.0f) * 5; //give
         new_order.setEstimated_cost(String.valueOf(total_cost));
         //Display Cost
         if (layout_cost_detail.getVisibility() == View.GONE) {
@@ -1065,23 +1074,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             txtDestination.setText(new_order.getDropoff());
             txt_cost.setText(String.valueOf(total_cost));
         }
-    }
-
-    private void updateOtherPassengerCosts(int passenger_count)
-    {
-
-//        for (Map.Entry<String, Boolean> entry : mPassengerList.entrySet()) {
-//            String key = entry.getKey();
-//            Object value = entry.getValue();
-//            // you code here
-//        }
+        //update old users discount
         DatabaseReference db_ref_order = firebase_db.getReference(Helper.REF_ORDERS);
+        int user_count = 0;
 
         for (Map.Entry<String, Boolean> entry : mOrderList.entrySet())
         {
+
             String key = entry.getKey();
             Boolean value = (Boolean)entry.getValue();
-
+            userStatus.put(key,user_count);
             if(value)
             {
                 db_ref_order.child(key).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
@@ -1090,8 +1092,27 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         if(dataSnapshot.exists())
                         {
                             Order order = dataSnapshot.getValue(Order.class);
-                            order.getEstimated_cost();
-                            db_ref_order.child(key).child("estimated_cost").setValue("").addOnCompleteListener(new OnCompleteListener<Void>() {
+                            double cost = 0;
+                            if(order.getEstimated_cost() != null)
+                             cost = Double.parseDouble(order.getEstimated_cost().toString());
+
+                            if(userStatus.get(order.getOrder_id()) == 0)
+                            {
+                                //primary user
+                                total_cost = (cost / 100.0f) * 20; //give 20% discount
+                            }
+                            else if(userStatus.get(order.getOrder_id()) == 1)
+                            {
+                                //secondary user
+                                total_cost = (cost / 100.0f) * 10; //give 1 0% discount
+                            }
+                            if(userStatus.get(order.getOrder_id())==2)
+                            {
+                                //tertiary and onward user
+                                total_cost = (cost / 100.0f) * 5; //give
+                            }
+                            String estimated_cost_final = String.valueOf(total_cost);
+                            db_ref_order.child(key).child("estimated_cost").setValue(estimated_cost_final).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
 
@@ -1107,7 +1128,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 });
 
             }
-            // you code here
+            user_count++;
         }
     }
     @Override
