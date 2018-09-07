@@ -1,3 +1,12 @@
+
+/*
+ * Copyright (C) Logixcess, Inc - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by M. Noman <Nomanghous@hotmail.com>, Copyright (c) 2018.
+ *
+ */
+
 package com.logixcess.smarttaxiapplication.CustomerModule;
 
 import android.Manifest;
@@ -74,7 +83,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private GoogleMap mMap;
     private Order currentOrder = null;
     private User CURRENT_USER = null;
-    private boolean IS_RIDE_SHARED = false;
     private String CUSTOMER_USER_ID = "";
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
@@ -91,13 +99,11 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
-    private double totalDistance = 100, totalTime = 120; // total time in minutes
-    private double distanceRemaining = 90;
+    private double totalDistance = 0, totalTime = 120; // total time in minutes
+    private double distanceRemaining = 0;
     private DatabaseReference db_ref, db_ref_driver;
     private LatLng driver = null;
-//    private SharedRide CURRENT_SHARED_RIDE;
     private Location driverLocation = null  ;
-//    private String sharedRideId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -111,19 +117,15 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
+
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
-                IS_RIDE_SHARED = true;
-//                if(bundle.containsKey(KEY_CURRENT_SHARED_RIDE)) {
-//                    sharedRideId = bundle.getString(KEY_CURRENT_SHARED_RIDE);
-//                    IS_RIDE_SHARED = true;
-//                }
             }else if(currentOrder != null) {
-                IS_RIDE_SHARED = false;
             }else{
                 finish();
                 return;
             }
+
             askLocationPermission();
             setContentView(R.layout.activity_maps_customer);
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -138,8 +140,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.exists()){
                         Driver driver = dataSnapshot.getValue(Driver.class);
-                        if(driver != null && mMap != null && driverLocation != null
-                                ) {
+                        if(driver != null && mMap != null && driverLocation != null) {
                             driverLocation.setLatitude(driver.getLatitude());
                             driverLocation.setLongitude(driver.getLongitude());
                             if(!IS_ROUTE_ADDED)
@@ -200,13 +201,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                         driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
                         if(distanceRemaining > totalDistance)
                             return;
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                checkForDistanceToSendNotification();
-                            }
-                        });
 
+                        runOnUiThread(CustomerMapsActivity.this::checkForDistanceToSendNotification);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -232,6 +228,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     }
 
     private void requestNewRoute() {
+
         if(driverLocation == null || IS_ROUTE_ADDED)
             return;
         driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
@@ -267,6 +264,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1001);
         }
     }
+
     private void checkForDistanceToSendNotification()  {
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         mDriverMarker.setPosition(driver);
@@ -274,16 +272,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             Toast.makeText(this, "Driver has arrived", Toast.LENGTH_SHORT).show();
         }else if(percentageLeft < 50){
             BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_vehicle_red);
-
-//            MarkerOptions markerOptions = new MarkerOptions().position(latLng)
-//                    .title("Current Location")
-//                    .snippet("Thinking of finding some thing...")
-//                    .icon(icon)
-//                    ;
             mDriverMarker.setIcon(icon);
-
-            //mMarker = googleMap.addMarker(markerOptions);
-
         }else if(percentageLeft < 75)
         {
             BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_vehicle);
@@ -309,6 +298,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
         animateMarker(myMap, marker, directionPoint, false);
     }
+
     private void animateMarker(GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint,
                                final boolean hideMarker) {
         final Handler handler = new Handler();
@@ -443,7 +433,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
-//                    CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
+//                 CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
                 }
             }
             @Override
@@ -460,9 +450,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         payload.setTitle(escapeValue("Order Completed"));
         payload.setDescription(escapeValue("Congratulations, Your order is completed."));
         payload.setType(Helper.NOTI_TYPE_ORDER_COMPLETED);
-//        if(currentOrder.getShared())
-//            payload.setGroup_id(escapeValue(currentOrder.getGroup_id()));
-//        else
         payload.setGroup_id(escapeValue("--NA--"));
         payload.setUser_id(escapeValue(USER_ME.getUid()));
         payload.setDriver_id(escapeValue("--NA--"));
@@ -489,27 +476,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         return mutableBitmap;
     }
 
-
-
     @Override
     public void onRoutingCancelled() {
 
     }
-
-
-    public void sendNotification(String title, String message) {
-        //Get an instance of NotificationManager//
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle(title)
-                        .setContentText(message);
-        // Gets an instance of the NotificationManager service//
-        NotificationManager mNotificationManager =
-        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(001, mBuilder.build());
-    }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

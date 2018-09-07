@@ -16,7 +16,8 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     @Exclude
     public static final int OrderStatusCompleted = 1, OrderStatusInProgress = 2, OrderStatusPending = 3,
                     OrderStatusCancelled = 4;
-
+    @Exclude
+    private boolean[] NotificaionsDone = new boolean[4];
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
@@ -69,7 +70,16 @@ public class Order extends ParcelableSparseArray implements Parcelable {
             return new Order[size];
         }
     };
-
+    
+    
+    public boolean[] getNotificaionsDone() {
+        return NotificaionsDone;
+    }
+    
+    public void setNotificaionsDone(boolean[] notificaionsDone) {
+        NotificaionsDone = notificaionsDone;
+    }
+    
     public String getEstimated_cost() {
         return estimated_cost;
     }

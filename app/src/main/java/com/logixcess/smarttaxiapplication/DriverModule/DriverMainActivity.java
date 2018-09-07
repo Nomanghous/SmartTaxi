@@ -80,6 +80,7 @@ public class DriverMainActivity extends AppCompatActivity {
             listenForDriverResponse(this,userMe.getUid());
         }
     }
+ 
     public static void listenForDriverResponse(Context context, String driverId){
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
@@ -119,6 +120,7 @@ public class DriverMainActivity extends AppCompatActivity {
             }
         });
     }
+    
     private void checkAssignedSingleOrder() {
         db_ref_order_to_driver.child(userMe.getUid())
                 .child(Helper.REF_SINGLE_ORDER).addValueEventListener(new ValueEventListener() {
@@ -224,11 +226,7 @@ public class DriverMainActivity extends AppCompatActivity {
     }
 
     private void acceptOrder(String orderId){
-//        db_ref_order.child(orderId).child("status").setValue(Order.OrderStatusInProgress);
-//        db_ref_order.child(orderId).child("driver_id").setValue(userMe.getUid());
-//        db_ref_order.child(orderId).child("order_id").setValue(orderId);
         CURRENT_ORDER_ID = orderId;
-        //goFetchOrderByID(orderId,false);
     }
 
 

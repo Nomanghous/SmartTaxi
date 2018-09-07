@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
@@ -71,7 +72,7 @@ import java.util.TimerTask;
 public class MapsActivity extends DriverMainActivity implements OnMapReadyCallback, RoutingListener {
 
 
-    boolean[] NotificaionsDone = new boolean[4];
+    
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
@@ -88,7 +89,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
     private double totalDistance = 0, totalTime = 120; // total time in minutes
-    private double distanceRemaining = 0;
     private DatabaseReference db_ref, db_ref_driver;
     private String selectedPassengerId;
     private LatLng driver = null;
@@ -98,7 +98,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     List<Order> ORDERS_IN_SHARED_RIDE = null;
     private HashMap<String, Boolean> orderIDs;
     private HashMap<String, Marker> PickupMarkers;
-
+    private List<User> currentPassengers;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -109,18 +110,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         userMe = FirebaseAuth.getInstance().getCurrentUser();
-        NotificaionsDone[0] = false;
-        NotificaionsDone[1] = false;
-        NotificaionsDone[2] = false;
-        NotificaionsDone[3] = false;
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
 
-                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null)
+                if(currentSharedRide != null && currentSharedRide.getGroup_id() != null) {
                     IS_RIDE_SHARED = true;
-                else if(currentOrder.getShared()){
+                } else if(currentOrder.getShared()){
                     fetchThatGroup();
                 }
 
@@ -156,8 +153,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
             });
             try {
-                if(currentOrder.getShared())
-                    addOrdersListener();
+                if(currentOrder.getShared()) {
+                    ORDERS_IN_SHARED_RIDE = new ArrayList<>();
+                    goFetchOrderById();
+                }
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
@@ -202,8 +201,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     }
 
-    private void checkForDistanceToSendNotification()  {
-        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
+    private void checkForDistanceToSendNotification(Order currentOrder,User currentUser, double distanceRemaining )  {
+//      int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
+        boolean[] NotificationsDone = currentOrder.getNotificaionsDone();
         mDriverMarker.setPosition(driver);
         NotificationPayload payload = new NotificationPayload();
         payload.setDriver_id(escapeValue(userMe.getUid()));
@@ -213,12 +213,15 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             group_id = Helper.getConcatenatedID(currentOrder.getOrder_id(), userMe.getUid());
         payload.setGroup_id(escapeValue(group_id));
         payload.setTitle(escapeValue("Order Updates"));
-        payload.setPercentage_left(escapeValue(""+percentageLeft));
+        payload.setPercentage_left(escapeValue(""+distanceRemaining));
         payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(escapeValue(currentOrder.getOrder_id()));
         String token = currentUser.getUser_token();
-        if(percentageLeft < 10 && !NotificaionsDone[0]){
-            NotificaionsDone[0] = true;
+        if(distanceRemaining < 100 && !NotificationsDone[0]){
+            NotificationsDone[0] = true;
+            NotificationsDone[1] = true;
+            NotificationsDone[2] = true;
+            NotificationsDone[3] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
             payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
             String str = new Gson().toJson(payload);
@@ -229,8 +232,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 e.printStackTrace();
             }
 
-        }else if(percentageLeft < 50 && !NotificaionsDone[1]){
-            NotificaionsDone[1] = true;
+        }else if(distanceRemaining < 200 && !NotificationsDone[1]){
+            NotificationsDone[1] = true;
+            NotificationsDone[2] = true;
+            NotificationsDone[3] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
             String str = new Gson().toJson(payload);
             try {
@@ -240,8 +245,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 e.printStackTrace();
             }
 
-        }else if(percentageLeft < 75&& !NotificaionsDone[2]){
-            NotificaionsDone[2] = true;
+        }else if(distanceRemaining < 250 && !NotificationsDone[2]){
+            NotificationsDone[2] = true;
+            NotificationsDone[3] = true;
             payload.setDescription(escapeValue("Driver is reaching soon"));
             String str = new Gson().toJson(payload);
             try {
@@ -251,8 +257,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 e.printStackTrace();
             }
 
-        }else if(percentageLeft < 100 && !NotificaionsDone[3]){
-            NotificaionsDone[3] = true;
+        }else if(!NotificationsDone[3]){
+            NotificationsDone[3] = true;
             payload.setDescription(escapeValue("Driver is coming your way"));
             String str = new Gson().toJson(payload);
             try {
@@ -261,11 +267,37 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-
+            
         }
+        currentOrder.setNotificaionsDone(NotificationsDone);
     }
 
+    
+    /*calculate pickup distance for notification*/
+    private void calculatePickupDistance(){
+        double distanceRemaining;
+        Location pickup = new Location("pickup");
+        for(User user : currentPassengers){
+            Marker marker = PickupMarkers.get(user.getUser_id());
+            pickup.setLatitude(marker.getPosition().latitude);
+            pickup.setLongitude(marker.getPosition().longitude);
+            distanceRemaining = myLocation.distanceTo(pickup);
+            for(Order order : ORDERS_IN_SHARED_RIDE){
+                if(order.getUser_id().equals(user.getUser_id())){
+                    checkForDistanceToSendNotification(order,user,distanceRemaining);
+                    break;
+                }
+            }
+        }
+    
+    
+    
+    }
+    
+    
+    
+    
+    
     private String escapeValue(String value) {
         return "\""+value+"\"";
     }
@@ -340,8 +372,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         options.title(currentOrder.getPickup());
         if(PickupMarkers == null)
             PickupMarkers = new HashMap<>();
-        if(!PickupMarkers.containsKey(currentOrder.getOrder_id()))
-           PickupMarkers.put(currentOrder.getOrder_id(),mMap.addMarker(options));
+        if(!PickupMarkers.containsKey(currentOrder.getUser_id()))
+           PickupMarkers.put(currentOrder.getUser_id(),mMap.addMarker(options));
         // End marker
         options = new MarkerOptions();
         options.position(end);
@@ -357,6 +389,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
     @Override
     public void onRoutingFailure(RouteException e) {
+        Log.e("Err",e.getMessage() != null ? e.getMessage() : "error getting Route");
     }
 
     @Override
@@ -371,7 +404,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         //add route(s) to the map.
         IS_ROUTE_ADDED = true;
         Route shortestRoute = route.get(shortestRouteIndex);
-        if (totalDistance < 0 || distanceRemaining > totalDistance)
+//        if (totalDistance < 0 || distanceRemaining > totalDistance)
             totalDistance = shortestRoute.getDistanceValue();
         int colorIndex = shortestRouteIndex % COLORS.length;
         PolylineOptions polyOptions = new PolylineOptions();
@@ -382,10 +415,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         polylines.add(polyline);
         if (driver == null && myLocation != null)
             driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-        distanceRemaining = shortestRoute.getDistanceValue();
+//        distanceRemaining = shortestRoute.getDistanceValue();
 
-        if(mDriverMarker != null && driver != null && myLocation != null)
-            checkForDistanceToSendNotification();
+        if(mDriverMarker != null && driver != null && myLocation != null){
+            calculatePickupDistance();
+        }
+//            checkForDistanceToSendNotification();
 
 
 
@@ -395,22 +430,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     public void onRoutingCancelled() {
 
     }
-
-
-    public void sendNotification(String title, String message) {
-        //Get an instance of NotificationManager//
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle(title)
-                        .setContentText(message);
-        // Gets an instance of the NotificationManager service//
-        NotificationManager mNotificationManager =
-        (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(001, mBuilder.build());
-    }
-
-
+    
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(requestCode == 1001){
@@ -421,42 +441,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         else
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-    private void setupOrdersListener() {
-        db_ref_order.child(currentOrderId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(!dataSnapshot.exists())
-                    return;
-                Order order = dataSnapshot.getValue(Order.class);
-                if(order != null){
-                    if(order.getStatus() == Order.OrderStatusInProgress &&
-                            order.getDriver_id().equals(userMe.getUid())
-                            && Helper.checkWithinRadius(myLocation, new LatLng(order.getPickupLat(),order.getPickupLong()))){
-                        // order is within reach and it's assigned.
-                        currentOrder = order;
-                        IS_RIDE_SHARED = order.getShared();
-                        goDrawRoute();
-                        if(IS_RIDE_SHARED){
-                            fetchThatGroup();
-                        }else{
-                            fetchThatCustomer();
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
-    private void goDrawRoute() {
-
-    }
-
+    
     private void fetchThatGroup() {
         if(currentSharedRide != null)
             return;
@@ -469,7 +454,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     Toast.makeText(MapsActivity.this, "Something went Wrong.", Toast.LENGTH_SHORT).show();
                     finish();
                 }else{
-                    addMarkersForNewRiders();
+                    orderIDs = currentSharedRide.getOrderIDs();
+                    goGetOrdersForGroup();
                 }
             }
 
@@ -480,11 +466,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
     }
 
-    private void fetchThatCustomer() {
-        if(currentUser != null)
-            showDataOnMap();
-    }
-
+    
     private void showDataOnMap() {
 
         if(mMap != null && currentUser != null){
@@ -556,14 +538,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         location.setLongitude(start.longitude);
                         if(totalDistance == 0)
                             totalDistance = myLocation.distanceTo(location);
-                        distanceRemaining = myLocation.distanceTo(location);
+//                        distanceRemaining = myLocation.distanceTo(location);
                         driver = new LatLng(myLocation.getLatitude(),myLocation.getLongitude());
-                        if(distanceRemaining > totalDistance)
-                            return;
+//                        if(distanceRemaining > totalDistance)
+//                            return;
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                checkForDistanceToSendNotification();
+                                calculatePickupDistance();
                             }
                         });
 
@@ -574,24 +556,40 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             }
         }
     }
+    
+    
+    private void initNextOrderVars(){
+        totalDistance = 0;
+        totalTime = 0;
+//        distanceRemaining = 0;
+        
+    }
+    
 
-
-    private void getTheNextNearestDropOff(boolean fetchOrdersAgain){
+    
+    
+    
+    
+    private void getTheNextNearestDropOff(){
         double totalDistance = 0;
         boolean isAllOrdersCompleted = true;
         if(currentSharedRide == null)
             return;
-        if(fetchOrdersAgain)
-            goFetchOrderById();
         else{
             for (Order order : ORDERS_IN_SHARED_RIDE){
                 if(order.getStatus() == Order.OrderStatusInProgress){
+                    if(currentOrder != null && currentOrder.getOrder_id().equals(order.getOrder_id())){
+                        // current order is in progress.
+                        return;
+                    }
                     Location dropOff = new Location("dropoff");
                     dropOff.setLatitude(order.getDropoffLat());
                     dropOff.setLongitude(order.getDropoffLong());
                     isAllOrdersCompleted = false;
+                    
                     if(myLocation == null)
                         continue;
+                    
                     if(totalDistance == 0) {
                         totalDistance = myLocation.distanceTo(dropOff);
                         currentOrder = order;
@@ -602,6 +600,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
             }
         }
+        
         if(isAllOrdersCompleted){
             DatabaseReference db_ref_order_to_driver;
             db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
@@ -615,16 +614,18 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     }
 
     private void goFetchOrderById(){
-        ORDERS_IN_SHARED_RIDE = new ArrayList<>();
+        
         orderIDs = currentSharedRide.getOrderIDs();
 
         if(currentSharedRide.getGroup_id() == null) {
             fetchThatGroup();
             return;
         }
+        goGetOrdersForGroup();
+    }
+    private void goGetOrdersForGroup() {
         for (Map.Entry<String, Boolean> entry : orderIDs.entrySet()) {
             String key = entry.getKey();
-            Object value = entry.getValue();
             db_ref_order.child(key).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -638,22 +639,23 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                                 ORDERS_IN_SHARED_RIDE.add(order);
                         }
                     }
-                    addMarkersForNewRiders();
-                    if(orderIDs.size() == ORDERS_IN_SHARED_RIDE.size())
-                        getTheNextNearestDropOff(false);
+                    if(orderIDs.size() == ORDERS_IN_SHARED_RIDE.size()) {
+                        addMarkersForNewRiders();
+                        addOrdersListener();
+                    }
                 }
-
+            
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                
                 }
             });
         }
     }
-
-
+    
+    
     private void addOrdersListener() throws NullPointerException{
-        db_ref_order.addChildEventListener(new ChildEventListener() {
+        db_ref_order.child(currentOrderId).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(!dataSnapshot.exists())
@@ -662,16 +664,15 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 if(order != null){
                     if(order.getStatus() == Order.OrderStatusInProgress &&
                             order.getDriver_id().equals(userMe.getUid()) && order.getShared()){
-                        getTheNextNearestDropOff(true);
+                        getTheNextNearestDropOff();
                         fetchThatGroup();
-                    }else{
+                    }else {
                         // order is single
-
+//                        markOrderComplete();
                     }
                 }
             }
-
-
+            
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(!dataSnapshot.exists())
@@ -682,29 +683,21 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
                                 && order.getDriver_id().equals(userMe.getUid())) {
                             if (order.getStatus() == Order.OrderStatusInProgress) {
-
+                            
                             }else if (order.getStatus() == Order.OrderStatusCompleted){
-                                getTheNextNearestDropOff(true);
+                                initNextOrderVars();
+                                getTheNextNearestDropOff();
                             }else if (order.getStatus() == Order.OrderStatusPending){
 
                             }
                         }
                     }
                     else {
-                        if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
+                        if(currentOrder.getOrder_id().equals(order.getOrder_id())
                                 && order.getDriver_id().equals(userMe.getUid())) {
                             if (order.getStatus() == Order.OrderStatusInProgress) {
-
                             }else if (order.getStatus() == Order.OrderStatusCompleted){
-                                DatabaseReference db_ref_order_to_driver;
-                                db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
-                                db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                                finish();
+                                markOrderComplete();
                             }else if (order.getStatus() == Order.OrderStatusPending){
 
                             }
@@ -731,55 +724,61 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
             }
         });
-        if(IS_RIDE_SHARED && currentSharedRide != null)
-        db_ref_group.child(currentSharedRide.getGroup_id()).addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                if(dataSnapshot.exists())
-                    currentSharedRide = dataSnapshot.getValue(SharedRide.class);
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+       
 
     }
-
+    
+    private void markOrderComplete() {
+        DatabaseReference db_ref_order_to_driver;
+        db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+            }
+        });
+        finish();
+    }
+    
     private void addMarkersForNewRiders(){
-        if(PickupMarkers == null)
+        if(PickupMarkers == null) {
             PickupMarkers = new HashMap<>();
+        }
+        if(currentPassengers == null)
+            currentPassengers = new ArrayList<>();
         if(ORDERS_IN_SHARED_RIDE != null){
             for(Order order : ORDERS_IN_SHARED_RIDE){
-                if(!PickupMarkers.containsKey(order.getOrder_id())){
+                if(!PickupMarkers.containsKey(order.getUser_id())){
                     Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
-                    Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
                     MarkerOptions options = new MarkerOptions().
                             icon(BitmapDescriptorFactory.fromBitmap(pickupPin))
                             .title(order.getPickup()).position(new LatLng(order.getPickupLat(),order.getPickupLong()));
-                    PickupMarkers.put(order.getOrder_id(),mMap.addMarker(options));
+                    PickupMarkers.put(order.getUser_id(),mMap.addMarker(options));
+                    goGetUserById(order.getUser_id());
                 }
             }
         }
     }
-
-
-
-
+    
+    private void goGetUserById(String user_id) {
+        db_ref_user.child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    User user = dataSnapshot.getValue(User.class);
+                    if(user != null){
+                        if(!currentPassengers.contains(user))
+                            currentPassengers.add(user);
+                    }
+                }
+            }
+    
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+            }
+        });
+    }
+    
+    
 }

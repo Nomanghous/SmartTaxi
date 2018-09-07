@@ -910,7 +910,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         return;
                     String token = driver.getUser_token();
                     NotificationPayload notificationPayload = new NotificationPayload();
-                    notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
                     if(new_order.getShared()) {
                         notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
                         notificationPayload.setTitle("\"New Passenger Request\"");
