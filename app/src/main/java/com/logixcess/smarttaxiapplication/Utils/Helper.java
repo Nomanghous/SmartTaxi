@@ -30,11 +30,17 @@ public class Helper {
     public static final String BROADCAST_DRIVER = "broadcast_drivers";
     public static final String BROADCAST_DRIVER_RESPONSE = "BROADCAST_DRIVER_RESPONSE";
     public static final String REF_NOTIFICATIONS = "notifications";
+    public static final String VEHICLE_CAR = "car";
+    public static final String VEHICLE_MINI = "mini";
+    public static final String VEHICLE_NANO = "nano";
+    public static final String VEHICLE_VIP = "vip";
+    public static final String VEHICLE_THREE_WHEELER = "three_wheeler";
 
 
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000; // it's in meters
     public static boolean IS_FROM_CHILD = false;
+
 
     public static boolean checkWithinRadius(Location mine, LatLng other) {
         if(mine == null)

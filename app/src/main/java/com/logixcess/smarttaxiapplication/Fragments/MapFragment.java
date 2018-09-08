@@ -71,6 +71,7 @@ import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
+import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.HttpConnection;
 import com.logixcess.smarttaxiapplication.Utils.PathJsonParser;
@@ -187,7 +188,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
      * @param param2 Parameter 2.
      * @return A new instance of fragment MapFragment.
      */
-
+FareCalculation fareCalculation;
     public static MapFragment newInstance(String param1, String param2) {
         MapFragment fragment = new MapFragment();
         Bundle args = new Bundle();
@@ -201,6 +202,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         gps = new UserLocationManager(getContext());
+        fareCalculation = new FareCalculation();
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -397,19 +399,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     }
 
-    public double check_cost(int shared_user_status, double base_fair_per_km) {
-        if (shared_user_status == 1)//primary
-        {
-            total_cost = (base_fair_per_km / 100.0f) * 20; //give 20% discount
-        } else if (shared_user_status == 2) // secondary
-        {
-            total_cost = (base_fair_per_km / 100.0f) * 10; //give 10% discount
-        } else if (shared_user_status == 3) //tertiary
-        {
-            total_cost = (base_fair_per_km / 100.0f) * 5; //give
-        }
-        return total_cost;
-    }
 
     /*public void getRegionName(Context context, double lati, double longi) {
         String regioName = "";
@@ -452,7 +441,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 //                    }
                     dialog_already_showing = false;
                     dialog.dismiss();
-                    //check_cost(0,0.0);
                 } else if (items[item].equals("OPEN PROFILE")) {
 
                 } else if (items[item].equals("CANCEL")) {
@@ -589,7 +577,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = 50;//car
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_CAR);
+                //Constants.BASE_FAIR_PER_KM = 50;//car
                 break;
             case R.id.layout_vehicle2:
                 if (vehicle2.getVisibility() == View.GONE)
@@ -602,7 +591,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = 30;//option mini
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_MINI);
+                //Constants.BASE_FAIR_PER_KM = 30;//option mini
                 break;
             case R.id.layout_vehicle3:
                 if (vehicle3.getVisibility() == View.GONE)
@@ -615,7 +605,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = 20;//option nano
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_NANO);
+                //Constants.BASE_FAIR_PER_KM = 20;//option nano
                 break;
             case R.id.layout_vehicle4:
                 if (vehicle4.getVisibility() == View.GONE)
@@ -628,7 +619,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     vehicle5.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = 60;//option vip
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_VIP);
+                //Constants.BASE_FAIR_PER_KM = 60;//option vip
                 break;
             case R.id.layout_vehicle5:
                 if (vehicle5.getVisibility() == View.GONE)
@@ -641,7 +633,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_THREE_WHEELER);
+                //Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
                 break;
 
         }
@@ -980,8 +973,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             timer.cancel();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
-
-            double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
+            double total_cost = fareCalculation.getCost();
             if (layout_cost_detail.getVisibility() == View.GONE) {
                 if (btn_confirm.getVisibility() == View.VISIBLE)
                     btn_confirm.setVisibility(View.GONE);
@@ -1051,37 +1043,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             passengers_count = 0;
         else
             passengers_count = mOrderList.size();
-            updateOtherPassengerCosts(passengers_count);
+            updateSharedDiscountedPrice(passengers_count);
     }
     HashMap<String,Integer> userStatus = new HashMap<>();
-    private void updateOtherPassengerCosts(int passenger_count)
+    private void updateSharedDiscountedPrice(int passenger_count)
     {
-
-//        for (Map.Entry<String, Boolean> entry : mPassengerList.entrySet()) {
-//            String key = entry.getKey();
-//            Object value = entry.getValue();
-//            // you code here
-//        }
         //give new user cost and discount
-        double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-        if (passenger_count == 0) {
-            total_cost = cost;// this is because for now only 1 user is riding that is you
-            //Display Cost
-            if (layout_cost_detail.getVisibility() == View.GONE) {
-                layout_cost_detail.setVisibility(View.VISIBLE);
-                if (btn_confirm.getVisibility() == View.VISIBLE)
-                    btn_confirm.setVisibility(View.GONE);
-                txtLocation.setText(new_order.getPickup());
-                txtDestination.setText(new_order.getDropoff());
-                txt_cost.setText(String.valueOf(total_cost));
-                new_order.setEstimated_cost(String.valueOf(total_cost));
-            }
-            return;
-        }
-        else if (passenger_count == 1)
-            total_cost = cost-((cost / 100.0f) * 10); //give 1 0% discount
-        else if (passenger_count > 2)
-            total_cost = cost-((cost / 100.0f) * 5); //give
+        total_cost = fareCalculation.getUserDiscountedPrice(passenger_count);
         new_order.setEstimated_cost(String.valueOf(total_cost));
         //Display Cost
         if (layout_cost_detail.getVisibility() == View.GONE) {
@@ -1092,13 +1060,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             txtDestination.setText(new_order.getDropoff());
             txt_cost.setText(String.valueOf(total_cost));
         }
-        //update old users discount
+        if (passenger_count == 0) {
+      // this is because for now only 1 user is riding that is you so we don't need to update other user's cost
+            return;
+        }
+        //update ride passengers discount
         DatabaseReference db_ref_order = firebase_db.getReference(Helper.REF_ORDERS);
         int user_count = 0;
-
         for (Map.Entry<String, Boolean> entry : mOrderList.entrySet())
         {
-
             String key = entry.getKey();
             Boolean value = (Boolean)entry.getValue();
             userStatus.put(key,user_count);
@@ -1111,39 +1081,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             double cost = 0;
                             if(order.getEstimated_cost() != null)
                              cost = Double.parseDouble(order.getEstimated_cost().toString());
-
-                            if(userStatus.get(order.getOrder_id()) == 0)
-                            {
-                                //primary user
-                                total_cost = cost-((cost / 100.0f) * 20); //give 20% discount
-                            }
-                            else if(userStatus.get(order.getOrder_id()) == 1)
-                            {
-                                //secondary user
-                                total_cost = cost-((cost / 100.0f) * 10); //give 1 0% discount
-                            }
-                            if(userStatus.get(order.getOrder_id())==2)
-                            {
-                                //tertiary and onward user
-                                total_cost = cost-((cost / 100.0f) * 5); //give
-                            }
+                            total_cost = fareCalculation.getPassengerDiscountedPrice(cost,userStatus.get(order.getOrder_id()));
                             String estimated_cost_final = String.valueOf(total_cost);
                             db_ref_order.child(key).child("estimated_cost").setValue(estimated_cost_final).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-
+                                public void onComplete(@NonNull Task<Void> task)
+                                {
+                                    //send push notifications
+                                    //PushNotifictionHelper
                                 }
                             });
                         }
                     }
-
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
-
                     }
                 });
-
-
             user_count++;
         }
     }
