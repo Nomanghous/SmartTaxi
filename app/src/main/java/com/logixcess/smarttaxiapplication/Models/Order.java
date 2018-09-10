@@ -8,8 +8,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class Order extends ParcelableSparseArray implements Parcelable {
 
@@ -18,6 +16,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
                     OrderStatusCancelled = 4;
     @Exclude
     private boolean[] NotificaionsDone = new boolean[4];
+    
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
@@ -71,11 +70,11 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         }
     };
     
-    
+    @Exclude
     public boolean[] getNotificaionsDone() {
         return NotificaionsDone;
     }
-    
+    @Exclude
     public void setNotificaionsDone(boolean[] notificaionsDone) {
         NotificaionsDone = notificaionsDone;
     }

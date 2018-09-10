@@ -507,8 +507,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
             String latitude = "latitude";
             String longitude = "longitude";
-            db_ref_driver.child(userMe.getUid()).child(latitude).setValue(myLocation.getLatitude());
-            db_ref_driver.child(userMe.getUid()).child(longitude).setValue(myLocation.getLongitude());
+            double lat = Helper.roundOffDouble(myLocation.getLatitude());
+            double lng = Helper.roundOffDouble(myLocation.getLongitude());
+            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(lat);
+            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(lng);
         }
     }
 
