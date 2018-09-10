@@ -93,7 +93,6 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -232,14 +231,14 @@ public class MainActivity extends BaseActivity
                                 MyNotificationManager.INTENT_FILTER_VIEW_ORDER),NotificationPayload.class);
                 IS_FOR_ORDER_VIEW = (notificationPayload != null);
                 if(IS_FOR_ORDER_VIEW)
-                    goFechOrder();
+                    goFetchOrder();
             }
         }
         getAllOrders();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if(user!=null)
         {
-            getAllNotificaations(user.getUid());
+            getAllNotifications(user.getUid());
         }
         getCurrentOrderId(true);
 
@@ -952,9 +951,6 @@ AlertDialog builder;
         startActivity(intent);
     }
 
-
-
-
     @Override
     public void DriversListAdded(List<Driver> drivers) {
         DriversInRadius = drivers;
@@ -962,7 +958,8 @@ AlertDialog builder;
         if (mapFragment != null)
             mapFragment.getDriverList(DriversInRadius);
     }
-    private void goFechOrder() {
+    
+    private void goFetchOrder() {
         DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(notificationPayload.getOrder_id());
         db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -1028,9 +1025,8 @@ ArrayList<Order> my_orders;
     }
 
     ArrayList<NotificationPayload> notificationPayloads;
-    private void getAllNotificaations(String user_id) {
+    private void getAllNotifications(String user_id) {
         notificationPayloads = new ArrayList<>();
-        FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         DatabaseReference db_ref_notifications = FirebaseDatabase.getInstance().getReference().child(Helper.REF_NOTIFICATIONS).child(user_id);
         db_ref_notifications.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override

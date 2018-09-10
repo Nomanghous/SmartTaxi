@@ -1289,7 +1289,7 @@ FareCalculation fareCalculation;
         et_pickup.setText("");
         et_drop_off.setText("");
         gMap.clear();
-        new_order = null;
+        new_order = new Order();
         currentSharedRide = null;
         btn_confirm.setVisibility(View.GONE);
         layout_cost_detail.setVisibility(View.GONE);

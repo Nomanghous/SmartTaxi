@@ -10,21 +10,13 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Requests;
-import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
-import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
-import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class MyNotificationManager extends BroadcastReceiver {
 
@@ -67,7 +59,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     public void sendNotificationToRequestGroupRide(String passengerID, Context context, NotificationPayload payload, String action)
     {
         boolean isAccepted = action.equals(INTENT_FILTER_ACCEPT_ORDER);
-        udpateRequest(payload.getDriver_id(),passengerID,isAccepted ? Requests.STATUS_ACCEPTED : Requests.STATUS_REJECTED);
+        updateRequest(payload.getDriver_id(),passengerID,isAccepted ? Requests.STATUS_ACCEPTED : Requests.STATUS_REJECTED);
 //        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
 //        db_ref_user.child(passengerID).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
 //            @Override
@@ -107,7 +99,7 @@ public class MyNotificationManager extends BroadcastReceiver {
 //        });
     }
 
-    private void udpateRequest(String driverId, String userId,int status){
+    private void updateRequest(String driverId, String userId, int status){
         Requests requests = new Requests(driverId,userId,status);
         String res_id = Helper.getConcatenatedID(userId,driverId);
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();

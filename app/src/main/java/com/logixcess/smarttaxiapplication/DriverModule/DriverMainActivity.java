@@ -141,11 +141,9 @@ public class DriverMainActivity extends AppCompatActivity {
 
     private void checkAssignedGroupOrder(){
         db_ref_order_to_driver.child(userMe.getUid())
-                .child(Helper.REF_GROUP_ORDER).addValueEventListener(new ValueEventListener() {
+                .child(Helper.REF_GROUP_ORDER).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(CURRENT_GROUP_ID != null)
-                    return;
                 if(dataSnapshot.exists()){
                     CURRENT_GROUP_ID = (String) dataSnapshot.getValue();
                     goFetchGroupByID(CURRENT_GROUP_ID);
@@ -343,7 +341,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     currentSharedRide = dataSnapshot.getValue(SharedRide.class);
                     if(currentSharedRide != null){
-                        if(CURRENT_ORDER_ID != null)
+                        if(CURRENT_ORDER_ID != null && currentOrder != null)
                             openOrderActivity(currentSharedRide);
                         else{
                             if(currentOrder == null)

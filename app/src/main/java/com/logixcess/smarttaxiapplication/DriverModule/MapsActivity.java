@@ -424,9 +424,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             calculatePickupDistance();
         }
 //            checkForDistanceToSendNotification();
-
-
-
     }
 
     @Override
@@ -680,17 +677,20 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 Order order = dataSnapshot.getValue(Order.class);
                 if(order != null){
                     if(currentOrder.getShared()){
-                        if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
-                                && order.getDriver_id().equals(userMe.getUid())) {
-                            if (order.getStatus() == Order.OrderStatusInProgress) {
-                            
-                            }else if (order.getStatus() == Order.OrderStatusCompleted){
-                                initNextOrderVars();
-                                getTheNextNearestDropOff();
-                            }else if (order.getStatus() == Order.OrderStatusPending){
+                        updateOrderLocally(order);
 
-                            }
-                        }
+//                        if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
+//                                && order.getDriver_id().equals(userMe.getUid())) {
+//                            if (order.getStatus() == Order.OrderStatusInProgress) {
+//
+//                            }else if (order.getStatus() == Order.OrderStatusCompleted){
+//                                updateOrderLocally(order);
+//                                initNextOrderVars();
+//                                getTheNextNearestDropOff();
+//                            }else if (order.getStatus() == Order.OrderStatusPending){
+//
+//                            }
+//                        }
                     }
                     else {
                         if(currentOrder.getOrder_id().equals(order.getOrder_id())
@@ -726,6 +726,32 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
        
 
+    }
+    
+    private void updateOrderLocally(Order order) {
+        int index = 0;
+        boolean isToRefresh = false;
+        for(Order o : ORDERS_IN_SHARED_RIDE){
+            if(o.getOrder_id().equals(order.getOrder_id())){
+                if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
+                        && order.getDriver_id().equals(userMe.getUid())) {
+                    if (order.getStatus() == Order.OrderStatusInProgress) {
+                        isToRefresh = true;
+                    }else if (order.getStatus() == Order.OrderStatusCompleted){
+                        isToRefresh = true;
+                    }else if (order.getStatus() == Order.OrderStatusPending){
+                        isToRefresh = true;
+                    }
+                }
+                ORDERS_IN_SHARED_RIDE.add(index,order);
+            }
+            index++;
+        }
+        if(isToRefresh){
+            initNextOrderVars();
+            getTheNextNearestDropOff();
+        }
+        
     }
     
     private void markOrderComplete() {
