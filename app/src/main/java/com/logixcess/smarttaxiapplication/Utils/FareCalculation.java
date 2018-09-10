@@ -1,7 +1,16 @@
 package com.logixcess.smarttaxiapplication.Utils;
 
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
+import com.logixcess.smarttaxiapplication.R;
 
 public class FareCalculation
 {
@@ -69,6 +78,35 @@ public class FareCalculation
         return discounted_price;
     }
 
-
-
+    
+    public MarkerOptions getVehicleMarkerOptions(Context context,LatLng latLng, String vehicleType){
+        MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("Driver");
+        markerOptions.icon(getDrawableByType(context,vehicleType));
+        return markerOptions;
+    }
+    
+    private BitmapDescriptor getDrawableByType(Context context, String vehicleType) {
+        Drawable drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
+        switch (vehicleType){
+            case Helper.VEHICLE_CAR:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_car);
+                break;
+            case Helper.VEHICLE_MINI:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_mini);
+                break;
+            case Helper.VEHICLE_NANO:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
+                break;
+            case Helper.VEHICLE_THREE_WHEELER:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_three_wheeler);
+                break;
+            case Helper.VEHICLE_VIP:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_vip);
+                break;
+        }
+        Bitmap driverPin = Helper.convertToBitmap(drawable, 100, 100);
+        return BitmapDescriptorFactory.fromBitmap(driverPin);
+    }
+    
+    
 }

@@ -56,6 +56,7 @@ import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
+import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
@@ -77,7 +78,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
     private boolean IS_RIDE_SHARED = false;
-    private DatabaseReference db_ref_user;
+    private DatabaseReference db_ref_user,db_ref_drivers;
     
     private Location myLocation = null;
     private LatLng dropoff, pickup;
@@ -108,6 +109,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
         db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
+        db_ref_drivers = firebase_db.getReference().child(Helper.REF_DRIVERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         userMe = FirebaseAuth.getInstance().getCurrentUser();
         Bundle bundle = getIntent().getExtras();
@@ -274,6 +276,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     /*calculate pickup distance for notification*/
     private void calculatePickupDistance(){
+        if(currentPassengers == null)
+            return;
         double distanceRemaining;
         Location pickup = new Location("pickup");
         for(User user : currentPassengers){
@@ -415,7 +419,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if (driver == null && myLocation != null)
             driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
 //        distanceRemaining = shortestRoute.getDistanceValue();
-
+        mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(MapsActivity.this, driver, currentOrder.getVehicle_id()));
         if(mDriverMarker != null && driver != null && myLocation != null){
             calculatePickupDistance();
         }
@@ -494,12 +498,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 public void run() {
                     if (mDriverMarker == null  && mMap != null) {
                         driver = new LatLng(myLocation.getLatitude(),myLocation.getLongitude());
-                        MarkerOptions options = new MarkerOptions();
-                        options.position(driver);
-                        Bitmap driverPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.ic_option_nano)
-                                , 100, 100);
-                        options.icon(BitmapDescriptorFactory.fromBitmap(driverPin));
-                        mDriverMarker = mMap.addMarker(options);
+                        mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(MapsActivity.this, driver, currentOrder.getVehicle_id()));
                     }
                 }
             });
