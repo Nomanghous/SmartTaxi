@@ -58,6 +58,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.DriverModule.MapsActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -66,6 +67,7 @@ import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
+import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
@@ -348,11 +350,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.addPolyline(line);
         MarkerOptions options = new MarkerOptions();
         options.position(new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude()));
-        Bitmap driverPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.ic_option_nano)
-                , 100, 100);
-        options.icon(BitmapDescriptorFactory.fromBitmap(driverPin));
-        mDriverMarker = mMap.addMarker(options);
-
+        mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(CustomerMapsActivity.this, driver, currentOrder.getVehicle_id()));
         Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
         Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
         options.title(currentOrder.getPickup()).position(start);

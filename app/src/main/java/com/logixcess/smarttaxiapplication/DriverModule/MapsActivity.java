@@ -431,7 +431,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
     @Override
     public void onRoutingCancelled() {
-
+    
     }
     
     @Override
