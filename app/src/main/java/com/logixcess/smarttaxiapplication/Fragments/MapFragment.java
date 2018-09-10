@@ -59,6 +59,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
+import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
@@ -299,7 +300,7 @@ FareCalculation fareCalculation;
 //                }
 
                 if (new_order != null) {
-                    new_order.setVehicle_id("Chingchi");
+                    new_order.setVehicle_id(Constants.selected_vehicle);
                     new_order.setShared(cb_shared.isChecked());
                 }
 //                MainActivity mainActivity = ((MainActivity)getContext());
@@ -578,6 +579,7 @@ FareCalculation fareCalculation;
                 if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_CAR);
+                Constants.selected_vehicle = Helper.VEHICLE_CAR;
                 //Constants.BASE_FAIR_PER_KM = 50;//car
                 break;
             case R.id.layout_vehicle2:
@@ -592,6 +594,7 @@ FareCalculation fareCalculation;
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_MINI);
+                Constants.selected_vehicle = Helper.VEHICLE_MINI;
                 //Constants.BASE_FAIR_PER_KM = 30;//option mini
                 break;
             case R.id.layout_vehicle3:
@@ -606,6 +609,7 @@ FareCalculation fareCalculation;
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_NANO);
+                Constants.selected_vehicle = Helper.VEHICLE_NANO;
                 //Constants.BASE_FAIR_PER_KM = 20;//option nano
                 break;
             case R.id.layout_vehicle4:
@@ -620,6 +624,7 @@ FareCalculation fareCalculation;
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_VIP);
+                Constants.selected_vehicle = Helper.VEHICLE_VIP;
                 //Constants.BASE_FAIR_PER_KM = 60;//option vip
                 break;
             case R.id.layout_vehicle5:
@@ -634,6 +639,7 @@ FareCalculation fareCalculation;
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
                 Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_THREE_WHEELER);
+                Constants.selected_vehicle = Helper.VEHICLE_THREE_WHEELER;
                 //Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
                 break;
 
