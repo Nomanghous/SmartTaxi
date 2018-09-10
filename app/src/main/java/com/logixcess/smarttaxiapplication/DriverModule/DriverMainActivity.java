@@ -50,8 +50,6 @@ public class DriverMainActivity extends AppCompatActivity {
     protected DatabaseReference db_ref_order;
     protected DatabaseReference db_ref_drivers,db_ref_users;
     protected DatabaseReference db_ref_group;
-    protected DatabaseReference db_ref_single_order;
-    protected DatabaseReference db_ref_shared_order;
     protected DatabaseReference db_ref_order_to_driver;
     protected FirebaseUser userMe;
     protected Location myLocation = null;
@@ -82,43 +80,43 @@ public class DriverMainActivity extends AppCompatActivity {
     }
  
     public static void listenForDriverResponse(Context context, String driverId){
-        FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
-        DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
-        db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        Requests request = snapshot.getValue(Requests.class);
-                        if (request != null) {
-                            if (request.getDriverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
-                                NotificationPayload notificationPayload = new NotificationPayload();
-                                notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
-                                notificationPayload.setTitle("\"Request Accepted\"");
-                                notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
-                                notificationPayload.setUser_id("\"" + request.getUserId() + "\"");
-                                notificationPayload.setDriver_id("\"" + request.getDriverId() + "\"");
-                                notificationPayload.setOrder_id("\"\"");
-                                notificationPayload.setPercentage_left("\"" + -1 + "\"");
-                                String str = new Gson().toJson(notificationPayload);
-
-                                try {
-                                    JSONObject json = new JSONObject(str);
-                                    NotificationUtils.preparePendingIntentForFriendRequest(context, json.toString(), notificationPayload);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                        }
-                    }
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+//        FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
+//        DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
+//        db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+//                if (dataSnapshot.exists()) {
+//                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+//                        Requests request = snapshot.getValue(Requests.class);
+//                        if (request != null) {
+//                            if (request.getDriverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
+//                                NotificationPayload notificationPayload = new NotificationPayload();
+//                                notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
+//                                notificationPayload.setTitle("\"Request Accepted\"");
+//                                notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
+//                                notificationPayload.setUser_id("\"" + request.getUserId() + "\"");
+//                                notificationPayload.setDriver_id("\"" + request.getDriverId() + "\"");
+//                                notificationPayload.setOrder_id("\"\"");
+//                                notificationPayload.setPercentage_left("\"" + -1 + "\"");
+//                                String str = new Gson().toJson(notificationPayload);
+//
+//                                try {
+//                                    JSONObject json = new JSONObject(str);
+//                                    NotificationUtils.preparePendingIntentForFriendRequest(context, json.toString(), notificationPayload);
+//                                } catch (JSONException e) {
+//                                    e.printStackTrace();
+//                                }
+//                            }
+//
+//                        }
+//                    }
+//                }
+//            }
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
     }
     
     private void checkAssignedSingleOrder() {

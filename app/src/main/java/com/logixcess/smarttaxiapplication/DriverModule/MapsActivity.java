@@ -89,7 +89,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
     private double totalDistance = 0, totalTime = 120; // total time in minutes
-    private DatabaseReference db_ref, db_ref_driver;
+    private DatabaseReference db_ref;
     private String selectedPassengerId;
     private LatLng driver = null;
     private boolean IS_ROUTE_ADDED = false;
@@ -135,7 +135,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
-            db_ref_driver = db_ref.child(Helper.REF_DRIVERS);
             db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

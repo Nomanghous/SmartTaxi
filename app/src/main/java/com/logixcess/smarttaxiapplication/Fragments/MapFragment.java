@@ -426,7 +426,7 @@ FareCalculation fareCalculation;
                 "CANCEL"};
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
-
+        builder.setCancelable(false);
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {

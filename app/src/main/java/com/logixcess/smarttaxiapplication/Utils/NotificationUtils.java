@@ -308,6 +308,7 @@ public class NotificationUtils {
     }
 
     private static void preparePendingIntentForMessage(Context context, String payload, NotificationPayload userData) {
+        int id = getUniqueInt();
         Intent viewIntent = new Intent(context, MyNotificationManager.class);
         if(userData.getType() == Helper.NOTI_TYPE_ORDER_COMPLETED){
             viewIntent.setAction(MyNotificationManager.INTENT_FILTER_COMPETED_ORDER);
@@ -317,22 +318,26 @@ public class NotificationUtils {
             viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         }
         viewIntent.putExtra("data", payload);
+        viewIntent.putExtra("id", id);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
-        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent);
+        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription() != null ? userData.getDescription() : "", null, viewPendingIntent,id);
     }
 
     public static void preparePendingIntentForFriendRequest(Context context, String payload, NotificationPayload userData) {
+        int id = getUniqueInt();
         Intent acceptIntent = new Intent(context, MyNotificationManager.class);
         acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
         acceptIntent.putExtra("data", payload);
         acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        acceptIntent.putExtra("id", id);
         PendingIntent acceptPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
         Intent rejectIntent = new Intent(context, MyNotificationManager.class);
         rejectIntent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
         rejectIntent.putExtra("data", payload);
         rejectIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+        rejectIntent.putExtra("id", id);
         PendingIntent rejectPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
 
@@ -340,15 +345,16 @@ public class NotificationUtils {
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         viewIntent.putExtra("data", payload);
         viewIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
+        viewIntent.putExtra("id", id);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
         List<NotificationCompat.Action> actions = new ArrayList<>();
         actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
         actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
-        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent);
+        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent,id);
     }
 
-    private static void sendNotificationsWithPendingIntent(Context context,String title, String message, List<NotificationCompat.Action> actions,PendingIntent contentIntent) {
+    private static void sendNotificationsWithPendingIntent(Context context,String title, String message, List<NotificationCompat.Action> actions,PendingIntent contentIntent,int id) {
         if (Build.VERSION.SDK_INT >= 27) {
             // Call some material design APIs here
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
@@ -378,7 +384,7 @@ public class NotificationUtils {
                 }
             NotificationManager mNotificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(123, mBuilder.build());
+            mNotificationManager.notify(id, mBuilder.build());
         }
 
     }

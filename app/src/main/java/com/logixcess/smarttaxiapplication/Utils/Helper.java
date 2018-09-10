@@ -51,9 +51,11 @@ public class Helper {
         return mine.distanceTo(pickup) < SELECTED_RADIUS;
     }
     public static String getConcatenatedID(String myUid,String uid){
+        myUid = myUid.replace("\"","");
+        uid = uid.replace("\"","");
         String[] alphaNumericStringArray = new String[]{myUid, uid};
         Arrays.sort(alphaNumericStringArray, new AlphanumericSorting());
-        return alphaNumericStringArray[0] + alphaNumericStringArray[1];
+        return alphaNumericStringArray[0].concat(alphaNumericStringArray[1]);
     }
     public static Bitmap convertToBitmap(Drawable drawable, int widthPixels, int heightPixels) {
         Bitmap mutableBitmap = Bitmap.createBitmap(widthPixels, heightPixels, Bitmap.Config.ARGB_8888);

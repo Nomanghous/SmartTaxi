@@ -39,11 +39,12 @@ public class MyNotificationManager extends BroadcastReceiver {
         mContext = context;
         String action = intent.getExtras() != null ? intent.getExtras().getString("action") : null;
         String data = intent.getExtras() != null ? intent.getExtras().getString("data") : null;
-        if(action == null || data == null)
+        int id = intent.getExtras() != null ? intent.getExtras().getInt("id") : -1;
+        if(action == null || data == null || id == -1)
             return;
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if(notificationManager != null)
-            notificationManager.cancel(123);
+            notificationManager.cancel(id);
         NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
         if(notificationPayload != null) {
             if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED) {
