@@ -340,6 +340,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         mMap.addPolyline(line);
         MarkerOptions options = new MarkerOptions();
         options.position(new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude()));
+        driver = new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude());
         mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(CustomerMapsActivity.this, driver, currentOrder.getVehicle_id()));
         Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
         Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
@@ -366,7 +367,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     @Override
     public void onRoutingFailure(RouteException e) {
-        Toast.makeText(this, "failed", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "failed", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -448,6 +449,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
     }
 
     private String escapeValue(String value) {

@@ -17,9 +17,6 @@ public class Constants
     public static float SELECTED_RADIUS = 10000.0f ;//distance in meters
     public static long date_selected_expiry;
     public static long date_selected_issue;
-    public static final int PRIMARY_USER = 1;
-    public static final int SECONDARY_USER = 2;
-    public static final int TERTIARY_USER = 3;
     public static double BASE_FAIR_PER_KM = 0;
     public static String selected_vehicle = "";
     public static String user_image_path = "";

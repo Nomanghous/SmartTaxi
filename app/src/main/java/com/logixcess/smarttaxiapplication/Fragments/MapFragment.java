@@ -23,6 +23,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,11 +32,14 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
@@ -51,12 +55,16 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
@@ -175,6 +183,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private FirebaseDatabase firebase_db;
     private Button btn_add_members;
     private boolean isTimeout = false;
+    private DatabaseReference db_ref_user_general;
 
     public MapFragment() {
         // Required empty public constructor
@@ -250,6 +259,7 @@ FareCalculation fareCalculation;
         firebase_db = FirebaseDatabase.getInstance();
         USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         db_ref_user = firebase_db.getReference().child(Helper.REF_PASSENGERS);
+        db_ref_user_general = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         driverList = new ArrayList<>();
@@ -418,6 +428,209 @@ FareCalculation fareCalculation;
             e.printStackTrace();
         }
     }*/
+
+    ProgressDialog progressDialog;
+    public void  show_driverDetail(String driverid)
+    {
+        if (dialog_already_showing)
+            return;
+        String driverId = driverid;
+        final CharSequence[] items = { "SELECT", "OPEN PROFILE",
+                "CANCEL" };
+        //final CharSequence[] items = { "SEL   ECT",
+        //      "CANCEL" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Driver Detail");
+
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                boolean result = PermissionHandler.checkPermission(getActivity());
+                if (items[item].equals("SELECT")) {
+                    //                    if (new_order.getShared()) {
+                    new_order.setDriver_id(driverId);
+                    sendNotificationToRequestGroupRide(driverId);
+//                    } else {//non shared
+
+//                    }
+                    dialog_already_showing = false;
+                    dialog.dismiss();
+                }
+                else if (items[item].equals("OPEN PROFILE"))
+                {
+                    progressDialog = new ProgressDialog(getActivity());
+                    progressDialog.setMessage("Please Wait...");
+                    progressDialog.show();
+                    db_ref_user_general.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot)
+                        {
+                            if(dataSnapshot.exists())
+                            {     User driver = dataSnapshot.getValue(User.class);
+                                //int index = driver_list_index.get(driverId);
+                                //Driver driver = driverList.get(index);
+                                open_profile(driver.getUser_id(),driver.getName(),driver.getUser_image_url(),driver.getPhone());
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+                }
+                else if (items[item].equals("CANCEL")) {
+                    dialog_already_showing = false;
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.show();
+    }
+
+    private void open_profile(String user_id,String name,String url,String phone)
+    {
+
+        ImageView image = new ImageView(getActivity());
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(350,300);
+        image.setLayoutParams(layoutParams);
+        if(url!=null || (!TextUtils.isEmpty(url)) )
+        {
+            RequestOptions requestOptions = new RequestOptions();
+            requestOptions.placeholder(R.drawable.user_placeholder);
+            requestOptions.circleCrop();
+            requestOptions.centerInside();
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(url);
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri)
+                {
+                    String imageURL = uri.toString();
+
+                    Glide.with(getActivity()).setDefaultRequestOptions(requestOptions).load(imageURL)
+                            .into(image);
+
+                    //Glide.with(getApplicationContext()).load(imageURL).into(i1);
+                }
+            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                @Override
+                public void onComplete(@NonNull Task<Uri> task) {
+                    if(progressDialog!=null && progressDialog.isShowing())
+                    {
+                        progressDialog.dismiss();
+                    }
+                    String status = "OFFLINE";
+                    if(true)
+                        status = "ONLINE";
+                    final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+                    AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
+                    builder.setTitle("Driver Information :");
+                    builder.setView(image);
+                    builder.setPositiveButton("Request Now", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //driver_selected(user_id);
+                            new_order.setDriver_id(user_id);
+                            sendNotificationToRequestGroupRide(user_id);
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            dialog_already_showing = false;
+                        }
+                    });
+
+                    builder.setItems(items, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int item)
+                        {
+//                if (items[item].equals("SendRequest"))
+//                {
+//                    driver_selected(user_id);
+//                }
+                        }
+                    });
+
+                    builder.show();
+                    dialog_already_showing = true;
+                }
+            })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            // Handle any errors
+                            //  Glide.with(getActivity()).setDefaultRequestOptions(requestOptions).load(url)
+                            //        .into(image);
+
+                        }
+                    });
+        }
+        else
+        {
+            if(progressDialog!=null && progressDialog.isShowing())
+            {
+                progressDialog.dismiss();
+            }
+            String status = "OFFLINE";
+            if(true)
+                status = "ONLINE";
+            final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+            AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
+            builder.setTitle("Driver Information");
+            builder.setView(image);
+            builder.setPositiveButton("Request Now", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    //driver_selected(user_id);
+                    new_order.setDriver_id(user_id);
+                    sendNotificationToRequestGroupRide(user_id);
+//                    } else {//non shared
+
+//                    }
+                    dialog.dismiss();
+
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    dialog_already_showing = false;
+                }
+            });
+
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int item)
+                {
+//                if (items[item].equals("SendRequest"))
+//                {
+//                    driver_selected(user_id);
+//                }
+                    if (items[item].equals("CANCEL")) {
+                        dialog.dismiss();
+                        dialog_already_showing = false;
+                    }
+                    else
+                    {
+                    }
+                }
+            });
+
+            builder.show();
+            dialog_already_showing = true;
+        }
+
+
+
+    }
+
+/*
     public void show_driverDetail(String driverid) {
 
         if (dialog_already_showing)
@@ -452,57 +665,7 @@ FareCalculation fareCalculation;
         });
         builder.show();
         dialog_already_showing = true;
-    }
-
-    public void checkRidePassengers(String region_name, String driver_id) {
-        valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    SharedRide sharedRide = null;
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        if (snapshot.getKey().contains(driver_id)) {
-                            sharedRide = snapshot.getValue(SharedRide.class);
-                            int passengers_count = sharedRide.getPassengers().size();
-                            double cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                            if (passengers_count == 0)
-                                total_cost = (cost / 100.0f) * 20; //give 20% discount
-                            else if (passengers_count == 1)
-                                total_cost = (cost / 100.0f) * 10; //give 10% discount
-                            else if (passengers_count > 2)
-                                total_cost = (cost / 100.0f) * 5; //give
-
-                            new_order.setEstimated_cost(String.valueOf(total_cost));
-                            //Display Cost
-                            if (layout_cost_detail.getVisibility() == View.GONE) {
-                                layout_cost_detail.setVisibility(View.VISIBLE);
-                                if (btn_confirm.getVisibility() == View.VISIBLE)
-                                    btn_confirm.setVisibility(View.GONE);
-                                txtLocation.setText(new_order.getPickup());
-                                txtDestination.setText(new_order.getDropoff());
-                                txt_cost.setText(String.valueOf(total_cost));
-                            }
-                        }
-                    }
-                } else {
-                    Toast.makeText(getActivity(), "No Rides are going nearby, we will create your new Ride.", Toast.LENGTH_SHORT).show();
-                    double total_cost = Constants.BASE_FAIR_PER_KM * Double.parseDouble(new_order.getTotal_kms());
-                    if (layout_cost_detail.getVisibility() == View.GONE) {
-                        layout_cost_detail.setVisibility(View.VISIBLE);
-                        txtLocation.setText(new_order.getPickup());
-                        txtDestination.setText(new_order.getDropoff());
-                        txt_cost.setText(String.valueOf(total_cost));
-                    }
-                }
-
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-            }
-        };
-        firebase_instance.child("Group").orderByChild("region_name").equalTo(region_name).addListenerForSingleValueEvent(valueEventListener);//call onDataChange   executes OnDataChange method immediately and after executing that method once it stops listening to the reference location it is attached to.
-    }
+    }*/
 
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {

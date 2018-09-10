@@ -78,13 +78,13 @@ public class FareCalculation
         return discounted_price;
     }
 
-    
+
     public MarkerOptions getVehicleMarkerOptions(Context context,LatLng latLng, String vehicleType){
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("Driver");
         markerOptions.icon(getDrawableByType(context,vehicleType));
         return markerOptions;
     }
-    
+
     private BitmapDescriptor getDrawableByType(Context context, String vehicleType) {
         Drawable drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
         switch (vehicleType){
@@ -107,6 +107,6 @@ public class FareCalculation
         Bitmap driverPin = Helper.convertToBitmap(drawable, 100, 100);
         return BitmapDescriptorFactory.fromBitmap(driverPin);
     }
-    
-    
+
+
 }
