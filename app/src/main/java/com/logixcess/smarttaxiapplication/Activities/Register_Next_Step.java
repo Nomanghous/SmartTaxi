@@ -139,10 +139,14 @@ public class Register_Next_Step extends AppCompatActivity {
                 switch(checkedId){
                     case R.id.radio_student:
                         passenger.setIs_working_student(false);
+                        if(sp_workplace_name.getVisibility() == View.VISIBLE)
+                            sp_workplace_name.setVisibility(View.GONE);
                         sp_intitution_name.setVisibility(View.VISIBLE);
                         break;
                     case R.id.radio_working:
                         passenger.setIs_working_student(true);
+                        if(sp_intitution_name.getVisibility() == View.VISIBLE)
+                            sp_intitution_name.setVisibility(View.GONE);
                         sp_workplace_name.setVisibility(View.VISIBLE);
                         break;
                 }

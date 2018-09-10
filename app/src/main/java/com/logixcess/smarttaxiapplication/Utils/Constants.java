@@ -17,8 +17,8 @@ public class Constants
     public static float SELECTED_RADIUS = 10000.0f ;//distance in meters
     public static long date_selected_expiry;
     public static long date_selected_issue;
-    public static double BASE_FAIR_PER_KM = 0;
-    public static String selected_vehicle = "";
+    public static double BASE_FAIR_PER_KM = 50;
+    public static String selected_vehicle = Helper.VEHICLE_CAR;
     public static String user_image_path = "";
     public static String group_id = "";
     public static int group_radius = 0;
