@@ -925,11 +925,14 @@ AlertDialog builder;
                     if(!mapFragment.getThereIsActiveOrder() ){
                         if(!isForConditionCheck)
                             Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                        mapFragment.setThereIsActiveOrder(false);
                         findViewById(R.id.current_order_view).setVisibility(View.GONE);
                     }
                 }else{
                     if(!isForConditionCheck)
                         Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                    mapFragment.setThereIsActiveOrder(false);
+                    findViewById(R.id.current_order_view).setVisibility(View.GONE);
                 }
                 progressbar.setVisibility(View.GONE);
 

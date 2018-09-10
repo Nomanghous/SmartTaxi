@@ -126,7 +126,6 @@ public class DriverMainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     CURRENT_ORDER_ID = (String) dataSnapshot.getValue();
-                    
                     goFetchOrderByID(CURRENT_ORDER_ID,true);
                 }else{
                     checkAssignedGroupOrder();
