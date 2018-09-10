@@ -282,6 +282,7 @@ public class MainActivity extends BaseActivity
 
         // clear the notification area when the app is opened
         NotificationUtils.clearNotifications(getApplicationContext());
+        getCurrentOrderId(true);
     }
 
     @Override
@@ -927,7 +928,8 @@ AlertDialog builder;
                         findViewById(R.id.current_order_view).setVisibility(View.GONE);
                     }
                 }else{
-                    Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
+                    if(!isForConditionCheck)
+                        Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                 }
                 progressbar.setVisibility(View.GONE);
 

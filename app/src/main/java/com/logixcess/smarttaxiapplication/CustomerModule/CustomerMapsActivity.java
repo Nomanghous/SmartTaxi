@@ -270,18 +270,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private void checkForDistanceToSendNotification()  {
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         mDriverMarker.setPosition(driver);
-        if(percentageLeft < 2){
+        if(percentageLeft < 100) {
             Toast.makeText(this, "Driver has arrived", Toast.LENGTH_SHORT).show();
-        }else if(percentageLeft < 50){
-            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_vehicle_red);
-            mDriverMarker.setIcon(icon);
-        }else if(percentageLeft < 75)
-        {
-            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_vehicle);
-            mDriverMarker.setIcon(icon);
-        }else if(percentageLeft < 100){
-            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_vehicle_grey);
-            mDriverMarker.setIcon(icon);
         }
     }
 
@@ -458,7 +448,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     private String escapeValue(String value) {
