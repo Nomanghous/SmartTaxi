@@ -126,6 +126,7 @@ public class DriverMainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     CURRENT_ORDER_ID = (String) dataSnapshot.getValue();
+                    
                     goFetchOrderByID(CURRENT_ORDER_ID,true);
                 }else{
                     checkAssignedGroupOrder();
@@ -210,11 +211,8 @@ public class DriverMainActivity extends AppCompatActivity {
     }
 
     public void openRunningOrder(View view) {
-        if(CURRENT_ORDER_ID != null && !CURRENT_ORDER_ID.isEmpty()) {
-            openOrderActivity();
-        }else{
-            Toast.makeText(this, "No Order in Progress", Toast.LENGTH_SHORT).show();
-        }
+        checkAssignedSingleOrder();
+        
     }
 
     private void openOrderActivity() {
@@ -268,12 +266,17 @@ public class DriverMainActivity extends AppCompatActivity {
                         if(TextUtils.isEmpty(currentUserId)){
                             goFetchCustomerById(isAlreadyAccepted);
                         }
-
-                        String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
-                        if(CURRENT_GROUP_ID == null && currentOrder.getShared())
-                            goFetchGroupByID(groupId);
-                        if(!isAlreadyAccepted) {
-                            Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
+                        if(currentOrder.getShared()) {
+                            String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
+                            if (CURRENT_GROUP_ID == null && currentOrder.getShared())
+                                goFetchGroupByID(groupId);
+                            if (!isAlreadyAccepted) {
+                                Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
+                            }
+                        }else if(CURRENT_ORDER_ID != null && !CURRENT_ORDER_ID.isEmpty()) {
+                            openOrderActivity();
+                        }else{
+                            Toast.makeText(DriverMainActivity.this, "No Order in Progress", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
