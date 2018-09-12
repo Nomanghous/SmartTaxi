@@ -122,7 +122,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
             currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
+            
             }else if(currentOrder != null) {
+            
             }else{
                 finish();
                 return;
@@ -176,13 +178,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             // driver id not provided
             finish();
         }
-//        if(IS_RIDE_SHARED){
-//            if(CURRENT_SHARED_RIDE == null && !TextUtils.isEmpty(sharedRideId))
-//                goFetchGroupByID(sharedRideId);
-//            else if(CURRENT_SHARED_RIDE == null){
-//                finish();
-//            }
-//        }
+
     }
 
     private class Every10Seconds extends TimerTask {

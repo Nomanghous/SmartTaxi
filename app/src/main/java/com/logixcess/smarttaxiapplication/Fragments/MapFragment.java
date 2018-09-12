@@ -72,6 +72,7 @@ import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.Requests;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
@@ -184,7 +185,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private Button btn_add_members;
     private boolean isTimeout = false;
     private DatabaseReference db_ref_user_general;
-
+    private List<Passenger> mNearbyPassengers;
+    
     public MapFragment() {
         // Required empty public constructor
 
@@ -328,6 +330,7 @@ FareCalculation fareCalculation;
                 ct_vehicles.setVisibility(View.GONE);
                 btn_confirm.setVisibility(View.VISIBLE);
                 refreshDrivers();
+                showNearbyPassengersForSharedRide();
             }
         });
 
@@ -997,13 +1000,11 @@ FareCalculation fareCalculation;
                     }else{
                         if(new_order.getShared()) {
                             CREATE_NEW_GROUP = true;
-                            showRadiusInputField();
                         }
                     }
                 }else{
                     if(new_order.getShared()) {
                         CREATE_NEW_GROUP = true;
-                        showRadiusInputField();
                     }
                 }
                 show_driverDetail(driverId);
@@ -1128,8 +1129,44 @@ FareCalculation fareCalculation;
     }
 
 
+    private void showNearbyPassengersForSharedRide(){
+        DatabaseReference db_passengers = firebase_db.getReference().child(Helper.REF_PASSENGERS);
+        db_passengers.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    for(com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()){
+                        Passenger passenger = snapshot.getValue(Passenger.class);
+                        if(passenger != null){
+                            addMarkersForPassenger(passenger);
+                        }
+                    }
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
+            }
+        });
+    }
+    
+    private void addMarkersForPassenger(Passenger passenger) {
+        if(mNearbyPassengers == null)
+            mNearbyPassengers = new ArrayList<>();
+        for(Passenger p : mNearbyPassengers){
+            if(p.getFk_user_id().equals(passenger.getFk_user_id()))
+                return;
+        }
+        String count = String.valueOf(mNearbyPassengers.size() + 1);
+        MarkerOptions markerOptions = new MarkerOptions().title(count).icon(
+                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                .position(new LatLng(passenger.getLatitude(),passenger.getLongitude()));
+        gMap.addMarker(markerOptions);
+        mNearbyPassengers.add(passenger);
+    }
+    
+    
     private void checkForResponse(ProgressDialog progressDialog, CountDownTimer timer) {
             if (isOrderAccepted && new_order.getShared()) {
             progressDialog.dismiss();
@@ -1140,6 +1177,7 @@ FareCalculation fareCalculation;
             calculateTheCosts();
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             timer.cancel();
+            showRadiusInputField();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
             double total_cost = fareCalculation.getCost();
@@ -1153,7 +1191,7 @@ FareCalculation fareCalculation;
                 new_order.setEstimated_cost(String.valueOf(total_cost));
             }
             timer.cancel();
-
+            showRadiusInputField();
         }
         else if (isDriverResponded ||isTimeout) {
             progressDialog.dismiss();
@@ -1191,7 +1229,6 @@ FareCalculation fareCalculation;
                     }
                 } else {
                     CREATE_NEW_GROUP = true;
-                    showRadiusInputField();
                 }
             }
 
@@ -1239,7 +1276,7 @@ FareCalculation fareCalculation;
         for (Map.Entry<String, Boolean> entry : mOrderList.entrySet())
         {
             String key = entry.getKey();
-            Boolean value = (Boolean)entry.getValue();
+            Boolean value = entry.getValue();
             userStatus.put(key,user_count);
                 db_ref_order.child(key).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                     @Override
@@ -1291,6 +1328,8 @@ FareCalculation fareCalculation;
         gMap.clear();
         new_order = new Order();
         currentSharedRide = null;
+        if(mNearbyPassengers != null)
+            mNearbyPassengers.clear();
         btn_confirm.setVisibility(View.GONE);
         layout_cost_detail.setVisibility(View.GONE);
         btn_select_vehicle.setVisibility(View.VISIBLE);
