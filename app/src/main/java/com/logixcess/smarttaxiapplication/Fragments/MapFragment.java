@@ -1,3 +1,4 @@
+
 package com.logixcess.smarttaxiapplication.Fragments;
 
 import android.app.Activity;
@@ -40,9 +41,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -67,7 +66,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
-import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
@@ -131,9 +129,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public GoogleMap gMap;
     CheckBox cb_shared, cb_scheduled;
     Firebase firebase_instance;
-    ValueEventListener valueEventListener;
     ArrayList<Driver> driverList;
-    Location DRIVER_LOCATION;
     Location MY_LOCATION;
     double total_cost = 0;
     Button btn_select_vehicle, btn_hide_details;
@@ -144,10 +140,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     LinearLayout layout_cost_detail;
     TextView txtLocation, txtDestination, txt_cost;
     View vehicle1, vehicle2, vehicle3, vehicle4, vehicle5;
-    int count_for_region = 0;
-    private HashMap<String,Boolean> groupMembersForScheduledRide;
-
-
+    
     BroadcastReceiver driverResponseReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
