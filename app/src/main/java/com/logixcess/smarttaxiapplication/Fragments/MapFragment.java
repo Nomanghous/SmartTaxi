@@ -9,7 +9,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -17,9 +20,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -46,6 +51,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -364,6 +370,7 @@ FareCalculation fareCalculation;
             }
         });
         everyTenSecondsTask();
+        MY_LOCATION = LocationManagerService.mLastLocation;
         return view;
     }
 
@@ -491,7 +498,7 @@ FareCalculation fareCalculation;
         ImageView image = new ImageView(getActivity());
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(350,300);
         image.setLayoutParams(layoutParams);
-        if(url!=null || (!TextUtils.isEmpty(url)) )
+        if(url!=null && (!TextUtils.isEmpty(url)) )
         {
             RequestOptions requestOptions = new RequestOptions();
             requestOptions.placeholder(R.drawable.user_placeholder);
@@ -864,6 +871,7 @@ FareCalculation fareCalculation;
      * MAP JOB
      *
      * */
+    Marker myMarker = null;
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
@@ -872,14 +880,29 @@ FareCalculation fareCalculation;
         LatLng usa = new LatLng(latitude, longitude);
         if(MY_LOCATION != null){
             usa = new LatLng(MY_LOCATION.getLatitude(), MY_LOCATION.getLongitude());
+            myMarker = gMap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(bitmapDescriptorFromVector(getActivity(),R.drawable.personn))).position(new LatLng(usa.latitude, usa.longitude))
+                    .title("You"));
+
         }
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
-        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(usa, 10));
+        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(usa, 12));
         gMap.setOnPolylineClickListener(this);
         gMap.setOnMarkerClickListener(this);
 
     }
-
+    private Bitmap bitmapDescriptorFromVector(Context context, @DrawableRes int vectorDrawableResourceId) {
+        Drawable background = ContextCompat.getDrawable(context, R.drawable.personn);
+        //background.setBounds(0, 0, background.getIntrinsicWidth(), background.getIntrinsicHeight());
+        background.setBounds(0, 0, 0, 0);
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId);
+        //vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth() + 40, vectorDrawable.getIntrinsicHeight() + 20);
+        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth() , vectorDrawable.getIntrinsicHeight() );
+        Bitmap bitmap = Bitmap.createBitmap(background.getIntrinsicWidth(), background.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        background.draw(canvas);
+        vectorDrawable.draw(canvas);
+        return bitmap;//BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
     public String getMapsApiDirectionsUrl() {
         String addresses = "optimize:true&origin="
                 + new_order.getPickupLat().toString().concat(",") + new_order.getPickupLong()
@@ -906,6 +929,10 @@ FareCalculation fareCalculation;
                     .title("First Point"));
             gMap.addMarker(new MarkerOptions().position(new LatLng(dropOffLat, dropOffLng))
                     .title("Second Point"));
+            if(myMarker!=null)
+            {
+                myMarker.remove();
+            }
         }
     }
 
