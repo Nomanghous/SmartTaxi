@@ -17,13 +17,13 @@ import java.util.List;
 public class UserFareRecord {
     String userId;
     List<LatLng> latLngs;
-    HashMap<LatLng, Double> userFare;
+    HashMap<String, Double> userFare;
     double baseFare;
-    public HashMap<LatLng, Double> getUserFare() {
+    public HashMap<String, Double> getUserFare() {
         return userFare;
     }
     
-    public void setUserFare(HashMap<LatLng, Double> userFare) {
+    public void setUserFare(HashMap<String, Double> userFare) {
         this.userFare = userFare;
     }
     

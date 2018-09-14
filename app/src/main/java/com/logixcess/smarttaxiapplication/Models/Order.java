@@ -8,6 +8,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Order extends ParcelableSparseArray implements Parcelable {
 
@@ -22,12 +23,13 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
-    
+//    UserFareRecord fareRecord;
+//    private List<RoutePoints> journeyPoints;
     private String order_id;
     private Boolean isScheduled, isShared, isOnRide;
     private int status = 0; // nothing
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
-    private ArrayList<RoutePoints> SELECTED_ROUTE;
+    private ArrayList<RoutePoints> SelectedRoute;
     private int passenger_status;
 
     public Order() {
@@ -56,7 +58,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         this.isScheduled = isScheduled;
         this.isShared = isShared;
         this.status = status;
-        this.SELECTED_ROUTE = selectedRoute;
+        this.SelectedRoute = selectedRoute;
         this.passenger_status = passenger_status;
         this.isOnRide = isOnRide;
     }
@@ -289,9 +291,10 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         isShared = tmpIsShared == 0 ? null : tmpIsShared == 1;
         status = in.readInt();
         passenger_status = in.readInt();
-        SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
+        SelectedRoute = in.readArrayList(LatLng.class.getClassLoader());
         byte tmIsOnRide = in.readByte();
         isOnRide = tmIsOnRide == 0 ? null : tmIsOnRide == 1;
+//        journeyPoints = in.readArrayList(LatLng.class.getClassLoader());
     }
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -317,16 +320,17 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         dest.writeByte((byte) (isShared == null ? 0 : isShared ? 1 : 2));
         dest.writeInt(status);
         dest.writeInt(passenger_status);
-        dest.writeList(SELECTED_ROUTE);
+        dest.writeList(SelectedRoute);
         dest.writeByte((byte) (isOnRide == null ? 0 : isOnRide ? 1 : 2));
+//        dest.writeList(journeyPoints);
     }
 
-    public ArrayList<RoutePoints> getSELECTED_ROUTE() {
-        return SELECTED_ROUTE;
+    public ArrayList<RoutePoints> getSelectedRoute() {
+        return SelectedRoute;
     }
 
-    public void setSELECTED_ROUTE(ArrayList<RoutePoints> SELECTED_ROUTE) {
-        this.SELECTED_ROUTE = SELECTED_ROUTE;
+    public void setSelectedRoute(ArrayList<RoutePoints> selectedRoute) {
+        this.SelectedRoute = selectedRoute;
     }
 
     public int getPassenger_status() {
@@ -336,45 +340,20 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     public void setPassenger_status(int passenger_status) {
         this.passenger_status = passenger_status;
     }
-
-    public class Cost{
-        String cost_id, trip_id;
-        float cost;
-        long datetime;
-
-        public String getCost_id() {
-            return cost_id;
-        }
-
-        public void setCost_id(String cost_id) {
-            this.cost_id = cost_id;
-        }
-
-        public String getTrip_id() {
-            return trip_id;
-        }
-
-        public void setTrip_id(String trip_id) {
-            this.trip_id = trip_id;
-        }
-
-        public float getCost() {
-            return cost;
-        }
-
-        public void setCost(float cost) {
-            this.cost = cost;
-        }
-
-        public long getDatetime() {
-            return datetime;
-        }
-
-        public void setDatetime(long datetime) {
-            this.datetime = datetime;
-        }
-    }
-
-
-
+//
+//    public UserFareRecord getFareRecord() {
+//        return fareRecord;
+//    }
+//
+//    public void setFareRecord(UserFareRecord fareRecord) {
+//        this.fareRecord = fareRecord;
+//    }
+//
+//    public List<RoutePoints> getJourneyPoints() {
+//        return journeyPoints;
+//    }
+//
+//    public void setJourneyPoints(List<RoutePoints> journeyPoints) {
+//        this.journeyPoints = journeyPoints;
+//    }
 }

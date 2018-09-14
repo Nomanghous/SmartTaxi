@@ -42,7 +42,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.firebase.client.Firebase;
-import com.firebase.client.ValueEventListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -929,7 +928,7 @@ FareCalculation fareCalculation;
         for (LatLng latLng : polyline.getPoints()) {
             pointsList.add(new RoutePoints(latLng.latitude, latLng.longitude));
         }
-        new_order.setSELECTED_ROUTE(pointsList);
+        new_order.setSelectedRoute(pointsList);
     }
 
     @Override

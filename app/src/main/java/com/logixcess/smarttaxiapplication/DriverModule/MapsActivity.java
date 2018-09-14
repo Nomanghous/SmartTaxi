@@ -390,7 +390,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     }
 
     private void getRoutePoints() {
-        for (RoutePoints points : currentOrder.getSELECTED_ROUTE()){
+        for (RoutePoints points : currentOrder.getSelectedRoute()){
             waypoints.add(new LatLng(points.getLatitude(),points.getLongitude()));
         }
     }

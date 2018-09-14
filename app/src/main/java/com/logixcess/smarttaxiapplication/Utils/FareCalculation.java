@@ -133,8 +133,6 @@ public class FareCalculation
         int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
-            
-            
             if(allPoints.containsKey(key)){
                 List<LatLng> latLngList = allPoints.get(key);
                 boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
@@ -163,6 +161,8 @@ public class FareCalculation
         currentSharedRide.setAllJourneyPoints(allPoints);
         return currentSharedRide;
     }
+    
+ 
     
     private int getActiveRideUsersCount(List<Order> ordersInSharedRide) {
         int Count = 0;
@@ -201,8 +201,8 @@ public class FareCalculation
                 currentFare = getRegularKMFare(totalPassengers,fareRecord);
                 break;
         }
-        HashMap<LatLng,Double> fare = fareRecord.getUserFare();
-        fare.put(cLatLng,currentFare);
+        HashMap<String,Double> fare = fareRecord.getUserFare();
+        fare.put(cLatLng.toString(),currentFare);
         fareRecord.setUserFare(fare);
         return fareRecord;
     }
