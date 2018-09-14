@@ -30,6 +30,7 @@ import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
@@ -65,7 +66,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
     private DatabaseReference db_ref_order_to_driver;
     DatabaseReference db_ref;
     private HashMap<String, UserFareRecord> mPassengerFares;
-    private HashMap<String, List<LatLng>> mJourneyPoints;
+    private HashMap<String, List<RoutePoints>> mJourneyPoints;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +85,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
         if(new_order != null){
             new_order.setUser_id(MainActivity.mFirebaseUser.getUid());
+            new_order.setOnRide(false);
             tv_pickup.setText(new_order.getPickup());
             tv_destination.setText(new_order.getDropoff());
             tv_distance.setText(new_order.getTotal_kms());
@@ -156,8 +158,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
                         String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
                         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
-                        List<LatLng> latLngs = new ArrayList<>();
-                        latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
+                        List<RoutePoints> latLngs = new ArrayList<>();
+                        latLngs.add(new RoutePoints(new_order.getPickupLat(),new_order.getPickupLong()));
                         fareRecord.setLatLngs(latLngs);
                         fareRecord.setUserFare(userFare);
                         mJourneyPoints = new HashMap<>();
@@ -321,8 +323,9 @@ public class OrderDetailsActivity extends AppCompatActivity {
         LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
         String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
-        List<LatLng> latLngs = new ArrayList<>();
-        latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
+        
+        List<RoutePoints> latLngs = new ArrayList<>();
+        latLngs.add(new RoutePoints(new_order.getPickupLat(),new_order.getPickupLong()));
         fareRecord.setLatLngs(latLngs);
         fareRecord.setUserFare(userFare);
         mJourneyPoints = new HashMap<>();

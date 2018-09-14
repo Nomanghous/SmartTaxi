@@ -13,7 +13,7 @@ public class SharedRide extends Group implements Parcelable {
     private HashMap<String, Boolean> passengers;
     private HashMap<String, Boolean> orderIDs;
     private HashMap<String, UserFareRecord> passengerFares; // passengerID and Fare
-    private HashMap<String,List<LatLng>> allJourneyPoints;
+    private HashMap<String,List<RoutePoints>> allJourneyPoints;
     
     @Exclude
     private HashMap<String,LatLng> startingPoints;
@@ -22,9 +22,12 @@ public class SharedRide extends Group implements Parcelable {
     private HashMap<String,LatLng> endingPoints;
     
     
-    public SharedRide(HashMap<String,Boolean> passengers, HashMap<String, Boolean> orderIds){
+    public SharedRide(HashMap<String,Boolean> passengers, HashMap<String, Boolean> orderIds,HashMap<String, UserFareRecord> passengerFares,
+                      HashMap<String,List<RoutePoints>> allJourneyPoints){
         this.passengers = passengers;
         this.orderIDs = orderIds;
+        this.passengerFares = passengerFares;
+        this.allJourneyPoints = allJourneyPoints;
     }
 
     public SharedRide() {
@@ -121,11 +124,11 @@ public class SharedRide extends Group implements Parcelable {
         this.endingPoints = endingPoints;
     }
     
-    public HashMap<String, List<LatLng>> getAllJourneyPoints() {
+    public HashMap<String, List<RoutePoints>> getAllJourneyPoints() {
         return allJourneyPoints;
     }
     
-    public void setAllJourneyPoints(HashMap<String, List<LatLng>> allJourneyPoints) {
+    public void setAllJourneyPoints(HashMap<String, List<RoutePoints>> allJourneyPoints) {
         this.allJourneyPoints = allJourneyPoints;
     }
 }

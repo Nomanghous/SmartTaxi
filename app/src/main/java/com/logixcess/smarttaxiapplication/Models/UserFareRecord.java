@@ -16,7 +16,7 @@ import java.util.List;
 
 public class UserFareRecord {
     String userId;
-    List<LatLng> latLngs;
+    List<RoutePoints> latLngs;
     HashMap<String, Double> userFare;
     double baseFare;
     public HashMap<String, Double> getUserFare() {
@@ -35,11 +35,11 @@ public class UserFareRecord {
         this.userId = userId;
     }
     
-    public List<LatLng> getLatLngs() {
+    public List<RoutePoints> getLatLngs() {
         return latLngs;
     }
     
-    public void setLatLngs(List<LatLng> latLngs) {
+    public void setLatLngs(List<RoutePoints> latLngs) {
         this.latLngs = latLngs;
     }
     
