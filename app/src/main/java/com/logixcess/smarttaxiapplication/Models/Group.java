@@ -4,12 +4,17 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Group {
-    String group_id, user_id,driver_id;
-    long time;
-    String order_id;
-    String region_name;
-    int radius_constraint;
-    double startingLat, startingLng;
+    public String group_id, user_id,driver_id;
+    private long time;
+    private String order_id;
+    private String region_name;
+    private int radius_constraint;
+    private double startingLat, startingLng;
+    
+    
+    
+    
+    
     public Group(){}
 
     public Group(String group_id, String user_id, long time,String driver_id) {

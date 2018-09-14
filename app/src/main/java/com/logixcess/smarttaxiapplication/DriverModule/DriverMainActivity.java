@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
+import com.google.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -33,6 +34,7 @@ import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
+import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
@@ -40,6 +42,7 @@ import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -59,7 +62,8 @@ public class DriverMainActivity extends AppCompatActivity {
     protected String CURRENT_GROUP_ID = null;
     protected SharedRide currentSharedRide;
     protected String currentUserId = "";
-
+    protected FareCalculation mFareCalc = new FareCalculation();
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -409,6 +413,11 @@ public class DriverMainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRejectOrderReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mViewOrderReceiver);
         super.onDestroy();
+        
     }
+    
+    
+  
+    
 
 }

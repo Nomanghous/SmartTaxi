@@ -551,6 +551,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     e.printStackTrace();
                 }
             }
+            runtimeFareCalculationStart();
         }
     }
     
@@ -806,5 +807,21 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
     }
     
+      /*
+    Shared Ride Fare Calculation
+    */
     
+    private void runtimeFareCalculationStart(){
+        if(currentSharedRide != null) {
+            // current ride is shared
+            currentSharedRide = mFareCalc.calculateFareForSharedRide(currentSharedRide, myLocation, currentOrder.getVehicle_id());
+        }else{
+        
+        }
+    }
+    
+    
+    private void runtimeFareCalculationEnd(){
+    
+    }
 }
