@@ -72,5 +72,7 @@
     <string name="minimum_password">Password must be greater than 6</string>
     <string name="auth_failed">Auth Failed</string>
     <string name="additional_details">Additional Details :</string>
+    <string name="speech_prompt">Do you want to accept or reject ?</string>
+    <string name="speech_not_supported">Speech Not Supported</string>
 
 </resources>
