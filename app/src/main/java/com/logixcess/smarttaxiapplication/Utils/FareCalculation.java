@@ -21,6 +21,8 @@ import java.util.List;
 
 import java.util.Map;
 
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
+
 public class FareCalculation
 {
     
@@ -202,7 +204,8 @@ public class FareCalculation
                 break;
         }
         HashMap<String,Double> fare = fareRecord.getUserFare();
-        fare.put(cLatLng.toString(),currentFare);
+        String latlngKey = cLatLng.toString();
+        fare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),currentFare);
         fareRecord.setUserFare(fare);
         return fareRecord;
     }

@@ -153,7 +153,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         fareRecord.setUserId(new_order.getUser_id());
                         fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
                         HashMap<String,Double> userFare = new HashMap<>();
-                        userFare.put(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString(),0.0);
+                        String latlngKey = new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString();
+                        userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
                         List<LatLng> latLngs = new ArrayList<>();
                         latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
                         fareRecord.setLatLngs(latLngs);
@@ -316,7 +317,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
         fareRecord.setUserId(new_order.getUser_id());
         fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
         HashMap<String ,Double> userFare = new HashMap<>();
-        userFare.put(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString(),0.0);
+        String latlngKey = new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString();
+        userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
         List<LatLng> latLngs = new ArrayList<>();
         latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
         fareRecord.setLatLngs(latLngs);

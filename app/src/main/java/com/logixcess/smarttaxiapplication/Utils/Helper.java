@@ -37,11 +37,22 @@ public class Helper {
     public static final String VEHICLE_THREE_WHEELER = "three_wheeler";
     public static final String REF_FEEBACK = "Feedback";
 
+    public static final String commaSeparator = "-";
+    public static final String dotSeparator = "_";
+    
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000; // it's in meters
     public static boolean IS_FROM_CHILD = false;
 
 
+    public static String getRefinedLatLngKeyForHashMap(String latlng){
+        return latlng.replace("(","").replace(")","").replace(",",commaSeparator).replace(".",dotSeparator);
+    }
+    
+    public static String decodeLatLngKeyForHashMap(String latlng){
+        return latlng.replace(commaSeparator, ",").replace(dotSeparator,".");
+    }
+    
     public static boolean checkWithinRadius(Location mine, LatLng other) {
         if(mine == null)
             return false;
