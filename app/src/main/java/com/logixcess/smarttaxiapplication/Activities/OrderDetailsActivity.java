@@ -311,7 +311,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
             //passengersIds.put(userId,true);
             sharedRide.setPassengers(passengersIds);
         }
-        mPassengerFares = currentSharedRide.getPassengerFares();
+        mPassengerFares = new HashMap<>();
         UserFareRecord fareRecord = new UserFareRecord();
         fareRecord.setUserId(new_order.getUser_id());
         fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
