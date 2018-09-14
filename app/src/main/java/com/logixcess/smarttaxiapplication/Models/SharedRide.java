@@ -18,6 +18,7 @@ public class SharedRide extends Group implements Parcelable {
     
     @Exclude
     private HashMap<String,LatLng> startingPoints;
+    
     @Exclude
     private HashMap<String,LatLng> endingPoints;
     

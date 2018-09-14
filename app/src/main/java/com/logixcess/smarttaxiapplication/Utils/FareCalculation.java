@@ -154,7 +154,7 @@ public class FareCalculation
         }
         currentSharedRide.setPassengerFares(allFareRecords);
         currentSharedRide.setAllJourneyPoints(allPoints);
-        return null;
+        return currentSharedRide;
     }
     
     

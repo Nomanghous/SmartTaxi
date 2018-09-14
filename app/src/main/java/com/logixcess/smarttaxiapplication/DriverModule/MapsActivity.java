@@ -54,6 +54,7 @@ import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
+import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
@@ -100,6 +101,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private HashMap<String, Boolean> orderIDs;
     private HashMap<String, Marker> PickupMarkers;
     private List<User> currentPassengers;
+    private HashMap<String, UserFareRecord> currentPassengerFares;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -450,10 +452,16 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 currentSharedRide = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
+                
+                
                 if(currentSharedRide == null || currentSharedRide.getGroup_id() == null){
                     Toast.makeText(MapsActivity.this, "Something went Wrong.", Toast.LENGTH_SHORT).show();
                     finish();
                 }else{
+                    if(currentSharedRide.getPassengerFares() == null)
+                        currentSharedRide.setPassengerFares(new HashMap<>());
+                    currentPassengerFares = currentSharedRide.getPassengerFares();
+                    
                     orderIDs = currentSharedRide.getOrderIDs();
                     goGetOrdersForGroup();
                 }
@@ -815,6 +823,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(currentSharedRide != null) {
             // current ride is shared
             currentSharedRide = mFareCalc.calculateFareForSharedRide(currentSharedRide, myLocation, currentOrder.getVehicle_id());
+            Log.i("FareCalculation", currentSharedRide.getPassengerFares().toString());
         }else{
         
         }

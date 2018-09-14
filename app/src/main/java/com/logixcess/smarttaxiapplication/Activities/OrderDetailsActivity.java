@@ -32,16 +32,19 @@ import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
+import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.SmartTaxiApp;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
+import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +64,9 @@ public class OrderDetailsActivity extends AppCompatActivity {
     private HashMap<String, Boolean> mOrderList;
     private DatabaseReference db_ref_order_to_driver;
     DatabaseReference db_ref;
+    private HashMap<String, UserFareRecord> mPassengerFares;
+    private HashMap<String, List<LatLng>> mJourneyPoints;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,6 +148,21 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         mOrderList.put(new_order.getOrder_id(), true);
                         currentSharedRide.setPassengers(mPassengerList);
                         currentSharedRide.setOrderIDs(mOrderList);
+                        mPassengerFares = currentSharedRide.getPassengerFares();
+                        UserFareRecord fareRecord = new UserFareRecord();
+                        fareRecord.setUserId(new_order.getUser_id());
+                        fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
+                        HashMap<LatLng,Double> userFare = new HashMap<>();
+                        userFare.put(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()),0.0);
+                        List<LatLng> latLngs = new ArrayList<>();
+                        latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
+                        fareRecord.setLatLngs(latLngs);
+                        fareRecord.setUserFare(userFare);
+                        mJourneyPoints = new HashMap<>();
+                        mJourneyPoints.put(new_order.getUser_id(),latLngs);
+                        currentSharedRide.setAllJourneyPoints(mJourneyPoints);
+                        mPassengerFares.put(new_order.getUser_id(),fareRecord);
+                        currentSharedRide.setPassengerFares(mPassengerFares);
                         updateThatSpecificOrderToAccepted(currentSharedRide.getGroup_id());
                     }
                 }
@@ -290,8 +311,24 @@ public class OrderDetailsActivity extends AppCompatActivity {
             //passengersIds.put(userId,true);
             sharedRide.setPassengers(passengersIds);
         }
+        mPassengerFares = currentSharedRide.getPassengerFares();
+        UserFareRecord fareRecord = new UserFareRecord();
+        fareRecord.setUserId(new_order.getUser_id());
+        fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
+        HashMap<LatLng,Double> userFare = new HashMap<>();
+        userFare.put(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()),0.0);
+        List<LatLng> latLngs = new ArrayList<>();
+        latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
+        fareRecord.setLatLngs(latLngs);
+        fareRecord.setUserFare(userFare);
+        mJourneyPoints = new HashMap<>();
+        mJourneyPoints.put(new_order.getUser_id(),latLngs);
+        currentSharedRide.setAllJourneyPoints(mJourneyPoints);
+        mPassengerFares.put(new_order.getUser_id(),fareRecord);
+        currentSharedRide.setPassengerFares(mPassengerFares);
         new_order.setStatus(Order.OrderStatusInProgress);
         db_ref_group.child(groupId).setValue(sharedRide);
+        
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);
         db_ref_order_to_driver.child(new_order.getDriver_id()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
         CloseActivity();
