@@ -21,6 +21,7 @@ public class Constants
     public static String selected_vehicle = Helper.VEHICLE_CAR;
     public static String user_image_path = "";
     public static String group_id = "";
+    public static String notificationPayload = "";
     public static int group_radius = 0;
 
 }

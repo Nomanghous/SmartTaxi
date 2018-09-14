@@ -38,6 +38,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.AutocompleteFilter;
@@ -46,8 +47,10 @@ import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -61,6 +64,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.BaseActivity;
+import com.logixcess.smarttaxiapplication.Activities.LoginActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Activities.OrderDetailsActivity;
 import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
@@ -714,6 +718,24 @@ AlertDialog builder;
                 navItemIndex = 6;
                 getCurrentOrderId(false);
                 break;
+            case R.id.nav_logout:
+                AuthUI.getInstance()
+                        .signOut(MainActivity.this)
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            public void onComplete(@NonNull Task<Void> task) {
+                                // user is now signed out
+                                if(task.isSuccessful())
+                                {
+                                    startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                                    finish();
+                                }
+                                else
+                                {
+                                    Toast.makeText(MainActivity.this,"Error "+task.getException(),Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                break;
             default:
                 navItemIndex = 0;
 
@@ -838,6 +860,23 @@ AlertDialog builder;
                         CURRENT_TAG = "current_ride";
                         getCurrentOrderId(false);
                         break;
+                    case R.id.nav_logout:
+                        AuthUI.getInstance()
+                                .signOut(MainActivity.this)
+                                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        // user is now signed out
+                                        if(task.isSuccessful())
+                                        {
+                                            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                                            finish();
+                                        }
+                                        else
+                                        {
+                                            Toast.makeText(MainActivity.this,"Error"+task.getException(),Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
                     default:
                         navItemIndex = 0;
 

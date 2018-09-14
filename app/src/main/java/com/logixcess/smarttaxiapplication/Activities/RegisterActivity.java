@@ -88,16 +88,38 @@ public class RegisterActivity extends AppCompatActivity {
                     user.setUser_token(Constants.USER_TOKEN);
                 if(!TextUtils.isEmpty(et_address.getText().toString()))
                     user.setAddress(et_address.getText().toString());
+                else
+                    {
+                    et_address.setError("Address Field is Empty !");
+                    return;
+                }
                 user.setJoin_date(String.valueOf(System.currentTimeMillis()));
                 if(!TextUtils.isEmpty(et_name.getText().toString()))
                     user.setName(et_name.getText().toString());
+                else{
+                    et_name.setError("Name Field is Empty !");
+                    return;
+                }
                 if(!TextUtils.isEmpty(et_email.getText().toString()))
                     user.setEmail(et_email.getText().toString());
+                else
+                {
+                    et_email.setError("Email Field is Empty !");
+                    return;
+                }
                 if(!TextUtils.isEmpty(et_password.getText().toString()))
                     user.setPassword(et_password.getText().toString());
+                else
+                    {
+                    et_password.setError("Password Field is Empty !");
+                        return;
+                    }
                 if(!TextUtils.isEmpty(et_phone.getText().toString()))
                     user.setPhone(et_phone.getText().toString());
-
+                else {
+                    et_phone.setError("Phone Field is Empty !");
+                    return;
+                }
                 user.setUser_type(sp_user_types.getSelectedItem().toString());
                 if(Constants.FilePathUri != null && !TextUtils.isEmpty(Constants.FilePathUri.toString()))
                     UploadImageFileToFirebaseStorage(Constants.FilePathUri);

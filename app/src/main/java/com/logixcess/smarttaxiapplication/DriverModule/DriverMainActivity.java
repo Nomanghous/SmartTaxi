@@ -8,10 +8,12 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -34,6 +36,7 @@ import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
+import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
@@ -48,7 +51,7 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class DriverMainActivity extends AppCompatActivity {
+public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
     protected FirebaseDatabase firebase_db;
     protected DatabaseReference db_ref_order;
     protected DatabaseReference db_ref_drivers,db_ref_users;
@@ -62,11 +65,13 @@ public class DriverMainActivity extends AppCompatActivity {
     protected String CURRENT_GROUP_ID = null;
     protected SharedRide currentSharedRide;
     protected String currentUserId = "";
+    private TextToSpeech tts;
     protected FareCalculation mFareCalc = new FareCalculation();
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        tts = new TextToSpeech(this, this);
         if(!Helper.IS_FROM_CHILD) {
             setContentView(R.layout.activity_driver_main);
             setupBroadcastReceivers();
@@ -81,6 +86,35 @@ public class DriverMainActivity extends AppCompatActivity {
             everyTenSecondsTask();
             listenForDriverResponse(this,userMe.getUid());
         }
+
+        acceptingVoice();
+    }
+    @Override
+    public void onInit(int status) {
+
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = tts.setLanguage(Locale.US);
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } else {
+                //btnSpeak.setEnabled(true);
+                speakOut();
+            }
+
+        } else {
+            Log.e("TTS", "Initilization Failed!");
+        }
+
+    }
+
+    private void speakOut() {
+
+        //String text = txtText.getText().toString();
+
+        //tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
  
     public static void listenForDriverResponse(Context context, String driverId){
@@ -379,6 +413,7 @@ public class DriverMainActivity extends AppCompatActivity {
             NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
             String order_id = notificationPayload.getOrder_id();
             acceptOrder(order_id);
+            Constants.notificationPayload = "";
 
         }
     };
@@ -386,7 +421,7 @@ public class DriverMainActivity extends AppCompatActivity {
     private BroadcastReceiver mRejectOrderReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
+            Constants.notificationPayload = "";
         }
     };
 
@@ -396,7 +431,36 @@ public class DriverMainActivity extends AppCompatActivity {
 
         }
     };
+    public void acceptingVoice()
+    {
+        if(TextUtils.isEmpty(Constants.notificationPayload))
+            return;
+        Intent intent = new Intent(DriverMainActivity.this,MyNotificationManager.class);//"mAcceptOrderReceiver");
+        //IntentFilter intentFilter = new IntentFilter();
+        //intentFilter.addAction("HELLO1");
+        intent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
+        //intent.addFlags(intentFilter);
+        // Put the random number to intent to broadcast it
+        //intent.putExtra("RandomNumber",randomNumber);
+        // Send the broadcast
+        LocalBroadcastManager.getInstance(DriverMainActivity.this).sendBroadcast(intent);
 
+    }
+    public void rejectingVoice()
+    {
+        if(TextUtils.isEmpty(Constants.notificationPayload))
+            return;
+        Intent intent = new Intent(DriverMainActivity.this,MyNotificationManager.class);//"mAcceptOrderReceiver");
+        //IntentFilter intentFilter = new IntentFilter();
+        //intentFilter.addAction("HELLO1");
+        intent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
+        //intent.addFlags(intentFilter);
+        // Put the random number to intent to broadcast it
+        //intent.putExtra("RandomNumber",randomNumber);
+        // Send the broadcast
+        LocalBroadcastManager.getInstance(DriverMainActivity.this).sendBroadcast(intent);
+
+    }
 
     private void setupBroadcastReceivers() {
         LocalBroadcastManager.getInstance(this).registerReceiver(mAcceptOrderReceiver,
@@ -413,11 +477,6 @@ public class DriverMainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRejectOrderReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mViewOrderReceiver);
         super.onDestroy();
-        
     }
-    
-    
-  
-    
 
 }

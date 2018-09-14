@@ -340,7 +340,6 @@ public class NotificationUtils {
         rejectIntent.putExtra("id", id);
         PendingIntent rejectPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
-
         Intent viewIntent = new Intent(context, MyNotificationManager.class);
         viewIntent.setAction(MyNotificationManager.INTENT_FILTER_VIEW_ORDER);
         viewIntent.putExtra("data", payload);
@@ -351,6 +350,7 @@ public class NotificationUtils {
         List<NotificationCompat.Action> actions = new ArrayList<>();
         actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
         actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
+        Constants.notificationPayload = payload;
         sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent,id);
     }
 

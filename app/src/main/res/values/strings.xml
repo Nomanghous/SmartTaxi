@@ -48,12 +48,12 @@
         <item>Passenger</item>
     </string-array>
     <string-array name="institution_names">
-        <item>Lahore Grammer School</item>
-        <item>Educators School</item>
+        <item>SLIIT</item>
+        <item>IIT</item>
     </string-array>
     <string-array name="workplace_names">
-        <item>LogiXcess</item>
-        <item>TxLabz</item>
+        <item>Wso2</item>
+        <!--<item>TxLabz</item>-->
     </string-array>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class Order extends ParcelableSparseArray implements Parcelable {
 
     @Exclude
-    public static final int OrderStatusCompleted = 1, OrderStatusInProgress = 2, OrderStatusPending = 3,
+    public static final int OrderStatusCompleted = 1,OrderStatusCompleted_Review = 5, OrderStatusInProgress = 2, OrderStatusPending = 3,
                     OrderStatusCancelled = 4;
     @Exclude
     private boolean[] NotificaionsDone = new boolean[4];

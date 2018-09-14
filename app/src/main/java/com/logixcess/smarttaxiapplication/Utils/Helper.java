@@ -35,7 +35,7 @@ public class Helper {
     public static final String VEHICLE_NANO = "nano";
     public static final String VEHICLE_VIP = "vip";
     public static final String VEHICLE_THREE_WHEELER = "three_wheeler";
-
+    public static final String REF_FEEBACK = "Feedback";
 
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000; // it's in meters
