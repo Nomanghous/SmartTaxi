@@ -11,6 +11,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
+import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
 import com.logixcess.smarttaxiapplication.R;
@@ -125,14 +126,17 @@ public class FareCalculation
         return vehicle_cost;
     }
     
-    public SharedRide calculateFareForSharedRide(SharedRide currentSharedRide, Location myLocation, String vehicleType) {
+    public SharedRide calculateFareForSharedRide(List<Order> ordersInSharedRide, SharedRide currentSharedRide, Location myLocation, String vehicleType) {
         HashMap<String,List<LatLng>> allPoints = currentSharedRide.getAllJourneyPoints();
         HashMap<String,UserFareRecord> allFareRecords = currentSharedRide.getPassengerFares();
-        
+        int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
+            
+            
             if(allPoints.containsKey(key)){
                 List<LatLng> latLngList = allPoints.get(key);
+                boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
                 if(latLngList != null){
                     
                     Location lastPointLocation = new Location("lastPoint");
@@ -143,12 +147,14 @@ public class FareCalculation
                     if(totalDistanceFromPrevPoint > 30){
                         latLngList.add(new LatLng(lastPointLocation.getLatitude()
                                 ,lastPointLocation.getLongitude()));
-                        allPoints.put(key,latLngList);
+                        if(isOnRide)
+                            allPoints.put(key,latLngList);
                     }
                     UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
-                            currentSharedRide.getPassengers().size(), vehicleType,myLocation);
-                    allFareRecords.put(key,fareRecord);
+                            totalOnRide, vehicleType,myLocation);
+                    if(isOnRide)
+                        allFareRecords.put(key,fareRecord);
                 }
             }
         }
@@ -157,6 +163,14 @@ public class FareCalculation
         return currentSharedRide;
     }
     
+    private int getActiveRideUsersCount(List<Order> ordersInSharedRide) {
+        int Count = 0;
+        for(Order order : ordersInSharedRide)
+            if(order.getOnRide())
+                Count++;
+        
+        return Count;
+    }
     
     
     private UserFareRecord calculateFareOfSingleVehicle(List<LatLng> userLatLngs, UserFareRecord fareRecord, int totalPassengers, String vehicleType , Location myLocation){
@@ -245,6 +259,15 @@ public class FareCalculation
     
     
     
+    private boolean isDriverOnRide(String key, List<Order> orders){
+        // checking if driver is on ride
+        for(Order order : orders){
+            if(order.getUser_id().equals(key)){
+                return order.getOnRide();
+            }
+        }
+        return false;
+    }
     
     
     public MarkerOptions getVehicleMarkerOptions(Context context,LatLng latLng, String vehicleType){

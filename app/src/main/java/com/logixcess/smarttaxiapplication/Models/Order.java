@@ -12,16 +12,19 @@ import java.util.ArrayList;
 public class Order extends ParcelableSparseArray implements Parcelable {
 
     @Exclude
-    public static final int OrderStatusCompleted = 1,OrderStatusCompleted_Review = 5, OrderStatusInProgress = 2, OrderStatusPending = 3,
+    public static final int OrderStatusCompleted = 1, OrderStatusCompletedReview = 5,
+            OrderStatusInProgress = 2, OrderStatusPending = 3,
                     OrderStatusCancelled = 4;
+    
     @Exclude
     private boolean[] NotificaionsDone = new boolean[4];
     
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
+    
     private String order_id;
-    private Boolean isScheduled, isShared;
+    private Boolean isScheduled, isShared, isOnRide;
     private int status = 0; // nothing
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
     private ArrayList<RoutePoints> SELECTED_ROUTE;
@@ -31,7 +34,8 @@ public class Order extends ParcelableSparseArray implements Parcelable {
 
     }
 
-    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled, Boolean isShared, int status, ArrayList<RoutePoints> selectedRoute,int passenger_status) {
+    public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled,
+                 Boolean isShared, int status, ArrayList<RoutePoints> selectedRoute,int passenger_status,boolean isOnRide) {
         this.pickup = pickup;
         this.dropoff = dropoff;
         this.pickupLat = pickupLat;
@@ -54,6 +58,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         this.status = status;
         this.SELECTED_ROUTE = selectedRoute;
         this.passenger_status = passenger_status;
+        this.isOnRide = isOnRide;
     }
 
 
@@ -226,8 +231,15 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     public Boolean getScheduled() {
         return isScheduled;
     }
-
-
+    
+    public Boolean getOnRide() {
+        return isOnRide;
+    }
+    
+    public void setOnRide(Boolean onRide) {
+        isOnRide = onRide;
+    }
+    
     public void setScheduled(Boolean scheduled) {
         isScheduled = scheduled;
     }
@@ -278,6 +290,8 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         status = in.readInt();
         passenger_status = in.readInt();
         SELECTED_ROUTE = in.readArrayList(LatLng.class.getClassLoader());
+        byte tmIsOnRide = in.readByte();
+        isOnRide = tmIsOnRide == 0 ? null : tmIsOnRide == 1;
     }
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -304,6 +318,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         dest.writeInt(status);
         dest.writeInt(passenger_status);
         dest.writeList(SELECTED_ROUTE);
+        dest.writeByte((byte) (isOnRide == null ? 0 : isOnRide ? 1 : 2));
     }
 
     public ArrayList<RoutePoints> getSELECTED_ROUTE() {

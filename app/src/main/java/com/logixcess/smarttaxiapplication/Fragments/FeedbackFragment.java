@@ -1,7 +1,6 @@
 package com.logixcess.smarttaxiapplication.Fragments;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -23,8 +22,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
-import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Feedback;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
@@ -146,7 +143,7 @@ public class FeedbackFragment extends Fragment {
                                 public void onComplete(@NonNull Task<Void> task) {
                                     if (task.isSuccessful())
                                         Toast.makeText(getContext(), "Thank you for your Feeback !", Toast.LENGTH_SHORT).show();
-                                    db_ref_order.child("status").setValue(Order.OrderStatusCompleted_Review).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    db_ref_order.child("status").setValue(Order.OrderStatusCompletedReview).addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if (task.isSuccessful())

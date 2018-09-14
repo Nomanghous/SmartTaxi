@@ -1,9 +1,6 @@
 package com.logixcess.smarttaxiapplication.DriverModule;
 
 import android.Manifest;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
@@ -13,8 +10,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -40,7 +35,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -50,7 +44,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
-import com.logixcess.smarttaxiapplication.Models.Passenger;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
@@ -97,7 +90,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private boolean IS_ROUTE_ADDED = false;
 
 
-    List<Order> ORDERS_IN_SHARED_RIDE = null;
+    List<Order> ordersInSharedRide = null;
     private HashMap<String, Boolean> orderIDs;
     private HashMap<String, Marker> PickupMarkers;
     private List<User> currentPassengers;
@@ -157,7 +150,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             });
             try {
                 if(currentOrder.getShared()) {
-                    ORDERS_IN_SHARED_RIDE = new ArrayList<>();
+                    ordersInSharedRide = new ArrayList<>();
                     goFetchOrderById();
                 }
             }catch (NullPointerException i){}
@@ -287,9 +280,19 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             pickup.setLatitude(marker.getPosition().latitude);
             pickup.setLongitude(marker.getPosition().longitude);
             distanceRemaining = myLocation.distanceTo(pickup);
-            for(Order order : ORDERS_IN_SHARED_RIDE){
+            
+            for(Order order : ordersInSharedRide){
                 if(order.getUser_id().equals(user.getUser_id())){
                     checkForDistanceToSendNotification(order,user,distanceRemaining);
+                    
+                    if(order.getStatus() == Order.OrderStatusInProgress) {
+                        if (distanceRemaining < 10) {
+                            order.setOnRide(true);
+                        } else {
+                            order.setOnRide(false);
+                        }
+                    }
+                    
                     break;
                 }
             }
@@ -452,17 +455,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 currentSharedRide = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
-                
-                
                 if(currentSharedRide == null || currentSharedRide.getGroup_id() == null){
                     Toast.makeText(MapsActivity.this, "Something went Wrong.", Toast.LENGTH_SHORT).show();
                     finish();
                 }else{
-                    if(currentSharedRide.getPassengerFares() == null)
-                        currentSharedRide.setPassengerFares(new HashMap<>());
-                    currentPassengerFares = currentSharedRide.getPassengerFares();
-                    
                     orderIDs = currentSharedRide.getOrderIDs();
+                    
                     goGetOrdersForGroup();
                 }
             }
@@ -582,7 +580,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(currentSharedRide == null)
             return;
         else{
-            for (Order order : ORDERS_IN_SHARED_RIDE){
+            for (Order order : ordersInSharedRide){
                 if(order.getStatus() == Order.OrderStatusInProgress){
                     if(currentOrder != null && currentOrder.getOrder_id().equals(order.getOrder_id())){
                         // current order is in progress.
@@ -641,11 +639,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(order != null){
                         if(order.getStatus() == Order.OrderStatusInProgress &&
                                 order.getDriver_id().equals(userMe.getUid())){
-                            if(!ORDERS_IN_SHARED_RIDE.contains(order))
-                                ORDERS_IN_SHARED_RIDE.add(order);
+                            if(!ordersInSharedRide.contains(order))
+                                ordersInSharedRide.add(order);
                         }
                     }
-                    if(orderIDs.size() == ORDERS_IN_SHARED_RIDE.size()) {
+                    if(orderIDs.size() == ordersInSharedRide.size()) {
                         addMarkersForNewRiders();
                         addOrdersListener();
                     }
@@ -740,7 +738,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void updateOrderLocally(Order order) {
         int index = 0;
         boolean isToRefresh = false;
-        for(Order o : ORDERS_IN_SHARED_RIDE){
+        for(Order o : ordersInSharedRide){
             if(o.getOrder_id().equals(order.getOrder_id())){
                 if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
                         && order.getDriver_id().equals(userMe.getUid())) {
@@ -752,7 +750,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         isToRefresh = true;
                     }
                 }
-                ORDERS_IN_SHARED_RIDE.add(index,order);
+                ordersInSharedRide.add(index,order);
             }
             index++;
         }
@@ -781,8 +779,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
         if(currentPassengers == null)
             currentPassengers = new ArrayList<>();
-        if(ORDERS_IN_SHARED_RIDE != null){
-            for(Order order : ORDERS_IN_SHARED_RIDE){
+        if(ordersInSharedRide != null){
+            for(Order order : ordersInSharedRide){
                 if(!PickupMarkers.containsKey(order.getUser_id())){
                     Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
                     MarkerOptions options = new MarkerOptions().
@@ -822,7 +820,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void runtimeFareCalculationStart(){
         if(currentSharedRide != null) {
             // current ride is shared
-            currentSharedRide = mFareCalc.calculateFareForSharedRide(currentSharedRide, myLocation, currentOrder.getVehicle_id());
+            
+            currentSharedRide = mFareCalc.calculateFareForSharedRide(ordersInSharedRide, currentSharedRide, myLocation, currentOrder.getVehicle_id());
             Log.i("FareCalculation", currentSharedRide.getPassengerFares().toString());
         }else{
         
