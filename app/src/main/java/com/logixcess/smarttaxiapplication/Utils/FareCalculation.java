@@ -175,7 +175,7 @@ public class FareCalculation
     
     
     private UserFareRecord calculateFareOfSingleVehicle(List<LatLng> userLatLngs, UserFareRecord fareRecord, int totalPassengers, String vehicleType , Location myLocation){
-        double baseFare = getBaseFare2(vehicleType);
+        double baseFare = getBaseFare(vehicleType);
         fareRecord.setBaseFare(baseFare);
         double totalKms = getTotalDistanceTraveled(userLatLngs);
         int totalKmsRecord = fareRecord.getLatLngs().size();
