@@ -323,9 +323,9 @@ public class OrderDetailsActivity extends AppCompatActivity {
         fareRecord.setUserFare(userFare);
         mJourneyPoints = new HashMap<>();
         mJourneyPoints.put(new_order.getUser_id(),latLngs);
-        currentSharedRide.setAllJourneyPoints(mJourneyPoints);
+        sharedRide.setAllJourneyPoints(mJourneyPoints);
         mPassengerFares.put(new_order.getUser_id(),fareRecord);
-        currentSharedRide.setPassengerFares(mPassengerFares);
+        sharedRide.setPassengerFares(mPassengerFares);
         new_order.setStatus(Order.OrderStatusInProgress);
         db_ref_group.child(groupId).setValue(sharedRide);
         
