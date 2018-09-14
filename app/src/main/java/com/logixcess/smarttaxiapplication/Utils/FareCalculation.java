@@ -113,10 +113,11 @@ public class FareCalculation
                 base_fair =  50;
                 break;
         }
-        return getCostTotal(base_fair,Integer.parseInt(MapFragment.new_order.getTotal_kms())-1);
+        
+        return getCostTotal(base_fair, Double.parseDouble(MapFragment.new_order.getTotal_kms()) - 1);
     }
     
-    private double getCostTotal(double vehicle_cost,int kilometers)
+    private double getCostTotal(double vehicle_cost,double kilometers)
     {
         double discounted_price = (vehicle_cost * 40)/100;
         for(int i=1;i<=kilometers;i++)
