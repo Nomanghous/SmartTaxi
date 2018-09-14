@@ -246,10 +246,15 @@ public class NotificationUtils {
 
             switch (notificationPayload.getType()) {
                 case Helper.NOTI_TYPE_ORDER_CREATED:
+                    if(!isAppIsInBackground(context))
+                        return;
                     saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForFriendRequest(context,payload,notificationPayload);
                     break;
                 case Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE:
+                    if(!isAppIsInBackground(context))
+                        return;
+                    
                     saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForFriendRequest(context,payload,notificationPayload);
                     break;

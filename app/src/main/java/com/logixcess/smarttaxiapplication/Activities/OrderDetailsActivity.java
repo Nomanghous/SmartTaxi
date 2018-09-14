@@ -153,7 +153,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         fareRecord.setUserId(new_order.getUser_id());
                         fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
                         HashMap<String,Double> userFare = new HashMap<>();
-                        String latlngKey = new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString();
+                        LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
+                        String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
                         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
                         List<LatLng> latLngs = new ArrayList<>();
                         latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));
@@ -317,7 +318,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
         fareRecord.setUserId(new_order.getUser_id());
         fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
         HashMap<String ,Double> userFare = new HashMap<>();
-        String latlngKey = new LatLng(new_order.getPickupLat(),new_order.getPickupLong()).toString();
+        LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
+        String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
         List<LatLng> latLngs = new ArrayList<>();
         latLngs.add(new LatLng(new_order.getPickupLat(),new_order.getPickupLong()));

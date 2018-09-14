@@ -204,7 +204,7 @@ public class FareCalculation
                 break;
         }
         HashMap<String,Double> fare = fareRecord.getUserFare();
-        String latlngKey = cLatLng.toString();
+        String latlngKey = String.valueOf(cLatLng.latitude) + String.valueOf(cLatLng.longitude);
         fare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),currentFare);
         fareRecord.setUserFare(fare);
         return fareRecord;
