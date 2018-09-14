@@ -12,6 +12,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
 import com.logixcess.smarttaxiapplication.R;
@@ -130,24 +131,24 @@ public class FareCalculation
     }
     
     public SharedRide calculateFareForSharedRide(List<Order> ordersInSharedRide, SharedRide currentSharedRide, Location myLocation, String vehicleType) {
-        HashMap<String,List<LatLng>> allPoints = currentSharedRide.getAllJourneyPoints();
+        HashMap<String,List<RoutePoints>> allPoints = currentSharedRide.getAllJourneyPoints();
         HashMap<String,UserFareRecord> allFareRecords = currentSharedRide.getPassengerFares();
         int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
             if(allPoints.containsKey(key)){
-                List<LatLng> latLngList = allPoints.get(key);
+                List<RoutePoints> latLngList = allPoints.get(key);
                 boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
                 if(latLngList != null){
                     
                     Location lastPointLocation = new Location("lastPoint");
-                    lastPointLocation.setLatitude(latLngList.get(latLngList.size() - 1).latitude);
-                    lastPointLocation.setLongitude(latLngList.get(latLngList.size() - 1).longitude);
+                    lastPointLocation.setLatitude(latLngList.get(latLngList.size() - 1).getLatitude());
+                    lastPointLocation.setLongitude(latLngList.get(latLngList.size() - 1).getLongitude());
                     double totalDistanceFromPrevPoint = lastPointLocation.distanceTo(myLocation);
                     
                     if(totalDistanceFromPrevPoint > 30){
-                        latLngList.add(new LatLng(lastPointLocation.getLatitude()
-                                ,lastPointLocation.getLongitude()));
+                        latLngList.add(new RoutePoints(myLocation.getLatitude()
+                                ,myLocation.getLongitude()));
                         if(isOnRide)
                             allPoints.put(key,latLngList);
                     }
@@ -176,8 +177,8 @@ public class FareCalculation
     }
     
     
-    private UserFareRecord calculateFareOfSingleVehicle(List<LatLng> userLatLngs, UserFareRecord fareRecord, int totalPassengers, String vehicleType , Location myLocation){
-        double baseFare = getBaseFare(vehicleType);
+    private UserFareRecord calculateFareOfSingleVehicle(List<RoutePoints> userLatLngs, UserFareRecord fareRecord, int totalPassengers, String vehicleType , Location myLocation){
+        double baseFare = fareRecord.getBaseFare();
         fareRecord.setBaseFare(baseFare);
         double totalKms = getTotalDistanceTraveled(userLatLngs);
         int totalKmsRecord = fareRecord.getLatLngs().size();
@@ -187,8 +188,8 @@ public class FareCalculation
         return fareRecord;
     }
     
-    private UserFareRecord insertAnotherKm(LatLng cLatLng, UserFareRecord fareRecord, int totalPassengers) {
-        List<LatLng> kmLatLng = fareRecord.getLatLngs();
+    private UserFareRecord insertAnotherKm(RoutePoints cLatLng, UserFareRecord fareRecord, int totalPassengers) {
+        List<RoutePoints> kmLatLng = fareRecord.getLatLngs();
         kmLatLng.add(cLatLng);
         fareRecord.setLatLngs(kmLatLng);
         double currentFare;
@@ -204,7 +205,7 @@ public class FareCalculation
                 break;
         }
         HashMap<String,Double> fare = fareRecord.getUserFare();
-        String latlngKey = String.valueOf(cLatLng.latitude) + String.valueOf(cLatLng.longitude);
+        String latlngKey = String.valueOf(cLatLng.getLatitude()) + String.valueOf(cLatLng.getLongitude());
         fare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),currentFare);
         fareRecord.setUserFare(fare);
         return fareRecord;
@@ -237,24 +238,24 @@ public class FareCalculation
     
     
     
-    private double getTotalDistanceTraveled(List<LatLng> userLatLngs) {
+    private double getTotalDistanceTraveled(List<RoutePoints> userLatLngs) {
         double totalDistance = 0;
         Location lastPointLocation = null;
         Location nextPointLocation = new Location("nextPoint");
         
         for(int i = 0; i < userLatLngs.size(); i++){
-            LatLng c = userLatLngs.get(i);
+            RoutePoints c = userLatLngs.get(i);
             
             if(lastPointLocation == null){
                 lastPointLocation = new Location("lastPoint");
-                lastPointLocation.setLatitude(c.latitude);
-                lastPointLocation.setLongitude(c.longitude);
+                lastPointLocation.setLatitude(c.getLatitude());
+                lastPointLocation.setLongitude(c.getLongitude());
             }else{
-                nextPointLocation.setLatitude(c.latitude);
-                nextPointLocation.setLongitude(c.longitude);
+                nextPointLocation.setLatitude(c.getLatitude());
+                nextPointLocation.setLongitude(c.getLongitude());
                 totalDistance += lastPointLocation.distanceTo(nextPointLocation);
-                lastPointLocation.setLatitude(c.latitude);
-                lastPointLocation.setLongitude(c.longitude);
+                lastPointLocation.setLatitude(c.getLatitude());
+                lastPointLocation.setLongitude(c.getLongitude());
             }
             
         }

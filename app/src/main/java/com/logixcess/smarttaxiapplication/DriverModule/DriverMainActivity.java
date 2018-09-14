@@ -157,12 +157,12 @@ public class DriverMainActivity extends AppCompatActivity {
                             if (request.getDriverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
                                 NotificationPayload notificationPayload = new NotificationPayload();
                                 notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
-                                notificationPayload.setTitle("\"Request Accepted\"");
-                                notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
-                                notificationPayload.setUser_id("\"" + request.getUserId() + "\"");
-                                notificationPayload.setDriver_id("\"" + request.getDriverId() + "\"");
-                                notificationPayload.setOrder_id("\"\"");
-                                notificationPayload.setPercentage_left("\"" + -1 + "\"");
+                                notificationPayload.setTitle("Request Accepted");
+                                notificationPayload.setDescription("Your Group Ride Request is Accepted");
+                                notificationPayload.setUser_id(request.getUserId());
+                                notificationPayload.setDriver_id(request.getDriverId());
+                                notificationPayload.setOrder_id("");
+                                notificationPayload.setPercentage_left("-1");
                                 String str = new Gson().toJson(notificationPayload);
 
                                 try {
