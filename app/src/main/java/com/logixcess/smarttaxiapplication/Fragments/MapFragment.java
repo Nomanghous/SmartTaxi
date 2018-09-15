@@ -1053,12 +1053,18 @@ FareCalculation fareCalculation;
     private void goCheckSharedRideDriver(String driverId, Driver driver) {
         if (isOrderAccepted && firebase_db == null)
             return;
+        
+        if(thereIsActiveOrder)
+            return;
         DatabaseReference db_driver_order_vault =
                 firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
         db_driver_order_vault.child(driverId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                
                 if (dataSnapshot.exists()) {
+                    if(new_order == null)
+                        return;
                     if (new_order.getShared() && dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)) {
                         driverList.add(driver);
                         getActivity().runOnUiThread(new Runnable() {

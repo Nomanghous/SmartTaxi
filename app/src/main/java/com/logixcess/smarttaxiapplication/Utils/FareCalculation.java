@@ -61,18 +61,18 @@ public class FareCalculation
     public double getUserDiscountedPrice(int passenger_count)
     {
         double discounted_price = 0;
-        double basic_fair = getCost();
+        double basic_fare = getCost();
         if(passenger_count == 0)
         {
-            discounted_price = basic_fair; // ono one is available for share ride
+            discounted_price = basic_fare; // ono one is available for share ride
         }
         else if(passenger_count == 1)
         {
-            discounted_price = basic_fair - ((basic_fair / 100.0f) *10 ); // 10%
+            discounted_price = basic_fare - ((basic_fare / 100.0f) *10 ); // 10%
         }
         else if(passenger_count >= 2)
         {
-            discounted_price = basic_fair - ((basic_fair / 100.0f) *5 ); // 5%
+            discounted_price = basic_fare - ((basic_fare / 100.0f) *5 ); // 5%
         }
         return discounted_price;
     }
@@ -97,27 +97,27 @@ public class FareCalculation
     
     public double getBaseFare2(String vehicle)
     {
-        double base_fair = 0;
+        double base_fare = 0;
         switch(vehicle)
         {
             case Helper.VEHICLE_CAR:
-                base_fair =  70;
+                base_fare =  70;
                 break;
             case Helper.VEHICLE_MINI:
-                base_fair =  65;
+                base_fare =  65;
                 break;
             case Helper.VEHICLE_NANO:
-                base_fair =  60;
+                base_fare =  60;
                 break;
             case Helper.VEHICLE_VIP:
-                base_fair =  100;
+                base_fare =  100;
                 break;
             case Helper.VEHICLE_THREE_WHEELER:
-                base_fair =  50;
+                base_fare =  50;
                 break;
         }
         
-        return getCostTotal(base_fair, Double.parseDouble(MapFragment.new_order.getTotal_kms()) - 1);
+        return getCostTotal(base_fare, Double.parseDouble(MapFragment.new_order.getTotal_kms()) - 1);
     }
     
     private double getCostTotal(double vehicle_cost,double kilometers)
@@ -154,7 +154,7 @@ public class FareCalculation
                     }
                     UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
-                            totalOnRide, vehicleType,myLocation);
+                            totalOnRide, vehicleType,myLocation,key,ordersInSharedRide);
                     if(isOnRide)
                         allFareRecords.put(key,fareRecord);
                 }
@@ -177,22 +177,24 @@ public class FareCalculation
     }
     
     
-    private UserFareRecord calculateFareOfSingleVehicle(List<RoutePoints> userLatLngs, UserFareRecord fareRecord, int totalPassengers, String vehicleType , Location myLocation){
+    private UserFareRecord calculateFareOfSingleVehicle(List<RoutePoints> userLatLngs, UserFareRecord fareRecord,
+                                                        int totalPassengers, String vehicleType, Location myLocation, String key, List<Order> ordersInSharedRide){
         double baseFare = fareRecord.getBaseFare();
         fareRecord.setBaseFare(baseFare);
         double totalKms = getTotalDistanceTraveled(userLatLngs);
         int totalKmsRecord = fareRecord.getLatLngs().size();
         if(totalKms > totalKmsRecord){
-            fareRecord = insertAnotherKm(userLatLngs.get(userLatLngs.size() - 1),fareRecord,totalPassengers);
+            fareRecord = insertAnotherKm(userLatLngs.get(userLatLngs.size() - 1),fareRecord,totalPassengers, key,ordersInSharedRide,baseFare);
         }
         return fareRecord;
     }
     
-    private UserFareRecord insertAnotherKm(RoutePoints cLatLng, UserFareRecord fareRecord, int totalPassengers) {
+    private UserFareRecord insertAnotherKm(RoutePoints cLatLng, UserFareRecord fareRecord, int totalPassengers, String key, List<Order> ordersInSharedRide, double baseFare) {
         List<RoutePoints> kmLatLng = fareRecord.getLatLngs();
         kmLatLng.add(cLatLng);
         fareRecord.setLatLngs(kmLatLng);
         double currentFare;
+        
         switch (fareRecord.getLatLngs().size()){
             case 1:
                 currentFare = getFirstKMFare(fareRecord);
@@ -205,10 +207,38 @@ public class FareCalculation
                 break;
         }
         HashMap<String,Double> fare = fareRecord.getUserFare();
-        String latlngKey = String.valueOf(cLatLng.getLatitude()) + String.valueOf(cLatLng.getLongitude());
+        String latlngKey = String.valueOf(cLatLng.getLatitude()) + "," + String.valueOf(cLatLng.getLongitude());
         fare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),currentFare);
-        fareRecord.setUserFare(fare);
+        
+        Order order = getOrderByID(key,ordersInSharedRide);
+        if(order != null) {
+            HashMap<String, Double> temp = new HashMap<>();
+            latlngKey = String.valueOf(order.getPickupLat()) + "," + String.valueOf(order.getPickupLong());
+            if (fare.containsKey(Helper.getRefinedLatLngKeyForHashMap(latlngKey)) && fare.containsValue(0.0)) {
+                for (Map.Entry<String, Double> entry : fare.entrySet()) {
+                    String k = entry.getKey();
+                    Double val = entry.getValue();
+                    if(k.equals(latlngKey)){
+                        if(val == 0.0){
+                            temp.put(entry.getKey(),baseFare);
+                        }
+                    }else{
+                        temp.put(entry.getKey(),entry.getValue());
+                    }
+                }
+            }
+            fareRecord.setUserFare(temp);
+        }else
+            fareRecord.setUserFare(fare);
         return fareRecord;
+    }
+    
+    private Order getOrderByID(String key, List<Order> ordersInSharedRide) {
+        for (Order order : ordersInSharedRide)
+            if(order.getUser_id().equals(key))
+                return order;
+        
+        return null;
     }
     
     private double getFirstKMFare(UserFareRecord fareRecord) {

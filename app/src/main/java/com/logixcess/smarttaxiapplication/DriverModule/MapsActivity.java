@@ -1,6 +1,10 @@
 package com.logixcess.smarttaxiapplication.DriverModule;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
@@ -10,6 +14,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -82,19 +87,15 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private Marker mDriverMarker;
     private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
-
+    
     private double totalDistance = 0, totalTime = 120; // total time in minutes
     private DatabaseReference db_ref;
-    private String selectedPassengerId;
     private LatLng driver = null;
     private boolean IS_ROUTE_ADDED = false;
-
-
     List<Order> ordersInSharedRide = null;
     private HashMap<String, Boolean> orderIDs;
     private HashMap<String, Marker> PickupMarkers;
     private List<User> currentPassengers;
-    private HashMap<String, UserFareRecord> currentPassengerFares;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -428,6 +429,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(mDriverMarker != null && driver != null && myLocation != null){
             calculatePickupDistance();
         }
+        
 //            checkForDistanceToSendNotification();
     }
 
@@ -557,7 +559,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     e.printStackTrace();
                 }
             }
-            runtimeFareCalculationStart();
+            runtimeFareCalculation();
         }
     }
     
@@ -639,7 +641,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(order != null){
                         if(order.getStatus() == Order.OrderStatusInProgress &&
                                 order.getDriver_id().equals(userMe.getUid())){
-                            if(!ordersInSharedRide.contains(order))
+                            if(!checkIfOrderExists(order.getOrder_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
                         }
                     }
@@ -657,7 +659,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     }
     
-    
+    private boolean checkIfOrderExists(String key, List<Order> ordersInSharedRide) {
+        for(Order order : ordersInSharedRide)
+            if(order.getOrder_id().equals(key))
+                return true;
+        return false;
+    }
     private void addOrdersListener() throws NullPointerException{
         db_ref_order.child(currentOrderId).addChildEventListener(new ChildEventListener() {
             @Override
@@ -813,11 +820,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
     }
     
-      /*
+  /*
     Shared Ride Fare Calculation
     */
-    
-    private void runtimeFareCalculationStart(){
+    private void runtimeFareCalculation(){
         if(currentSharedRide != null) {
             // current ride is shared
             if(myLocation.getLatitude() == 0 && myLocation.getLongitude() == 0)
@@ -828,15 +834,32 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 Log.i("FareCalculation", currentSharedRide.getPassengerFares().get(key).getUserFare().toString());
                 Log.i("FareCalculation", "Count: " + currentSharedRide.getPassengerFares().get(key).getUserFare().size());
             }
-            
-            
+            db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
         }else{
         
         }
     }
     
-    
-    private void runtimeFareCalculationEnd(){
-    
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(locationBroadcastReceiver);
     }
+    
+    @Override
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(this).registerReceiver(locationBroadcastReceiver, new IntentFilter(Helper.BROADCAST_DRIVER_RESPONSE));
+    }
+    
+    BroadcastReceiver locationBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            myLocation = LocationManagerService.mLastLocation;
+            if(myLocation != null){
+                mDriverMarker.setPosition(new LatLng(myLocation.getLatitude(),myLocation.getLongitude()));
+            }
+        }
+    };
+    
 }

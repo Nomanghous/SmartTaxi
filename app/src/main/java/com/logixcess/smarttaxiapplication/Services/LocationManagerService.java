@@ -7,19 +7,23 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import com.logixcess.smarttaxiapplication.Utils.Helper;
 
 public class LocationManagerService extends Service
 {
     private static final String TAG = "GPS";
     private LocationManager mLocationManager = null;
-    private static final int LOCATION_INTERVAL = 1000;
+    private static final int LOCATION_INTERVAL = 5000;
     private static final float LOCATION_DISTANCE = 10f;
     public static Location mLastLocation;
+    
     private class LocationListener implements android.location.LocationListener
     {
-
-
+    
+    
         LocationListener(String provider)
         {
             Log.e(TAG, "LocationListener " + provider);
@@ -31,6 +35,7 @@ public class LocationManagerService extends Service
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+            broadcastLocation();
         }
 
         @Override
@@ -56,7 +61,15 @@ public class LocationManagerService extends Service
             new LocationListener(LocationManager.GPS_PROVIDER),
             new LocationListener(LocationManager.NETWORK_PROVIDER)
     };
-
+    
+    private void broadcastLocation() {
+        Intent intent = new Intent(Helper.BROADCAST_LOCATION);
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
+        localBroadcastManager.sendBroadcast(intent);
+    }
+    
+    
+    
     @Override
     public IBinder onBind(Intent arg0)
     {
