@@ -378,7 +378,7 @@ FareCalculation fareCalculation;
     }
 
     public void getDriverList(List<Driver> drivers) {
-        if (new_order == null)
+        if (new_order == null || thereIsActiveOrder)
             return;
         for (Driver driver : drivers)
             goCheckSharedRideDriver(driver.getFk_user_id(), driver);
@@ -1591,10 +1591,12 @@ FareCalculation fareCalculation;
                 polyline.setTag(route_details.get(i + 1));
                 if (i == 0) {
                     addSelectedRoute(polyline);
+                    ct_details.setVisibility(View.VISIBLE);
+                    tv_distance.setText("Distance: ".concat(distance).concat(" km"));
+                    new_order.setTotal_kms(distance);
+    
                 }
-                ct_details.setVisibility(View.VISIBLE);
-                tv_distance.setText("Distance: ".concat(distance).concat(" km"));
-                new_order.setTotal_kms(distance);
+                
                 polyLineList.add(polyline);
                 refreshDrivers();
                 
