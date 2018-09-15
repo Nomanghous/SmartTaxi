@@ -10,6 +10,8 @@
 package com.logixcess.smarttaxiapplication.CustomerModule;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -119,6 +121,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             }else if(currentOrder != null) {
             
             }else{
+                Intent returnIntent = new Intent();
+                setResult(Activity.RESULT_OK,returnIntent);
                 finish();
                 return;
             }
@@ -169,6 +173,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
             // driver id not provided
+            Intent returnIntent = new Intent();
+            setResult(Activity.RESULT_OK,returnIntent);
             finish();
         }
 
@@ -259,9 +265,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private void checkForDistanceToSendNotification()  {
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
         mDriverMarker.setPosition(driver);
-        if(percentageLeft < 100) {
-            Toast.makeText(this, "Driver has arrived", Toast.LENGTH_SHORT).show();
-        }
+        
     }
 
     private MarkerOptions getDesiredMarker(int kind, LatLng posToSet, String title) {
@@ -400,6 +404,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 if(task.isSuccessful()){
                     sendPushNotification();
                     Toast.makeText(CustomerMapsActivity.this, "Order Successfully Completed", Toast.LENGTH_SHORT).show();
+                    Intent returnIntent = new Intent();
+                    setResult(Activity.RESULT_OK,returnIntent);
                     finish();
                 }
             }

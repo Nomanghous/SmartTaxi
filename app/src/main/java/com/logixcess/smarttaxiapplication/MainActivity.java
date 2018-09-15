@@ -108,6 +108,7 @@ public class MainActivity extends BaseActivity
     private static final int REQUEST_CODE_LOCATION = 1021;
     private static final int REQUEST_CODE_LOCATION_DROP_OFF = 1022;
     private static final int REQUEST_CODE_ORDER_CREATION = 1023;
+    private static final int REQUEST_CODE_MAPS = 1024;
     Order order_pending;
     Handler mHandler;
     NavigationView navigationView;
@@ -520,6 +521,12 @@ AlertDialog builder;
         }else if(requestCode == REQUEST_CODE_ORDER_CREATION){
             if(resultCode == RESULT_OK){
                 mapFragment.resetUI();
+            }
+        }else if(requestCode == REQUEST_CODE_MAPS){
+            if(resultCode == RESULT_OK){
+                mapFragment.resetUI();
+                mapFragment.setThereIsActiveOrder(false);
+                
             }
         }
 
@@ -987,7 +994,7 @@ AlertDialog builder;
     private void openOrderActivity(Order order) {
         Intent intent = new Intent(MainActivity.this, CustomerMapsActivity.class);
         intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
-        startActivity(intent);
+        startActivityForResult(intent,REQUEST_CODE_MAPS);
     }
 
     @Override
@@ -1013,7 +1020,7 @@ AlertDialog builder;
                                 intent.putExtra(CustomerMapsActivity.KEY_CURRENT_SHARED_RIDE, notificationPayload.getGroup_id());
                             }
                             intent.putExtra(CustomerMapsActivity.KEY_CURRENT_ORDER, order);
-                            startActivity(intent);
+                            startActivityForResult(intent,REQUEST_CODE_MAPS);
                             IS_FOR_ORDER_VIEW = false;
                             notificationPayload = null;
                         }
