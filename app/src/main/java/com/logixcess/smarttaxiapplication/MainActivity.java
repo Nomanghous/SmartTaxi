@@ -961,7 +961,8 @@ AlertDialog builder;
                             if(order.getStatus() == Order.OrderStatusInProgress){
                                 if(!isForConditionCheck)
                                     openOrderActivity(order);
-                                mapFragment.setThereIsActiveOrder(true);
+                                if(mapFragment != null)
+                                    mapFragment.setThereIsActiveOrder(true);
                                 findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
                                 break;
                             }

@@ -121,7 +121,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     }
                 }else {
                     new_order.setStatus(Order.OrderStatusInProgress);
-
                     db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
@@ -159,7 +158,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
                         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
                         List<RoutePoints> latLngs = new ArrayList<>();
-                        latLngs.add(new RoutePoints(new_order.getPickupLat(),new_order.getPickupLong()));
+                        latLngs.add(new RoutePoints(new_order.getPickupLat(), new_order.getPickupLong()));
                         fareRecord.setLatLngs(latLngs);
                         fareRecord.setUserFare(userFare);
                         mJourneyPoints = new HashMap<>();
@@ -333,7 +332,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
         sharedRide.setAllJourneyPoints(mJourneyPoints);
         mPassengerFares.put(new_order.getUser_id(),fareRecord);
         sharedRide.setPassengerFares(mPassengerFares);
-        new_order.setStatus(Order.OrderStatusInProgress);
+        new_order.setStatus(Order.OrderStatusWaiting);
         db_ref_group.child(groupId).setValue(sharedRide);
         
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order);

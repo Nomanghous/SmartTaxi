@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.view.animation.Interpolator;
@@ -49,6 +50,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -136,9 +138,14 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             driverLocation = LocationManagerService.mLastLocation;
             db_ref = FirebaseDatabase.getInstance().getReference();
             db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(currentOrder.getDriver_id());
-            db_ref_driver.addValueEventListener(new ValueEventListener() {
+            db_ref_driver.addChildEventListener(new ChildEventListener() {
                 @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                }
+
+                @Override
+                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                     if(dataSnapshot.exists()){
                         Driver driver = dataSnapshot.getValue(Driver.class);
                         if(driver != null && mMap != null && driverLocation != null) {
@@ -149,12 +156,23 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                         }
                     }
                 }
+
+                @Override
+                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                }
+
+                @Override
+                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                }
+
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
 
                 }
             });
-            db_ref_user = db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id());
+                    db_ref_user = db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id());
             db_ref_user.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -397,7 +415,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     public void markOrderAsComplete(View view) {
         // change the order status
-
         db_ref_order.child(currentOrder.getOrder_id()).child("status").setValue(Order.OrderStatusCompleted).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

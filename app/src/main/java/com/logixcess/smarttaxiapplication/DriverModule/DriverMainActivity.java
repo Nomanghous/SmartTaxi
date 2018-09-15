@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -72,7 +73,9 @@ public class DriverMainActivity extends AppCompatActivity {
     protected FareCalculation mFareCalc = new FareCalculation();
     private static final int REQ_CODE_SPEECH_INPUT = 100;
     Boolean isPromptDismissed = false;
-
+    protected List<Order> ordersInSharedRide = null;
+    protected HashMap<String, Boolean> orderIDs;
+    protected List<User> currentPassengers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -307,7 +310,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     currentOrder = dataSnapshot.getValue(Order.class);
                     if(currentOrder != null){
-                        if(currentOrder.getStatus() == Order.OrderStatusCompleted ){
+                        if(!currentOrder.getShared() && currentOrder.getStatus() == Order.OrderStatusCompleted ){
                             db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
@@ -316,7 +319,7 @@ public class DriverMainActivity extends AppCompatActivity {
                                 }
                             });
                             return;
-                        }else if(currentOrder.getStatus() == Order.OrderStatusCancelled){
+                        }else if(!currentOrder.getShared() && currentOrder.getStatus() == Order.OrderStatusCancelled){
                             db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
@@ -326,13 +329,13 @@ public class DriverMainActivity extends AppCompatActivity {
                             });
                             return;
                         }
-
                         currentUserId = currentOrder.getUser_id();
                         CURRENT_ORDER_ID = currentOrder.getOrder_id();
 
                         if(TextUtils.isEmpty(currentUserId)){
                             goFetchCustomerById(isAlreadyAccepted);
                         }
+    
                         if(currentOrder.getShared()) {
                             String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
                             if (CURRENT_GROUP_ID == null && currentOrder.getShared())
@@ -340,11 +343,13 @@ public class DriverMainActivity extends AppCompatActivity {
                             if (!isAlreadyAccepted) {
                                 Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
                             }
+                            goGetOrdersForGroup();
                         }else if(CURRENT_ORDER_ID != null && !CURRENT_ORDER_ID.isEmpty()) {
                             openOrderActivity();
                         }else{
                             Toast.makeText(DriverMainActivity.this, "No Order in Progress", Toast.LENGTH_SHORT).show();
                         }
+                        
                     }
                 }
             }
@@ -411,6 +416,7 @@ public class DriverMainActivity extends AppCompatActivity {
                 if(dataSnapshot.exists()){
                     currentSharedRide = dataSnapshot.getValue(SharedRide.class);
                     if(currentSharedRide != null){
+                        orderIDs = currentSharedRide.getOrderIDs();
                         if(CURRENT_ORDER_ID != null && currentOrder != null)
                             openOrderActivity(currentSharedRide);
                         else{
@@ -463,6 +469,65 @@ public class DriverMainActivity extends AppCompatActivity {
 
         }
     };
+    
+    
+    private void goGetOrdersForGroup() {
+        if(ordersInSharedRide == null)
+            ordersInSharedRide = new ArrayList<>();
+        for (Map.Entry<String, Boolean> entry : orderIDs.entrySet()) {
+            String key = entry.getKey();
+            db_ref_order.child(key).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(!dataSnapshot.exists())
+                        return;
+                    Order order = dataSnapshot.getValue(Order.class);
+                    if(order != null){
+                        if((order.getStatus() == Order.OrderStatusInProgress
+                                || order.getStatus() == Order.OrderStatusWaiting)
+                                && order.getDriver_id().equals(userMe.getUid())){
+                            if(!checkIfOrderExists(order.getOrder_id(), ordersInSharedRide))
+                                ordersInSharedRide.add(order);
+                        }
+                    }
+                    if(orderIDs.size() == ordersInSharedRide.size()) {
+                        checkOrderStatus(ordersInSharedRide);
+                    }
+                }
+                
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+                
+                }
+            });
+        }
+    }
+    
+    private void checkOrderStatus(List<Order> ordersInSharedRide) {
+        boolean check = false;
+        for(Order order : ordersInSharedRide)
+            if(order.getStatus() == Order.OrderStatusCompleted){
+                check = true;
+            }
+        if(!check){
+            // all orders completed
+            db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    Toast.makeText(DriverMainActivity.this, "Your Orders has been Completed", Toast.LENGTH_SHORT).show();
+                    currentOrder = null;
+                }
+            });
+        }
+    }
+    
+    private boolean checkIfOrderExists(String key, List<Order> ordersInSharedRide) {
+        for(Order order : ordersInSharedRide)
+            if(order.getOrder_id().equals(key))
+                return true;
+        return false;
+    }
+    
     public void acceptingVoice()
     {
         if(TextUtils.isEmpty(Constants.notificationPayload))

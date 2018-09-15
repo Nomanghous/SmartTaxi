@@ -63,6 +63,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,10 +93,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private DatabaseReference db_ref;
     private LatLng driver = null;
     private boolean IS_ROUTE_ADDED = false;
-    List<Order> ordersInSharedRide = null;
-    private HashMap<String, Boolean> orderIDs;
+    
     private HashMap<String, Marker> PickupMarkers;
-    private List<User> currentPassengers;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -281,18 +280,23 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             pickup.setLatitude(marker.getPosition().latitude);
             pickup.setLongitude(marker.getPosition().longitude);
             distanceRemaining = myLocation.distanceTo(pickup);
-            
+            int counter = 0;
             for(Order order : ordersInSharedRide){
+                if(distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
+                    order = goUpdateOrderStatus(order);
+                    ordersInSharedRide.add(counter,order);
+                }
+                
+                counter++;
                 if(order.getUser_id().equals(user.getUser_id())){
                     checkForDistanceToSendNotification(order,user,distanceRemaining);
                     
                     if(order.getStatus() == Order.OrderStatusInProgress) {
-                        if (distanceRemaining < 10) {
                             order.setOnRide(true);
-                        } else {
-                            order.setOnRide(false);
-                        }
+                    }else if(order.getStatus() == Order.OrderStatusCompleted) {
+                        order.setOnRide(false);
                     }
+                    
                     
                     break;
                 }
@@ -303,8 +307,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     }
     
-    
-    
+    private Order goUpdateOrderStatus(Order order) {
+        order.setStatus(Order.OrderStatusInProgress);
+        db_ref_order.child(order.getOrder_id()).setValue(order);
+        return order;
+    }
     
     
     private String escapeValue(String value) {
@@ -425,7 +432,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if (driver == null && myLocation != null)
             driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
 //        distanceRemaining = shortestRoute.getDistanceValue();
-        mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(MapsActivity.this, driver, currentOrder.getVehicle_id()));
+        if(mDriverMarker == null)
+            mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(MapsActivity.this, driver, currentOrder.getVehicle_id()));
         if(mDriverMarker != null && driver != null && myLocation != null){
             calculatePickupDistance();
         }
@@ -665,6 +673,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 return true;
         return false;
     }
+    
     private void addOrdersListener() throws NullPointerException{
         db_ref_order.child(currentOrderId).addChildEventListener(new ChildEventListener() {
             @Override
@@ -743,28 +752,30 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     }
     
     private void updateOrderLocally(Order order) {
-        int index = 0;
-        boolean isToRefresh = false;
-        for(Order o : ordersInSharedRide){
-            if(o.getOrder_id().equals(order.getOrder_id())){
-                if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
-                        && order.getDriver_id().equals(userMe.getUid())) {
-                    if (order.getStatus() == Order.OrderStatusInProgress) {
-                        isToRefresh = true;
-                    }else if (order.getStatus() == Order.OrderStatusCompleted){
-                        isToRefresh = true;
-                    }else if (order.getStatus() == Order.OrderStatusPending){
-                        isToRefresh = true;
+        try {
+            int index = 0;
+            boolean isToRefresh = false;
+            for (Order o : ordersInSharedRide) {
+                if (o.getOrder_id().equals(order.getOrder_id())) {
+                    if (currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
+                            && order.getDriver_id().equals(userMe.getUid())) {
+                        if (order.getStatus() == Order.OrderStatusInProgress) {
+                            isToRefresh = true;
+                        } else if (order.getStatus() == Order.OrderStatusCompleted) {
+                            isToRefresh = true;
+                        } else if (order.getStatus() == Order.OrderStatusPending) {
+                            isToRefresh = true;
+                        }
                     }
+                    ordersInSharedRide.add(index, order);
                 }
-                ordersInSharedRide.add(index,order);
+                index++;
             }
-            index++;
-        }
-        if(isToRefresh){
-            initNextOrderVars();
-            getTheNextNearestDropOff();
-        }
+            if (isToRefresh) {
+                initNextOrderVars();
+                getTheNextNearestDropOff();
+            }
+        }catch (ConcurrentModificationException ignore){}
         
     }
     
@@ -831,8 +842,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             currentSharedRide = mFareCalc.calculateFareForSharedRide(ordersInSharedRide, currentSharedRide, myLocation, currentOrder.getVehicle_id());
             for (Map.Entry<String, UserFareRecord> entry : currentSharedRide.getPassengerFares().entrySet()) {
                 String key = entry.getKey();
-                Log.i("FareCalculation", currentSharedRide.getPassengerFares().get(key).getUserFare().toString());
-                Log.i("FareCalculation", "Count: " + currentSharedRide.getPassengerFares().get(key).getUserFare().size());
+                UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
+                if(fareRecord != null && fareRecord.getUserFare() != null) {
+                    Log.i("FareCalculation",fareRecord.getUserFare().toString());
+                    Log.i("FareCalculation", "Count: " + fareRecord.getUserFare().size());
+                }
             }
             db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
         }else{
@@ -849,15 +863,16 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     @Override
     public void onStart() {
         super.onStart();
-        LocalBroadcastManager.getInstance(this).registerReceiver(locationBroadcastReceiver, new IntentFilter(Helper.BROADCAST_DRIVER_RESPONSE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(locationBroadcastReceiver, new IntentFilter(Helper.BROADCAST_LOCATION));
     }
     
     BroadcastReceiver locationBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             myLocation = LocationManagerService.mLastLocation;
-            if(myLocation != null){
+            if(myLocation != null && mDriverMarker != null){
                 mDriverMarker.setPosition(new LatLng(myLocation.getLatitude(),myLocation.getLongitude()));
+                Log.i("DriverLocation",myLocation.toString());
             }
         }
     };

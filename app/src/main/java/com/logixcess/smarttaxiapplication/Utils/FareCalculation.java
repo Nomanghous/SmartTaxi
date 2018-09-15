@@ -17,6 +17,7 @@ import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
 import com.logixcess.smarttaxiapplication.R;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -136,6 +137,16 @@ public class FareCalculation
         int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
+            if(!allPoints.containsKey(key)){
+                List<RoutePoints> routePoints = new ArrayList<>();
+                Order order = getOrderByID(key,ordersInSharedRide);
+                if(order != null) {
+                    RoutePoints rP = new RoutePoints(order.getPickupLat(),order.getPickupLong());
+                    routePoints.add(rP);
+                    allPoints.put(key,routePoints);
+                }else
+                    continue;
+            }
             if(allPoints.containsKey(key)){
                 List<RoutePoints> latLngList = allPoints.get(key);
                 boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
@@ -153,6 +164,7 @@ public class FareCalculation
                             allPoints.put(key,latLngList);
                     }
                     UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
+                    
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
                             totalOnRide, vehicleType,myLocation,key,ordersInSharedRide);
                     if(isOnRide)
@@ -183,6 +195,13 @@ public class FareCalculation
         fareRecord.setBaseFare(baseFare);
         double totalKms = getTotalDistanceTraveled(userLatLngs);
         int totalKmsRecord = fareRecord.getLatLngs().size();
+        if(fareRecord.getUserFare() == null){
+            RoutePoints cLatLng = userLatLngs.get(userLatLngs.size() - 1);
+            String latlngKey = String.valueOf(cLatLng.getLatitude()) + "," + String.valueOf(cLatLng.getLongitude());
+            HashMap<String, Double> fares = new HashMap<>();
+            fares.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),baseFare);
+            fareRecord.setUserFare(fares);
+        }
         if(totalKms > totalKmsRecord){
             fareRecord = insertAnotherKm(userLatLngs.get(userLatLngs.size() - 1),fareRecord,totalPassengers, key,ordersInSharedRide,baseFare);
         }
@@ -213,21 +232,19 @@ public class FareCalculation
         Order order = getOrderByID(key,ordersInSharedRide);
         if(order != null) {
             HashMap<String, Double> temp = new HashMap<>();
-            latlngKey = String.valueOf(order.getPickupLat()) + "," + String.valueOf(order.getPickupLong());
-            if (fare.containsKey(Helper.getRefinedLatLngKeyForHashMap(latlngKey)) && fare.containsValue(0.0)) {
+            if (fare.containsValue(0.0)) {
                 for (Map.Entry<String, Double> entry : fare.entrySet()) {
                     String k = entry.getKey();
                     Double val = entry.getValue();
-                    if(k.equals(latlngKey)){
-                        if(val == 0.0){
-                            temp.put(entry.getKey(),baseFare);
-                        }
+                    if(val == 0.0){
+                        temp.put(entry.getKey(),baseFare);
                     }else{
                         temp.put(entry.getKey(),entry.getValue());
                     }
                 }
             }
-            fareRecord.setUserFare(temp);
+            if(temp.size() == fareRecord.getUserFare().size())
+                fareRecord.setUserFare(temp);
         }else
             fareRecord.setUserFare(fare);
         return fareRecord;

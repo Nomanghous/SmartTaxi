@@ -15,7 +15,7 @@ public class RoutePoints implements Parcelable {
 
     }
 
-    protected RoutePoints(Parcel in) {
+    public RoutePoints(Parcel in) {
         latitude = in.readDouble();
         longitude = in.readDouble();
     }
