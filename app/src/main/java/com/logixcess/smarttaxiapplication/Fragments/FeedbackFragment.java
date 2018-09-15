@@ -88,7 +88,7 @@ public class FeedbackFragment extends Fragment {
         }
     }
     Button btn_feedback;
-    TextView tv_Destination,tv_Pickup;
+    TextView tv_Destination,tv_Pickup,tv_driver_name;
     EditText et_complaint;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -104,6 +104,7 @@ public class FeedbackFragment extends Fragment {
         tv_Destination = view.findViewById(R.id.tv_Destination);
         et_complaint = view.findViewById(R.id.et_complaint);
         tv_Pickup = view.findViewById(R.id.tv_Pickup);
+        tv_driver_name = view.findViewById(R.id.tv_driver_name);
         if(pending_dest!=null && (!TextUtils.isEmpty(pending_dest)))
         {
             tv_Destination.setText(pending_dest);
@@ -112,10 +113,19 @@ public class FeedbackFragment extends Fragment {
         {
             tv_Pickup.setText(pending_pickup);
         }
+        if(driver_name != null && !TextUtils.isEmpty(driver_name))
+        {
+            tv_driver_name.setText(driver_name);
+        }
         btn_feedback.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
             {
+                if(tv_Pickup.getText().toString().equalsIgnoreCase("empty") || tv_Destination.getText().toString().equalsIgnoreCase("empty"))
+                {
+                    Toast.makeText(getActivity(),"No Driver Found",Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Feedback feedback = new Feedback();
                 feedback.setFk_driver_id(driver_id);
                 feedback.setFk_order_id(order_id);

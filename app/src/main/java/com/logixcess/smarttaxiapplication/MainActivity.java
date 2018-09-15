@@ -78,6 +78,7 @@ import com.logixcess.smarttaxiapplication.Interfaces.IDrivers;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
@@ -93,6 +94,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -755,6 +757,53 @@ AlertDialog builder;
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+    ArrayList<Order> my_orders;
+    String order_pending_id,order_pending_driver_name,order_pending_driver_id,pending_dest,pending_pickup;
+    private void getAllOrders() {
+        my_orders = new ArrayList<>();
+        FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
+        Query db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).orderByChild("user_id").equalTo(USER_ME.getUid());
+        db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+                    for (DataSnapshot snapshot:dataSnapshot.getChildren()) {
+                        Order order = snapshot.getValue(Order.class);
+                        if( (order.getStatus() == Order.OrderStatusCompleted ) || (order.getStatus() == Order.OrderStatusCompletedReview ))
+                        {
+                            my_orders.add(order);
+                            getDriverId(my_orders.indexOf(order),order.getDriver_id());
+                        }
+                        if (order.getStatus() == Order.OrderStatusCompleted)
+                        {
+                            order_pending_id = order.getOrder_id();
+                            //order_pending_driver_name = order.getDriver_name();
+                            order_pending_driver_id = order.getDriver_id();
+                            pending_dest = order.getDropoff();
+                            pending_pickup = order.getPickup();
+                            getDriver(order.getDriver_id());
+                        }
+                        else if (order.getStatus() == Order.OrderStatusInProgress)
+                        {
+                            order_pending = order;
+                            //order_pending_id = order.getOrder_id();
+                            //order_pending_driver_name = order.getDriver_name();
+                            //order_pending_driver_id = order.getDriver_id();
+                            //pending_dest = order.getDropoff();
+                            //pending_pickup = order.getPickup();
+                        }
+                    }
+
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
     // index to identify current nav menu item
     public int navItemIndex = 0;
 
@@ -794,10 +843,24 @@ AlertDialog builder;
                     args.putParcelableArrayList("history_notifications", notificationPayloads );
                     notificationsFragment.setArguments(args);}
                 return notificationsFragment;
-
             case 4:
                 // feedback fragment
                 FeedbackFragment feedbackFragment = new FeedbackFragment();
+                if(order_pending_id!=null || (!TextUtils.isEmpty(order_pending_id)))
+                {
+                    Bundle args = new Bundle();
+                    args.putString("order_id",order_pending_id);
+                    args.putString("driver_id",order_pending_driver_id);
+                    args.putString("driver_name",order_pending_driver_name);
+                    args.putString("pending_dest",pending_dest);
+                    args.putString("pending_pickup",pending_pickup);
+                    feedbackFragment.setArguments(args);
+                    order_pending_id = null;
+                    order_pending_driver_id =  null;
+                    order_pending_driver_name =  null;
+                    pending_dest = null;
+                    pending_pickup = null;
+                }
                 return feedbackFragment;
 //            case 5:
 //                // find user fragment
@@ -1036,41 +1099,51 @@ AlertDialog builder;
             }
         });
     }
-ArrayList<Order> my_orders;
-    private void getAllOrders() {
-        my_orders = new ArrayList<>();
-        FirebaseUser USER_ME = FirebaseAuth.getInstance().getCurrentUser();
-        Query db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).orderByChild("user_id").equalTo(USER_ME.getUid());
-        db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
+    private void getDriver(String driver_id)
+    {
+        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference(Helper.REF_USERS);
+        db_ref_user.child(driver_id).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists())
                 {
-                    for (DataSnapshot snapshot:dataSnapshot.getChildren()) {
-                        Order order = snapshot.getValue(Order.class);
-                        if(order.getStatus() == Order.OrderStatusCompleted)
-                        {
-                            my_orders.add(order);
-                        }
-                        else if (order.getStatus() == Order.OrderStatusInProgress)
-                        {
-                            order_pending = order;
-                        }
-                    }
-
+                    User driver = dataSnapshot.getValue(User.class);
+                    order_pending_driver_name = driver.getName();
                 }
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
         });
     }
-    private void getDriver(String driver_id)
+    private void getDriverId(int order_index,String driver_id)
     {
-        //db_
-    }
+        HashMap<String,Integer> hm_driver = new HashMap<>();
+        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference(Helper.REF_USERS);
+        hm_driver.put(driver_id,order_index);
+        db_ref_user.child(driver_id).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+                    User driver = dataSnapshot.getValue(User.class);
+                    if (my_orders != null) {
+                        int index  = hm_driver.get(driver.getUser_id());
+                        Order order = my_orders.get(index);
+                        order.setDriver_name(driver.getName());
+                        my_orders.set(order_index,order);
+                    }
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     ArrayList<NotificationPayload> notificationPayloads;
     private void getAllNotifications(String user_id) {
         notificationPayloads = new ArrayList<>();

@@ -984,7 +984,7 @@ FareCalculation fareCalculation;
             distance = String.valueOf(Double.valueOf(distance.replace("m", "")) / 1000);
         tv_distance.setText("Distance: ".concat(distance).concat(" km"));
         new_order.setTotal_kms(distance);
-        Toast.makeText(getContext(), "Distance: ".concat(distance).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
+        ////Toast.makeText(getContext(), "Distance: ".concat(distance).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
 
     private void everyTenSecondsTask() {

@@ -50,7 +50,7 @@
                 android:layout_gravity="end"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="NULL"
+                android:text="EMPTY"
                 android:textColor="@color/leku_strong_grey"
                 android:textSize="13sp"
                 />
@@ -80,7 +80,7 @@
                 android:layout_gravity="end"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="NULL"
+                android:text="EMPTY"
                 android:textColor="@color/leku_strong_grey"
                 android:textSize="13sp"
                 />

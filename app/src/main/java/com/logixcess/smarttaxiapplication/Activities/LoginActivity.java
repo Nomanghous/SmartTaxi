@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.LoaderManager.LoaderCallbacks;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -66,16 +67,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     FirebaseAuth auth;
 
     /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "test@gmail.com:test1", "bar@example.com:world"
-    };
-    /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private UserLoginTask mAuthTask = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
@@ -85,11 +78,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     TextView message_view;
     AutoCompleteTextView et_email;
     EditText et_password;
-
+    ProgressDialog progressDialog = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        progressDialog = new ProgressDialog(LoginActivity.this);
+        progressDialog.setMessage("Please Wait ...");
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if(user != null){
             openActivityWithUserType(user.getUid());
@@ -126,9 +121,21 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(TextUtils.isEmpty(et_email.getText().toString()))
+                {
+                    et_email.setError("Email field is Empty !!");
+                    return;
+                }
+                if(TextUtils.isEmpty(et_password.getText().toString()))
+                {
+                    et_password.setError("Password field is Empty !!");
+                    return;
+                }
                 //attemptLogin();
                 if( !(TextUtils.isEmpty(et_email.getText().toString())) && !(TextUtils.isEmpty(et_password.getText().toString())) )
                 {
+                    if(!progressDialog.isShowing())
+                    progressDialog.show();
                     attemptLogin(et_email.getText().toString(),et_password.getText().toString());
                 }
             }
@@ -180,59 +187,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         }
     }
-
-
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    private void attemptLogin() {
-        if (mAuthTask != null) {
-            return;
-        }
-
-        // Reset errors.
-        mEmailView.setError(null);
-        mPasswordView.setError(null);
-
-        // Store values at the time of the login attempt.
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
-
-        boolean cancel = false;
-        View focusView = null;
-
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
-        }
-
-        // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
-            cancel = true;
-        } else if (!isEmailValid(email)) {
-            mEmailView.setError(getString(R.string.error_invalid_email));
-            focusView = mEmailView;
-            cancel = true;
-        }
-
-        if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
-            focusView.requestFocus();
-        } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
-            showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
-            mAuthTask.execute((Void) null);
-        }
-    }
 
     private boolean isEmailValid(String email) {
         //TODO: Replace this with your own logic
@@ -342,67 +301,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mEmail;
-        private final String mPassword;
-
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            showProgress(false);
-
-            if (success)
-            {
-                Intent intent = new Intent(LoginActivity.this,MainActivity.class);
-                startActivity(intent);
-                finish();
-            } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-            showProgress(false);
-        }
-    }
     public void attemptLogin(String email , String password)
     {
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(getApplicationContext(), "Enter email address!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(getApplicationContext(), "Enter password!", Toast.LENGTH_SHORT).show();
-            return;
-        }
         //Get Firebase auth instance
         auth = FirebaseAuth.getInstance();
      //   progressBar.setVisibility(View.VISIBLE);
@@ -415,14 +315,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         // the auth state listener will be notified and logic to handle the
                         // signed in user can be handled in the listener.
                         //mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                        showProgress(true);
+                        //////showProgress(true);
                         //progressBar.setVisibility(View.GONE);
                         if (!task.isSuccessful()) {
                             // there was an error
                             if (et_password.length() < 6) {
                                 et_password.setError(getString(R.string.minimum_password));
+                                if(progressDialog.isShowing())
+                                    progressDialog.dismiss();
+                                return;
                             } else {
                                 Toast.makeText(LoginActivity.this, getString(R.string.auth_failed), Toast.LENGTH_LONG).show();
+                                if(progressDialog.isShowing())
+                                    progressDialog.dismiss();
                             }
                         } else {
                             String userId = auth.getCurrentUser().getUid();
@@ -461,11 +366,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         }
                     }
                 }
+                if(progressDialog.isShowing())
+                    progressDialog.dismiss();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                if(progressDialog.isShowing())
+                    progressDialog.dismiss();
             }
         });
     }
