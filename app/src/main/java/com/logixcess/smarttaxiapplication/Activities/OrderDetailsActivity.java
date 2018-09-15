@@ -318,7 +318,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
         mPassengerFares = new HashMap<>();
         UserFareRecord fareRecord = new UserFareRecord();
         fareRecord.setUserId(new_order.getUser_id());
-        fareRecord.setBaseFare(new FareCalculation().getBaseFare2(new_order.getVehicle_id()));
+        fareRecord.setBaseFare(new   FareCalculation().getBaseFare2(new_order.getVehicle_id()));
         HashMap<String ,Double> userFare = new HashMap<>();
         LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
         String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
