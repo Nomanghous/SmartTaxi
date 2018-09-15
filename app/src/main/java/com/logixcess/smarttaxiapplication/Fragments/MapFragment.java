@@ -22,6 +22,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.CardView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -178,6 +179,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private boolean isTimeout = false;
     private DatabaseReference db_ref_user_general;
     private List<Passenger> mNearbyPassengers;
+    private TextView tv_distance, tv_estimated_cost;
+    private CardView ct_details;
     
     public MapFragment() {
         // Required empty public constructor
@@ -246,8 +249,6 @@ FareCalculation fareCalculation;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
         firebase_db = FirebaseDatabase.getInstance();
@@ -257,7 +258,8 @@ FareCalculation fareCalculation;
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
         db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         driverList = new ArrayList<>();
-
+        tv_estimated_cost = view.findViewById(R.id.tv_estimated_cost);
+        tv_distance = view.findViewById(R.id.tv_distance);
         LinearLayout layout_vehicle1, layout_vehicle2, layout_vehicle3, layout_vehicle4, layout_vehicle5;
         mapFragment = view.findViewById(R.id.map);
         btn_add_members = view.findViewById(R.id.btn_add_members);
@@ -266,6 +268,7 @@ FareCalculation fareCalculation;
         vehicle3 = view.findViewById(R.id.vehicle3);
         vehicle4 = view.findViewById(R.id.vehicle4);
         vehicle5 = view.findViewById(R.id.vehicle5);
+        ct_details = view.findViewById(R.id.ct_details);
 
         layout_vehicle1 = view.findViewById(R.id.layout_vehicle1);
         layout_vehicle1.setOnClickListener(this);
@@ -945,7 +948,16 @@ FareCalculation fareCalculation;
         }
         addSelectedRoute(polyline);
         String[] value = ((String) polyline.getTag()).split("--");
-        Toast.makeText(getContext(), "Distance: ".concat(value[0]).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
+        String distance = value[0].replaceAll("\\D+\\.\\D+", "");
+        if (distance.contains("mi"))
+            distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
+        else if (distance.contains(("km")))
+            distance = String.valueOf(Double.valueOf(distance.replace("km", "")));
+        else if (distance.contains("m"))
+            distance = String.valueOf(Double.valueOf(distance.replace("m", "")) / 1000);
+        tv_distance.setText("Distance: ".concat(distance).concat(" km"));
+        new_order.setTotal_kms(distance);
+        Toast.makeText(getContext(), "Distance: ".concat(distance).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
 
     private void everyTenSecondsTask() {
@@ -1181,6 +1193,7 @@ FareCalculation fareCalculation;
                 txtDestination.setText("Destination : " + new_order.getDropoff());
                 txt_cost.setText(String.valueOf(total_cost));
                 new_order.setEstimated_cost(String.valueOf(total_cost));
+                tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
             }
             timer.cancel();
             showRadiusInputField();
@@ -1249,6 +1262,7 @@ FareCalculation fareCalculation;
         //give new user cost and discount
         total_cost = fareCalculation.getUserDiscountedPrice(passenger_count);
         new_order.setEstimated_cost(String.valueOf(total_cost));
+        tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
         //Display Cost
         if (layout_cost_detail.getVisibility() == View.GONE) {
             layout_cost_detail.setVisibility(View.VISIBLE);
@@ -1318,6 +1332,9 @@ FareCalculation fareCalculation;
         et_pickup.setText("");
         et_drop_off.setText("");
         gMap.clear();
+        tv_distance.setText("");
+        tv_estimated_cost.setText("");
+        ct_details.setVisibility(View.GONE);
         new_order = new Order();
         currentSharedRide = null;
         if(mNearbyPassengers != null)
@@ -1516,10 +1533,10 @@ FareCalculation fareCalculation;
                 if (distance.contains("mi"))
                     distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
                 else if (distance.contains(("km")))
-                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")) * 1.609344);
+                    distance = String.valueOf(Double.valueOf(distance.replace("km", "")));
                 else if (distance.contains("m"))
-                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) * 1.609344);
-                new_order.setTotal_kms(distance);
+                    distance = String.valueOf(Double.valueOf(distance.replace("m", "")) / 1000);
+    
                 for (int j = 0; j < path.size(); j++) {
                     HashMap<String, String> point = path.get(j);
 
@@ -1548,8 +1565,12 @@ FareCalculation fareCalculation;
                 if (i == 0) {
                     addSelectedRoute(polyline);
                 }
+                ct_details.setVisibility(View.VISIBLE);
+                tv_distance.setText("Distance: ".concat(distance).concat(" km"));
+                new_order.setTotal_kms(distance);
                 polyLineList.add(polyline);
                 refreshDrivers();
+                
             }
         }
     }

@@ -820,7 +820,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void runtimeFareCalculationStart(){
         if(currentSharedRide != null) {
             // current ride is shared
-            
+            if(myLocation.getLatitude() == 0 && myLocation.getLongitude() == 0)
+                return;
             currentSharedRide = mFareCalc.calculateFareForSharedRide(ordersInSharedRide, currentSharedRide, myLocation, currentOrder.getVehicle_id());
             for (Map.Entry<String, UserFareRecord> entry : currentSharedRide.getPassengerFares().entrySet()) {
                 String key = entry.getKey();

@@ -104,8 +104,46 @@
 
                 />
         </LinearLayout>
-    </LinearLayout>
+        </LinearLayout>
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:layout_below="@+id/ct_address"
+        android:id="@+id/ct_details"
+        android:visibility="gone"
+        >
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp"
+
+            >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:id="@+id/tv_distance"
+            android:gravity="center_vertical"
+            android:textColor="@color/colorGreen"
+            android:textStyle="bold"
+
+            />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:id="@+id/tv_estimated_cost"
+            android:textColor="@color/colorOrange"
+            android:textStyle="bold"
+            android:gravity="center_vertical"
+            />
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
     <RelativeLayout
         android:layout_width="140dp"
         android:layout_height="50dp"
