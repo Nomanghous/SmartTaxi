@@ -1854,7 +1854,7 @@ FareCalculation fareCalculation;
                 {
                     User sender = dataSnapshot.getValue(User.class);
                     if(sender != null)
-                        open_profile(sender.getUser_id(),sender.getName(),sender.getUser_image_url(),sender.getPhone(), TO_SHOW_INFO_OF_PASSENGER);
+                        open_profile(sender.getUser_id(),sender.getName(),sender.getUser_image_url(),sender.getPhone(), TO_ACCEPT_INVITATION);
                 }
             }
         
