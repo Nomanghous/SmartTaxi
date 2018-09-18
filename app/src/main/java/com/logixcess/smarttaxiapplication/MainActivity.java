@@ -524,6 +524,7 @@ AlertDialog builder;
             }
         }
     }
+
     private void updateUserLocation(){
         
         if(mLastLocation == null)
@@ -535,9 +536,8 @@ AlertDialog builder;
 
     }
 
-
     private void onSelectFromGalleryResult(Intent data) {
-        Bitmap bm=null;
+        Bitmap bm = null;
         if (data != null) {
             try {
                 bm = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
@@ -555,6 +555,7 @@ AlertDialog builder;
             }
         }
     }
+
     private void onCaptureImageResult(Intent data) {
         Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();

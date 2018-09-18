@@ -128,6 +128,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private static final String ARG_PARAM2 = "param2";
     private static final int TO_SHOW_INFO_OF_PASSENGER = 113;
     private static final int TO_SHOW_INFO_OF_DRIVER = 114;
+    private static final int TO_ACCEPT_INVITATION = 115;
     public static EditText et_drop_off, et_pickup;
     public static Order new_order;
     public static HashMap<Integer, String> route_details;
@@ -191,6 +192,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private List<Passenger> mNearbyPassengers;
     private TextView tv_distance, tv_estimated_cost;
     private CardView ct_details;
+    
     
     public MapFragment() {
         // Required empty public constructor
@@ -519,17 +521,18 @@ FareCalculation fareCalculation;
         if(url!=null && (!TextUtils.isEmpty(url)) )
         {
             RequestOptions requestOptions = new RequestOptions();
-            requestOptions.placeholder(R.drawable.user_placeholder);
-            requestOptions.circleCrop();
-            requestOptions.centerInside();
+            requestOptions = requestOptions.placeholder(R.drawable.user_placeholder);
+            requestOptions = requestOptions.circleCrop();
+            requestOptions = requestOptions.centerInside();
             StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(url);
+            RequestOptions finalRequestOptions = requestOptions;
             storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                 @Override
                 public void onSuccess(Uri uri)
                 {
                     String imageURL = uri.toString();
 
-                    Glide.with(getActivity()).setDefaultRequestOptions(requestOptions).load(imageURL)
+                    Glide.with(getActivity()).setDefaultRequestOptions(finalRequestOptions).load(imageURL)
                             .into(image);
 
                     //Glide.with(getApplicationContext()).load(imageURL).into(i1);
@@ -550,6 +553,8 @@ FareCalculation fareCalculation;
                     String text = "Request Now";
                     if(purpose == TO_SHOW_INFO_OF_PASSENGER)
                         text = "Send Invitation";
+                    if(purpose == TO_ACCEPT_INVITATION)
+                        text = "Accept Invitation";
                     
                     builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                         @Override
@@ -560,6 +565,9 @@ FareCalculation fareCalculation;
                                 sendNotificationToRequestGroupRide(user_id);
                             else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
                                 sendInvitationForGroupRide(user_id);
+                            else if(purpose == TO_ACCEPT_INVITATION) {
+                                goAcceptInvitation(user_id);
+                            }
                             dialog.dismiss();
                         }
                     });
@@ -655,6 +663,8 @@ FareCalculation fareCalculation;
 
 
     }
+    
+
 
 /*
     public void show_driverDetail(String driverid) {
@@ -1083,7 +1093,7 @@ FareCalculation fareCalculation;
     }
 
     private void goCheckSharedRideDriver(String driverId, Driver driver) {
-        if (isOrderAccepted && firebase_db == null)
+        if (isOrderAccepted || firebase_db == null)
             return;
         
         if(thereIsActiveOrder)
@@ -1772,7 +1782,7 @@ FareCalculation fareCalculation;
     
     public void sendInvitationForGroupRide(String userId) {
         generateNewRequest(userId, new_order.getUser_id());
-        listenerForRequests(getContext(),userId);
+        listenerForRequests(getContext(),new_order.getUser_id());
     }
     
     private void showUserDetails(String title) {
@@ -1800,7 +1810,7 @@ FareCalculation fareCalculation;
     
     
     
-    public void listenerForRequests(Context context, String userId){
+    public void listenerForRequests(Context context, String mUserId){
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -1809,27 +1819,13 @@ FareCalculation fareCalculation;
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         Requests request = snapshot.getValue(Requests.class);
                         if (request != null) {
-                            if (request.getReceiverId().equals(userId) && request.getStatus() == Requests.STATUS_PENDING) {
-                                progressDialog = new ProgressDialog(getActivity());
-                                progressDialog.setMessage("Please Wait...");
-                                progressDialog.show();
-                                db_ref_user_general.child(request.getSenderId()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot)
-                                    {
-                                        if(dataSnapshot.exists())
-                                        {
-                                            User sender = dataSnapshot.getValue(User.class);
-                                            if(sender != null)
-                                                open_profile(sender.getUser_id(),sender.getName(),sender.getUser_image_url(),sender.getPhone(), TO_SHOW_INFO_OF_PASSENGER);
-                                        }
-                                    }
-        
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-            
-                                    }
-                                });
+                            if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_PENDING) {
+                               showRequestedInvitation(request);
+                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
+                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
+                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
+                                // Request Rejected
+                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
                             }
                             
                         }
@@ -1843,5 +1839,34 @@ FareCalculation fareCalculation;
         });
     }
     
+    private void showRequestedInvitation(Requests request) {
+        progressDialog = new ProgressDialog(getActivity());
+        progressDialog.setMessage("Please Wait...");
+        progressDialog.show();
+        db_ref_user_general.child(request.getSenderId()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot)
+            {
+                if(dataSnapshot.exists())
+                {
+                    User sender = dataSnapshot.getValue(User.class);
+                    if(sender != null)
+                        open_profile(sender.getUser_id(),sender.getName(),sender.getUser_image_url(),sender.getPhone(), TO_SHOW_INFO_OF_PASSENGER);
+                }
+            }
+        
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            
+            }
+        });
+    }
+    
+    private void goAcceptInvitation(String user_id) {
+        String myid = ((MainActivity)getActivity()).getmFirebaseUser().getUid();
+        String req_id = Helper.getConcatenatedID(user_id,myid);
+        db_ref_requests.child(req_id).child("status").setValue(Requests.STATUS_ACCEPTED);
+        Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+    }
   
 }
