@@ -27,10 +27,8 @@ import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order
 
 public class FareCalculation
 {
-    
-    
-    
-    public double getBaseFare(String vehicle)
+
+    /*public double getBaseFare(String vehicle)
     {
         double base_fair = 0;
         switch(vehicle)
@@ -52,7 +50,7 @@ public class FareCalculation
                 break;
         }
         return base_fair;
-    }
+    }*/
     
     public double getCost()
     {
@@ -117,18 +115,26 @@ public class FareCalculation
                 base_fare =  50;
                 break;
         }
-        
-        return getCostTotal(base_fare, Double.parseDouble(MapFragment.new_order.getTotal_kms()) - 1);
+        return base_fare;
+        //return getCostTotal(base_fare, Double.parseDouble(MapFragment.new_order.getTotal_kms()) - 1);
     }
     
-    private double getCostTotal(double vehicle_cost, double kilometers)
+    public double getCostSingleRide()
     {
-        double discounted_price = (vehicle_cost * 40)/100;
-        for(int i=1;i<=kilometers;i++)
-        {
-            vehicle_cost = vehicle_cost + discounted_price;
-        }
-        return vehicle_cost;
+        double km = Double.valueOf(new_order.getTotal_kms());
+        /*
+         * 6.4 =) 7
+         *   km * 1000 - 1000;
+         *   km * base * .6
+         *   km + base
+         * */
+        double lessBase = Constants.BASE_FAIR_PER_KM * .6;
+        lessBase = lessBase / 1000;
+        km = km * 1000;
+        double lessKM = km - 1000;
+        lessKM = lessKM * lessBase;
+        return lessKM + Constants.BASE_FAIR_PER_KM;
+
     }
     
     public SharedRide calculateFareForSharedRide(List<Order> ordersInSharedRide, SharedRide currentSharedRide, Location myLocation, String vehicleType) {

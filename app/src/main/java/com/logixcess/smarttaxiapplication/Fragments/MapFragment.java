@@ -333,12 +333,34 @@ FareCalculation fareCalculation;
 //                    mainActivity.getDrivers(pickup);
 //                }
                 if(new_order !=null)
-                if(new_order.getShared())
+                {
+                    if(new_order.getShared())
                     saveRadiusInputForGroupRide();
-                else{
-                    ct_address.setVisibility(View.VISIBLE);
-                    ct_vehicles.setVisibility(View.GONE);
-                    btn_confirm.setVisibility(View.VISIBLE);
+                    else
+                        {
+                            String stringKm = new_order.getTotal_kms();
+                            total_cost = fareCalculation.getCostSingleRide();
+//                            double total_cost = fareCalculation.getCostSingleRide(
+//                                    Constants.BASE_FAIR_PER_KM,
+//                                    km-1
+//                            ,Double.valueOf(stringKm.split(".")[1]));
+                            if (layout_cost_detail.getVisibility() == View.GONE)
+                            {
+                                if (btn_confirm.getVisibility() == View.VISIBLE)
+                                    btn_confirm.setVisibility(View.GONE);
+                                layout_cost_detail.setVisibility(View.VISIBLE);
+                                txtLocation.setText("Location : " + new_order.getPickup());
+                                txtDestination.setText("Destination : " + new_order.getDropoff());
+                                txt_cost.setText(String.valueOf(total_cost));
+                                new_order.setEstimated_cost(String.valueOf(total_cost));
+                                tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
+                            }
+                        ct_address.setVisibility(View.VISIBLE);
+                        ct_vehicles.setVisibility(View.GONE);
+                        if(btn_confirm.getVisibility() == View.VISIBLE)
+                        btn_confirm.setVisibility(View.GONE);
+                        //btn_confirm.setVisibility(View.VISIBLE);
+                    }
                 }
                 refreshDrivers();
                 showNearbyPassengersForSharedRide();
@@ -777,7 +799,7 @@ FareCalculation fareCalculation;
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle5.getVisibility() == View.VISIBLE)
                     vehicle5.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_CAR);
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare2(Helper.VEHICLE_CAR);
                 Constants.selected_vehicle = Helper.VEHICLE_CAR;
                 //Constants.BASE_FAIR_PER_KM = 50;//car
                 break;
@@ -792,7 +814,7 @@ FareCalculation fareCalculation;
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_MINI);
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare2(Helper.VEHICLE_MINI);
                 Constants.selected_vehicle = Helper.VEHICLE_MINI;
                 //Constants.BASE_FAIR_PER_KM = 30;//option mini
                 break;
@@ -807,7 +829,7 @@ FareCalculation fareCalculation;
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_NANO);
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare2(Helper.VEHICLE_NANO);
                 Constants.selected_vehicle = Helper.VEHICLE_NANO;
                 //Constants.BASE_FAIR_PER_KM = 20;//option nano
                 break;
@@ -822,7 +844,7 @@ FareCalculation fareCalculation;
                     vehicle5.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_VIP);
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare2(Helper.VEHICLE_VIP);
                 Constants.selected_vehicle = Helper.VEHICLE_VIP;
                 //Constants.BASE_FAIR_PER_KM = 60;//option vip
                 break;
@@ -837,7 +859,7 @@ FareCalculation fareCalculation;
                     vehicle4.setVisibility(View.GONE);
                 if (vehicle1.getVisibility() == View.VISIBLE)
                     vehicle1.setVisibility(View.GONE);
-                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare(Helper.VEHICLE_THREE_WHEELER);
+                Constants.BASE_FAIR_PER_KM = fareCalculation.getBaseFare2(Helper.VEHICLE_THREE_WHEELER);
                 Constants.selected_vehicle = Helper.VEHICLE_THREE_WHEELER;
                 //Constants.BASE_FAIR_PER_KM = 30;//option three wheeler
                 break;
@@ -1255,7 +1277,7 @@ FareCalculation fareCalculation;
             showRadiusInputField();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
-            double total_cost = fareCalculation.getCost();
+           /* double total_cost = fareCalculation.getCostSingleRide(Constants.BASE_FAIR_PER_KM,Integer.valueOf(new_order.getTotal_kms())-1);
             if (layout_cost_detail.getVisibility() == View.GONE) {
                 if (btn_confirm.getVisibility() == View.VISIBLE)
                     btn_confirm.setVisibility(View.GONE);
@@ -1265,7 +1287,7 @@ FareCalculation fareCalculation;
                 txt_cost.setText(String.valueOf(total_cost));
                 new_order.setEstimated_cost(String.valueOf(total_cost));
                 tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
-            }
+            }*/
             timer.cancel();
         }
         else if (isDriverResponded ||isTimeout) {

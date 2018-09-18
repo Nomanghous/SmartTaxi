@@ -19,11 +19,8 @@ public class LocationManagerService extends Service
     private static final int LOCATION_INTERVAL = 5000;
     private static final float LOCATION_DISTANCE = 10f;
     public static Location mLastLocation;
-    
     private class LocationListener implements android.location.LocationListener
     {
-    
-    
         LocationListener(String provider)
         {
             Log.e(TAG, "LocationListener " + provider);
@@ -67,9 +64,7 @@ public class LocationManagerService extends Service
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
         localBroadcastManager.sendBroadcast(intent);
     }
-    
-    
-    
+
     @Override
     public IBinder onBind(Intent arg0)
     {
