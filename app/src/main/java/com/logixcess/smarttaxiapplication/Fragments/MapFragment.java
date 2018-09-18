@@ -1318,7 +1318,7 @@ FareCalculation fareCalculation;
         else if (isDriverResponded ||isTimeout) {
             progressDialog.dismiss();
             if(isTimeout)
-                Toast.makeText(getContext(), "Driver didn't respond.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
             else{
                 Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
             }
@@ -1821,14 +1821,13 @@ FareCalculation fareCalculation;
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if (dataSnapshot.exists()) {
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        Requests request = snapshot.getValue(Requests.class);
-                        if (request != null) {
-                            if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_PENDING) {
-                                showRequestedInvitation(request);
-                            }
+                    Requests request = dataSnapshot.getValue(Requests.class);
+                    if (request != null) {
+                        if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_PENDING) {
+                            showRequestedInvitation(request);
                         }
                     }
+                
                 }
             }
     
