@@ -15,7 +15,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -29,7 +28,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
-import com.google.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -157,13 +155,13 @@ public class DriverMainActivity extends AppCompatActivity {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         Requests request = snapshot.getValue(Requests.class);
                         if (request != null) {
-                            if (request.getDriverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
+                            if (request.getReceiverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
                                 NotificationPayload notificationPayload = new NotificationPayload();
                                 notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
                                 notificationPayload.setTitle("Request Accepted");
                                 notificationPayload.setDescription("Your Group Ride Request is Accepted");
-                                notificationPayload.setUser_id(request.getUserId());
-                                notificationPayload.setDriver_id(request.getDriverId());
+                                notificationPayload.setUser_id(request.getSenderId());
+                                notificationPayload.setDriver_id(request.getReceiverId());
                                 notificationPayload.setOrder_id("");
                                 notificationPayload.setPercentage_left("-1");
                                 String str = new Gson().toJson(notificationPayload);

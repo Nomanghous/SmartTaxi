@@ -77,7 +77,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     public static final String KEY_CURRENT_ORDER = "current_order";
     private GoogleMap mMap;
-    private boolean IS_RIDE_SHARED = false;
     private DatabaseReference db_ref_user,db_ref_drivers;
     
     private Location myLocation = null;
@@ -113,13 +112,13 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             if(currentOrder != null && currentOrder.getShared()){
 
                 if(currentSharedRide != null && currentSharedRide.getGroup_id() != null) {
-                    IS_RIDE_SHARED = true;
+                
                 } else if(currentOrder.getShared()){
                     fetchThatGroup();
                 }
 
             }else if(currentOrder != null){
-                IS_RIDE_SHARED = false;
+            
             }else {
                 finish();
                 return;

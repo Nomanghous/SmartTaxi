@@ -471,6 +471,8 @@ AlertDialog builder;
                     MapFragment.new_order.setPickup(place.getAddress().toString());
                     MapFragment.new_order.setPickupLat(place.getLatLng().latitude);
                     MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
+                    mapFragment.showNearbyPassengersForSharedRide();
+    
                 }
             }
             else if (resultCode == RESULT_CANCELED)
@@ -1168,7 +1170,6 @@ AlertDialog builder;
         });
     }
 
-    public void saveRadiusInputForGroupRide(View view) {
-        mapFragment.saveRadiusInputForGroupRide();
-    }
+    
+    
 }

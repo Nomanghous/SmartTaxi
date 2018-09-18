@@ -8,23 +8,27 @@ import com.google.firebase.database.Exclude;
 public class Requests implements Parcelable{
     @Exclude
     public static int STATUS_ACCEPTED = 1, STATUS_PENDING = 0, STATUS_REJECTED = 2;
-    String driverId, userId;
+    boolean forSharedRide;
+    String receiverId, senderId;
     int status;
-
+    
+    
     public Requests() {
 
     }
 
-    public Requests(String driverId, String userId, int  status) {
-        this.driverId = driverId;
-        this.userId = userId;
+    public Requests(String driverId, String userId, int  status, boolean sharedRide) {
+        this.receiverId = driverId;
+        this.senderId = userId;
         this.status = status;
+        this.forSharedRide = sharedRide;
     }
 
     protected Requests(Parcel in) {
-        driverId = in.readString();
-        userId = in.readString();
+        receiverId = in.readString();
+        senderId = in.readString();
         status = in.readInt();
+        
     }
 
     public static final Creator<Requests> CREATOR = new Creator<Requests>() {
@@ -38,21 +42,29 @@ public class Requests implements Parcelable{
             return new Requests[size];
         }
     };
-
-    public String getDriverId() {
-        return driverId;
+    
+    public Requests(String driverId, String userId, int status) {
+        this.receiverId = driverId;
+        this.senderId = userId;
+        this.status = status;
+        this.forSharedRide = false;
+    
+    }
+    
+    public String getReceiverId() {
+        return receiverId;
     }
 
-    public void setDriverId(String driverId) {
-        this.driverId = driverId;
+    public void setReceiverId(String receiverId) {
+        this.receiverId = receiverId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getSenderId() {
+        return senderId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setSenderId(String senderId) {
+        this.senderId = senderId;
     }
 
     public int getStatus() {
@@ -70,8 +82,8 @@ public class Requests implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(driverId);
-        dest.writeString(userId);
+        dest.writeString(receiverId);
+        dest.writeString(senderId);
         dest.writeInt(status);
     }
 }

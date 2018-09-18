@@ -32,9 +32,9 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     private Double pickupLat, pickupLong, dropoffLat, dropoffLong;
     private ArrayList<RoutePoints> SelectedRoute;
     private int passenger_status;
-
+    
     public Order() {
-
+    
     }
 
     public Order(String pickup, String dropoff, Double pickupLat, Double pickupLong, Double dropoffLat, Double dropoffLong, String user_id, String user_name, String scheduled_time, String driver_id, String driver_name, String vehicle_id, String total_kms, String waiting_time, String pickup_time, String pickup_date, String estimated_cost, Boolean isScheduled,
