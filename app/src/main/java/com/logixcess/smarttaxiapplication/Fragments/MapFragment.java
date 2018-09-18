@@ -422,15 +422,12 @@ FareCalculation fareCalculation;
             if (gMap != null) {
                 Marker marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
                         .title("Driver: ".concat(driver1.getFk_user_id())));
-
                 marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
                 marker.setTag(driver1.getFk_user_id());
                 driver_list_index.put(driver1.getFk_user_id(), index);
                 driver_in_map.put(driver1.getFk_user_id(), marker);
             }
-
         }
-
     }
 
 
@@ -1231,8 +1228,8 @@ FareCalculation fareCalculation;
             ps.setLatitude(passenger.getLatitude());
             ps.setLongitude(passenger.getLongitude());
             Location pickup = new Location("pickup");
-            ps.setLatitude(passenger.getLatitude());
-            ps.setLongitude(passenger.getLongitude());
+            pickup.setLatitude(passenger.getLatitude());
+            pickup.setLongitude(passenger.getLongitude());
             if (pickup.distanceTo(ps) < group_radius) {
                 MarkerOptions markerOptions = new MarkerOptions().title(passenger.getFk_user_id()).icon(
                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
@@ -1249,13 +1246,15 @@ FareCalculation fareCalculation;
             if(p.getFk_user_id().equals(passenger.getFk_user_id()))
                 return;
         }
+        if(passenger.getLatitude() == 0)
+            return;
         Location ps = new Location("passsenger");
         ps.setLatitude(passenger.getLatitude());
         ps.setLongitude(passenger.getLongitude());
         Location pickup = new Location("pickup");
-        ps.setLatitude(passenger.getLatitude());
-        ps.setLongitude(passenger.getLongitude());
-        assert getActivity() != null;
+        pickup.setLatitude(new_order.getPickupLat());
+        pickup.setLongitude(new_order.getPickupLong());
+
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -1589,7 +1588,6 @@ FareCalculation fareCalculation;
             }
             return data;
         }
-
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
@@ -1599,7 +1597,6 @@ FareCalculation fareCalculation;
 
     private class ParserTask extends
             AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
         @Override
         protected List<List<HashMap<String, String>>> doInBackground(
                 String... jsonData) {

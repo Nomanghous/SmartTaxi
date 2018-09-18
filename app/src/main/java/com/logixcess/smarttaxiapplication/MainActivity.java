@@ -462,9 +462,8 @@ AlertDialog builder;
                     MapFragment.new_order.setPickup(place.getAddress().toString());
                     MapFragment.new_order.setPickupLat(place.getLatLng().latitude);
                     MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
-                    mapFragment.showNearbyPassengersForSharedRide();
                     mapFragment.showCalculatedCost();
-                    mapFragment.addMarkersAfterRefresh();
+
                 }
             }
             else if (resultCode == RESULT_CANCELED)
