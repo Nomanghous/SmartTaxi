@@ -38,6 +38,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.firebase.client.Firebase;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -97,6 +98,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
 
@@ -122,6 +125,8 @@ public class MainActivity extends BaseActivity
     private String CURRENT_ORDER_ID = "";
     private boolean IS_FOR_ORDER_VIEW = false;
     private NotificationPayload notificationPayload = null;
+    private DatabaseReference db_ref_user_general;
+    private DatabaseReference db_ref;
 
     public static String getRegionName(Context context, double lati, double longi) {
         String regioName = "";
@@ -156,7 +161,8 @@ public class MainActivity extends BaseActivity
         navigationView = findViewById(R.id.nav_view);
         progressbar = findViewById(R.id.progressbar);
         navigationView.setNavigationItemSelectedListener(this);
-
+        db_ref = FirebaseDatabase.getInstance().getReference();
+        db_ref_user_general = db_ref.child(Helper.REF_PASSENGERS);
         //Ahmads
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
@@ -194,6 +200,7 @@ public class MainActivity extends BaseActivity
                     }
                 });
             }
+            new Timer().schedule(new Every10Seconds(),5000,10000);
         }
 
 
@@ -448,22 +455,6 @@ AlertDialog builder;
         {
             if(resultCode == RESULT_OK){
                 mapFragment.getgMap().clear();
-//                double latitude = data.getDoubleExtra("latitude", 0);
-//                Log.d("LATITUDE****", String.valueOf(latitude));
-//                double longitude = data.getDoubleExtra("longitude", 0);
-//                Log.d("LONGITUDE****", String.valueOf(longitude));
-//                String address = data.getStringExtra("location_address");
-//                Log.d("ADDRESS****", String.valueOf(address));
-//                String postalcode = data.getStringExtra("zipcode");
-//                Log.d("POSTALCODE****", String.valueOf(postalcode));
-//                Address fullAddress = data.getParcelableExtra("address");
-//                if(fullAddress != null) {
-//                    Log.d("FULL ADDRESS****", fullAddress.toString());
-//                    MapFragment.et_pickup.setText(fullAddress.getAddressLine(0));
-//                    MapFragment.new_order.setPickup(fullAddress.getAddressLine(0));
-//                    MapFragment.new_order.setPickupLat(latitude);
-//                    MapFragment.new_order.setPickupLong(longitude);
-//                }
                 Place place = PlaceAutocomplete.getPlace(this, data);
                 if(place != null && place.getAddress() != null) {
                     Log.d("FULL ADDRESS****", place.toString());
@@ -511,7 +502,6 @@ AlertDialog builder;
             else if (resultCode == RESULT_CANCELED) {
                 //Write your code if there's no result
             }
-
         }
         if (requestCode == UserProfileFragment.GALLERY_REQUEST) {
             if (resultCode == RESULT_OK) {
@@ -534,11 +524,17 @@ AlertDialog builder;
                 
             }
         }
-
-
+    }
+    private void updateUserLocation(){
+        
+        if(mLastLocation == null)
+            return;
+        Double lat = mLastLocation.getLatitude();
+        Double lng = mLastLocation.getLongitude();
+        db_ref_user_general.child(mFirebaseUser.getUid()).child("latitude").setValue(Helper.roundOffDouble(lat));
+        db_ref_user_general.child(mFirebaseUser.getUid()).child("longitude").setValue(Helper.roundOffDouble(lng));
 
     }
-
 
 
     private void onSelectFromGalleryResult(Intent data) {
@@ -1170,7 +1166,12 @@ AlertDialog builder;
             }
         });
     }
-
     
     
+    private class Every10Seconds extends TimerTask {
+        @Override
+        public void run() {
+            updateUserLocation();
+        }
+    }
 }
