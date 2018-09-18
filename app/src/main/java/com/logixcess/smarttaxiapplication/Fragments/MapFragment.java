@@ -1827,23 +1827,20 @@ FareCalculation fareCalculation;
                             showRequestedInvitation(request);
                         }
                     }
-                
                 }
             }
     
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if (dataSnapshot.exists()) {
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        Requests request = snapshot.getValue(Requests.class);
-                        if (request != null) {
-                            if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
-                                Toast.makeText(getContext(),"Reqeust Accepted",Toast.LENGTH_LONG).show();
-                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
-                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
-                            }
-                
+                    Requests request = dataSnapshot.getValue(Requests.class);
+                    if (request != null) {
+                        if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
+                            Toast.makeText(getContext(),"Reqeust Accepted",Toast.LENGTH_LONG).show();
+                        } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
+                            Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
                         }
+            
                     }
                 }
             }
