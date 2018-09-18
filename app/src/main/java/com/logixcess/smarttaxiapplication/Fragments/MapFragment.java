@@ -222,6 +222,7 @@ FareCalculation fareCalculation;
         super.onCreate(savedInstanceState);
         gps = new UserLocationManager(getContext());
         fareCalculation = new FareCalculation();
+       
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -373,6 +374,10 @@ FareCalculation fareCalculation;
         });
         everyTenSecondsTask();
         MY_LOCATION = LocationManagerService.mLastLocation;
+        if(getActivity() != null) {
+            String userId = ((MainActivity) getActivity()).getmFirebaseUser().getUid();
+            listenerForRequests(userId);
+        }
         return view;
     }
     
@@ -1776,18 +1781,18 @@ FareCalculation fareCalculation;
     *
     *  Change Requirements; Shared Ride
     *
-    *
     * */
-    
     
     public void sendInvitationForGroupRide(String userId) {
         generateNewRequest(userId, new_order.getUser_id());
-        listenerForRequests(getContext(),new_order.getUser_id());
+        
     }
     
     private void showUserDetails(String title) {
-        progressDialog = new ProgressDialog(getActivity());
-        progressDialog.setMessage("Please Wait...");
+        if(progressDialog == null) {
+            progressDialog = new ProgressDialog(getActivity());
+            progressDialog.setMessage("Please Wait...");
+        }
         progressDialog.show();
         db_ref_user_general.child(title).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -1808,9 +1813,7 @@ FareCalculation fareCalculation;
         });
     }
     
-    
-    
-    public void listenerForRequests(Context context, String mUserId){
+    public void listenerForRequests(String mUserId){
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
             @Override
