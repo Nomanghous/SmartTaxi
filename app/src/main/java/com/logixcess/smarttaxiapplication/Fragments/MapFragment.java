@@ -332,8 +332,14 @@ FareCalculation fareCalculation;
 //                    pickup.setLongitude(new_order.getPickupLong());
 //                    mainActivity.getDrivers(pickup);
 //                }
-                saveRadiusInputForGroupRide();
-                
+                if(new_order !=null)
+                if(new_order.getShared())
+                    saveRadiusInputForGroupRide();
+                else{
+                    ct_address.setVisibility(View.VISIBLE);
+                    ct_vehicles.setVisibility(View.GONE);
+                    btn_confirm.setVisibility(View.VISIBLE);
+                }
                 refreshDrivers();
                 showNearbyPassengersForSharedRide();
             }
