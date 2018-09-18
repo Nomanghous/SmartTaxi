@@ -312,53 +312,14 @@ FareCalculation fareCalculation;
         btn_select_vehicle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                if(cb_shared2.isChecked())
-//                {
-//                    user_selection_dialog();
-//                }
-
                 if (new_order != null) {
                     new_order.setVehicle_id(Constants.selected_vehicle);
                     new_order.setShared(cb_shared.isChecked());
-                }
-//                MainActivity mainActivity = ((MainActivity)getContext());
-//                if(mainActivity == null)
-//                    return;
-//                if(driverList == null)
-//                    driverList = new ArrayList<>();
-//                if(new_order.getPickupLat() != null){
-//                    Location pickup = new Location("pickup");
-//                    pickup.setLatitude(new_order.getPickupLat());
-//                    pickup.setLongitude(new_order.getPickupLong());
-//                    mainActivity.getDrivers(pickup);
-//                }
-                if(new_order !=null)
-                {
-                    if(new_order.getShared())
-                    saveRadiusInputForGroupRide();
-                    else
-                        {
-                            String stringKm = new_order.getTotal_kms();
-                            total_cost = fareCalculation.getCostSingleRide();
-//                            double total_cost = fareCalculation.getCostSingleRide(
-//                                    Constants.BASE_FAIR_PER_KM,
-//                                    km-1
-//                            ,Double.valueOf(stringKm.split(".")[1]));
-                            if (layout_cost_detail.getVisibility() == View.GONE)
-                            {
-                                if (btn_confirm.getVisibility() == View.VISIBLE)
-                                    btn_confirm.setVisibility(View.GONE);
-                                layout_cost_detail.setVisibility(View.VISIBLE);
-                                txtLocation.setText("Location : " + new_order.getPickup());
-                                txtDestination.setText("Destination : " + new_order.getDropoff());
-                                txt_cost.setText(String.valueOf(total_cost));
-                                new_order.setEstimated_cost(String.valueOf(total_cost));
-                                tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
-                            }
-                        ct_address.setVisibility(View.VISIBLE);
-                        ct_vehicles.setVisibility(View.GONE);
-                        if(btn_confirm.getVisibility() == View.VISIBLE)
-                        btn_confirm.setVisibility(View.GONE);
+    
+                    if (new_order.getShared())
+                        saveRadiusInputForGroupRide();
+                    else {
+                        showCalculatedCost();
                         //btn_confirm.setVisibility(View.VISIBLE);
                     }
                 }
@@ -412,7 +373,28 @@ FareCalculation fareCalculation;
         MY_LOCATION = LocationManagerService.mLastLocation;
         return view;
     }
-
+    
+    public void showCalculatedCost() {
+        if(new_order.getTotal_kms() == null)
+            return;
+        
+        total_cost = fareCalculation.getCostSingleRide();
+        if (layout_cost_detail.getVisibility() == View.GONE) {
+            if (btn_confirm.getVisibility() == View.VISIBLE)
+                btn_confirm.setVisibility(View.GONE);
+            layout_cost_detail.setVisibility(View.VISIBLE);
+            txtLocation.setText("Location : " + new_order.getPickup());
+            txtDestination.setText("Destination : " + new_order.getDropoff());
+            txt_cost.setText(String.valueOf(total_cost));
+            new_order.setEstimated_cost(String.valueOf(total_cost));
+            tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
+        }
+        ct_address.setVisibility(View.VISIBLE);
+        ct_vehicles.setVisibility(View.GONE);
+        if (btn_confirm.getVisibility() == View.VISIBLE)
+            btn_confirm.setVisibility(View.GONE);
+    }
+    
     public void getDriverList(List<Driver> drivers) {
         if (new_order == null || thereIsActiveOrder)
             return;

@@ -472,7 +472,7 @@ AlertDialog builder;
                     MapFragment.new_order.setPickupLat(place.getLatLng().latitude);
                     MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
                     mapFragment.showNearbyPassengersForSharedRide();
-    
+                    mapFragment.showCalculatedCost();
                 }
             }
             else if (resultCode == RESULT_CANCELED)
@@ -491,7 +491,7 @@ AlertDialog builder;
                     MapFragment.new_order.setDropoff(place.getAddress().toString());
                     MapFragment.new_order.setDropoffLat(place.getLatLng().latitude);
                     MapFragment.new_order.setDropoffLong(place.getLatLng().longitude);
-
+                    mapFragment.showCalculatedCost();
                     if (!TextUtils.isEmpty(MapFragment.et_pickup.getText())) {
                         MarkerOptions options = new MarkerOptions();
                         Double pickupLat = MapFragment.new_order.getPickupLat();
