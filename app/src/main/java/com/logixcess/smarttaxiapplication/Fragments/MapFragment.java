@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -64,6 +65,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -1815,29 +1817,51 @@ FareCalculation fareCalculation;
     
     public void listenerForRequests(String mUserId){
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
-        db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+        db_ref_requests.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if (dataSnapshot.exists()) {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         Requests request = snapshot.getValue(Requests.class);
                         if (request != null) {
                             if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_PENDING) {
-                               showRequestedInvitation(request);
-                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
-                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
-                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
-                                // Request Rejected
-                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
+                                showRequestedInvitation(request);
                             }
-                            
                         }
                     }
                 }
             }
+    
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Requests request = snapshot.getValue(Requests.class);
+                        if (request != null) {
+                            if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
+                                Toast.makeText(getContext(),"Reqeust Accepted",Toast.LENGTH_LONG).show();
+                            } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
+                                Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
+                            }
+                
+                        }
+                    }
+                }
+            }
+    
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+        
+            }
+    
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+        
+            }
+    
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-            
+        
             }
         });
     }
