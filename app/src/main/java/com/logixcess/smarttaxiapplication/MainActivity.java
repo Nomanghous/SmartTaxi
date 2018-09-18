@@ -473,6 +473,7 @@ AlertDialog builder;
                     MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
                     mapFragment.showNearbyPassengersForSharedRide();
                     mapFragment.showCalculatedCost();
+                    mapFragment.addMarkersAfterRefresh();
                 }
             }
             else if (resultCode == RESULT_CANCELED)

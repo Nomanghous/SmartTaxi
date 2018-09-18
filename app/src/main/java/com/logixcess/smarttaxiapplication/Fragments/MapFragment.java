@@ -1222,7 +1222,26 @@ FareCalculation fareCalculation;
             }
         });
     }
-    
+
+    public void addMarkersAfterRefresh(){
+        if(mNearbyPassengers == null)
+            return;
+        for(Passenger passenger : mNearbyPassengers) {
+            Location ps = new Location("passsenger");
+            ps.setLatitude(passenger.getLatitude());
+            ps.setLongitude(passenger.getLongitude());
+            Location pickup = new Location("pickup");
+            ps.setLatitude(passenger.getLatitude());
+            ps.setLongitude(passenger.getLongitude());
+            if (pickup.distanceTo(ps) < group_radius) {
+                MarkerOptions markerOptions = new MarkerOptions().title(passenger.getFk_user_id()).icon(
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                        .position(new LatLng(passenger.getLatitude(), passenger.getLongitude())).snippet("Nearby");
+                gMap.addMarker(markerOptions);
+            }
+        }
+    }
+
     private void addMarkersForPassenger(Passenger passenger) {
         if(mNearbyPassengers == null)
             mNearbyPassengers = new ArrayList<>();
@@ -1236,13 +1255,21 @@ FareCalculation fareCalculation;
         Location pickup = new Location("pickup");
         ps.setLatitude(passenger.getLatitude());
         ps.setLongitude(passenger.getLongitude());
-        if(pickup.distanceTo(ps) < group_radius) {
-            MarkerOptions markerOptions = new MarkerOptions().title(passenger.getFk_user_id()).icon(
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
-                    .position(new LatLng(passenger.getLatitude(), passenger.getLongitude())).snippet("Nearby");
-            gMap.addMarker(markerOptions);
-            mNearbyPassengers.add(passenger);
-        }
+        assert getActivity() != null;
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(pickup.distanceTo(ps) < group_radius) {
+                    MarkerOptions markerOptions = new MarkerOptions().title(passenger.getFk_user_id()).icon(
+
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                            .position(new LatLng(passenger.getLatitude(), passenger.getLongitude())).snippet("Nearby");
+                    gMap.addMarker(markerOptions);
+                    mNearbyPassengers.add(passenger);
+                }
+            }
+        });
+
     }
     
     
