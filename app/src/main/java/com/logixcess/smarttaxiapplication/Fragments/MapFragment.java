@@ -194,6 +194,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private List<Passenger> mNearbyPassengers;
     private TextView tv_distance, tv_estimated_cost;
     private CardView ct_details;
+    private boolean isTimeoutForPassenger = false;
+    private boolean isPassengerResponded = false;
+    private boolean isPassengerAccepted = false;
     
     
     public MapFragment() {
@@ -618,8 +621,8 @@ FareCalculation fareCalculation;
                 progressDialog.dismiss();
             }
             String status = "OFFLINE";
-            if(true)
-                status = "ONLINE";
+            
+            status = "ONLINE";
             final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
             AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
             builder.setTitle("Driver Information");
@@ -1213,7 +1216,25 @@ FareCalculation fareCalculation;
             }
         }.start();
     }
-
+    private void waitForPassengerResponse(String myId, String otherId) {
+        ProgressDialog progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage("Waiting for Passenger Response");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        isTimeoutForPassenger = false;
+        new CountDownTimer(30000, 5000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                checkForResponseOfPassenger(progressDialog,this,otherId);
+            }
+            
+            @Override
+            public void onFinish() {
+                isTimeoutForPassenger = true;
+                checkForResponseOfPassenger(progressDialog,this,otherId);
+            }
+        }.start();
+    }
 
     public void showNearbyPassengersForSharedRide(){
         DatabaseReference db_passengers = firebase_db.getReference().child(Helper.REF_PASSENGERS);
@@ -1316,6 +1337,29 @@ FareCalculation fareCalculation;
             timer.cancel();
         }
         else if (isDriverResponded ||isTimeout) {
+            progressDialog.dismiss();
+            if(isTimeout)
+                Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
+            else{
+                Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
+            }
+            timer.cancel();
+        }
+    }
+    
+    private void checkForResponseOfPassenger(ProgressDialog progressDialog, CountDownTimer timer, String otherId) {
+        if (isPassengerAccepted) {
+            progressDialog.dismiss();
+            if(mPassengerList == null)
+                mPassengerList =  new HashMap<>();
+            addPassenger(otherId);
+            if(currentSharedRide == null)
+                currentSharedRide = new SharedRide();
+            currentSharedRide.setPassengers(mPassengerList);
+            Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
+            timer.cancel();
+        }
+        else if (isPassengerResponded || isTimeoutForPassenger) {
             progressDialog.dismiss();
             if(isTimeout)
                 Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
@@ -1726,8 +1770,7 @@ FareCalculation fareCalculation;
                     User passenger = dataSnapshot.getValue(User.class);
                     if(passenger == null)
                         return;
-                    if(!mPassengerList.containsKey(passenger.getUser_id()))
-                        mPassengerList.put(passenger.getUser_id(),true);
+                    addPassenger(passenger.getUser_id());
                 } else {
                     Toast.makeText(getContext(), "Sorry, No User Found.", Toast.LENGTH_SHORT).show();
                 }
@@ -1738,6 +1781,14 @@ FareCalculation fareCalculation;
 
             }
         });
+    }
+    
+    private void addPassenger(String user_id) {
+        if(new_order.getVehicle_id().equals(Helper.VEHICLE_THREE_WHEELER)
+                && mPassengerList.size() >= 3)
+            return;
+        if(!mPassengerList.containsKey(user_id))
+            mPassengerList.put(user_id,true);
     }
     
     public class AddMemberDialog extends Dialog {
@@ -1785,9 +1836,9 @@ FareCalculation fareCalculation;
     *
     * */
     
-    public void sendInvitationForGroupRide(String userId) {
-        generateNewRequest(userId, new_order.getUser_id());
-        
+    public void sendInvitationForGroupRide(String otherId) {
+        generateNewRequest(otherId, new_order.getUser_id());
+        waitForPassengerResponse(new_order.getUser_id(),otherId);
     }
     
     private void showUserDetails(String title) {
@@ -1839,8 +1890,13 @@ FareCalculation fareCalculation;
                             Toast.makeText(getContext(),"Reqeust Accepted",Toast.LENGTH_LONG).show();
                         } else if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
                             Toast.makeText(getContext(),"Reqeust Rejected",Toast.LENGTH_LONG).show();
+                        }if (request.getSenderId().equals(mUserId) && request.getStatus() == Requests.STATUS_ACCEPTED) {
+                            isPassengerAccepted = true;
+                            isPassengerResponded = true;
+                        } else if (request.getSenderId().equals(mUserId) && request.getStatus() == Requests.STATUS_REJECTED) {
+                            isPassengerAccepted = false;
+                            isPassengerResponded = true;
                         }
-            
                     }
                 }
             }
@@ -1890,6 +1946,7 @@ FareCalculation fareCalculation;
         String req_id = Helper.getConcatenatedID(user_id,myid);
         db_ref_requests.child(req_id).child("status").setValue(Requests.STATUS_ACCEPTED);
         Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+        
     }
   
 }
