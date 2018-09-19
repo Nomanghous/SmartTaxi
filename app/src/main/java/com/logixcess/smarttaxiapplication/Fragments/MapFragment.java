@@ -1180,7 +1180,7 @@ FareCalculation fareCalculation;
                     try {
                         JSONObject json = new JSONObject(str);
                         new PushNotifictionHelper(getContext()).execute(token, json);
-                        generateNewRequest(driverId, new_order.getUser_id());
+                        generateNewRequest(driverId, new_order.getUser_id(),true);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -1551,16 +1551,19 @@ FareCalculation fareCalculation;
 
     }
 
-    private void generateNewRequest(String driverId, String userId) {
-        Requests requests = new Requests(driverId, userId, Requests.STATUS_PENDING,new_order.getShared());
-        String res_id = Helper.getConcatenatedID(userId, driverId);
+    private void generateNewRequest(String otherId, String userId, boolean forDriver) {
+        Requests requests = new Requests(otherId, userId, Requests.STATUS_PENDING,new_order.getShared());
+        String res_id = Helper.getConcatenatedID(userId, otherId);
         db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
                     Toast.makeText(getContext(), "Request Sent Successfully", Toast.LENGTH_SHORT).show();
                     isOrderAccepted = false;
-                    waitForDriverResponse(driverId, userId);
+                    if(forDriver)
+                        waitForDriverResponse(otherId, userId);
+                    else
+                        waitForPassengerResponse(userId,otherId);
                 }
             }
         });
@@ -1837,7 +1840,7 @@ FareCalculation fareCalculation;
     * */
     
     public void sendInvitationForGroupRide(String otherId) {
-        generateNewRequest(otherId, new_order.getUser_id());
+        generateNewRequest(otherId, new_order.getUser_id(),false);
         waitForPassengerResponse(new_order.getUser_id(),otherId);
     }
     
