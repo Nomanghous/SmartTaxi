@@ -1611,18 +1611,19 @@ FareCalculation fareCalculation;
             return false;
         }
         else if(new_order.getShared()) {
-            if (CREATE_NEW_GROUP) {
+//            if (CREATE_NEW_GROUP) {
+            CREATE_NEW_GROUP = true;
                 if(group_radius < 10) {
                     showToast("Please enter Radius for Shared Ride");
                     showRadiusInputField();
                     return false;
                 }
-            }else{
-                if(TextUtils.isEmpty(Constants.group_id)){
-                    showToast("Group must be selected first");
-                    return false;
-                }
-            }
+//            }else{
+//                if(TextUtils.isEmpty(Constants.group_id)){
+//                    showToast("Group must be selected first");
+//                    return false;
+//                }
+//            }
         }
         return true;
     }
