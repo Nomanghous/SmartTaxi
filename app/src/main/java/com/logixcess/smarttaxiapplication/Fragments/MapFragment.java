@@ -1364,11 +1364,13 @@ FareCalculation fareCalculation;
             if(currentSharedRide == null)
                 currentSharedRide = new SharedRide();
             currentSharedRide.setPassengers(mPassengerList);
+            calculateTheCosts();
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             timer.cancel();
         }
         else if (isPassengerResponded || isTimeoutForPassenger) {
             progressDialog.dismiss();
+            calculateTheCosts();
             if(isTimeout)
                 Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
             else{
