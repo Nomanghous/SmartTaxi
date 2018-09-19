@@ -528,7 +528,7 @@ FareCalculation fareCalculation;
         ImageView image = new ImageView(getActivity());
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(350,300);
         image.setLayoutParams(layoutParams);
-        if(url!=null && (!TextUtils.isEmpty(url)) )
+        if(url != null && (!TextUtils.isEmpty(url)) )
         {
             RequestOptions requestOptions = new RequestOptions();
             requestOptions = requestOptions.placeholder(R.drawable.user_placeholder);
@@ -625,19 +625,27 @@ FareCalculation fareCalculation;
             status = "ONLINE";
             final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
             AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
-            builder.setTitle("Driver Information");
+            builder.setTitle("Information");
             builder.setView(image);
-            builder.setPositiveButton("Request Now", new DialogInterface.OnClickListener() {
+            String text = "Request Now";
+            if(purpose == TO_SHOW_INFO_OF_PASSENGER)
+                text = "Send Invitation";
+            if(purpose == TO_ACCEPT_INVITATION)
+                text = "Accept Invitation";
+    
+            builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     //driver_selected(user_id);
                     new_order.setDriver_id(user_id);
-                    sendNotificationToRequestGroupRide(user_id);
-//                    } else {//non shared
-
-//                    }
+                    if(purpose == TO_SHOW_INFO_OF_DRIVER)
+                        sendNotificationToRequestGroupRide(user_id);
+                    else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
+                        sendInvitationForGroupRide(user_id);
+                    else if(purpose == TO_ACCEPT_INVITATION) {
+                        goAcceptInvitation(user_id);
+                    }
                     dialog.dismiss();
-
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
