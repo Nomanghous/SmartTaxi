@@ -14,6 +14,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -77,8 +78,10 @@ import com.logixcess.smarttaxiapplication.Fragments.RideHistoryFragment;
 import com.logixcess.smarttaxiapplication.Fragments.UserProfileFragment;
 import com.logixcess.smarttaxiapplication.Interfaces.IDrivers;
 import com.logixcess.smarttaxiapplication.Models.Driver;
+import com.logixcess.smarttaxiapplication.Models.Group;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
@@ -120,6 +123,7 @@ public class MainActivity extends BaseActivity
     private ProgressBar progressbar;
     private DrawerLayout drawer;
     BroadcastReceiver mRegistrationBroadcastReceiver;
+    
     public static FirebaseUser mFirebaseUser;
     private int CURRENT_ORDER_STATUS = 0;
     private String CURRENT_ORDER_ID = "";
@@ -236,7 +240,6 @@ public class MainActivity extends BaseActivity
             }
         };
         displayFirebaseRegId();
-        new FetchDriversBasedOnRadius(this, mLastLocation,this);
         if(bundle != null){
             if(bundle.containsKey(MyNotificationManager.INTENT_FILTER_VIEW_ORDER)){
                 IS_FOR_ORDER_VIEW = true;
@@ -254,8 +257,20 @@ public class MainActivity extends BaseActivity
         {
             getAllNotifications(user.getUid());
         }
-        getCurrentOrderId(true);
-
+        new CountDownTimer(5000, 2500) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                getCurrentOrderId(true);
+            }
+        
+            @Override
+            public void onFinish() {
+                new FetchDriversBasedOnRadius(MainActivity.this, mLastLocation,MainActivity.this);
+            }
+        }.start();
+        
+        
+        
         order_pending = new Order();
     }
 
@@ -329,9 +344,7 @@ public class MainActivity extends BaseActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+        
 
         return super.onOptionsItemSelected(item);
     }
@@ -514,11 +527,18 @@ AlertDialog builder;
             }
         }else if(requestCode == REQUEST_CODE_ORDER_CREATION){
             if(resultCode == RESULT_OK){
+                getCurrentOrderId(true);
                 mapFragment.resetUI();
             }
         }else if(requestCode == REQUEST_CODE_MAPS){
             if(resultCode == RESULT_OK){
+                MapFragment.new_order = null;
+                mapFragment.setIsJoiningOtherRide(false);
+                MapFragment.CREATE_NEW_GROUP = false;
+                Constants.group_id = "";
+                Constants.group_radius = 0;
                 mapFragment.resetUI();
+                getCurrentOrderId(true);
                 mapFragment.setThereIsActiveOrder(false);
                 
             }
@@ -1020,11 +1040,18 @@ AlertDialog builder;
                     for(DataSnapshot snapshot : dataSnapshot.getChildren()){
                         Order order = snapshot.getValue(Order.class);
                         if(order != null){
-                            if(order.getStatus() == Order.OrderStatusInProgress){
+                            if(order.getStatus() == Order.OrderStatusWaiting ||
+                                    order.getStatus() == Order.OrderStatusInProgress){
                                 if(!isForConditionCheck)
                                     openOrderActivity(order);
-                                if(mapFragment != null)
+                                if(mapFragment != null) {
                                     mapFragment.setThereIsActiveOrder(true);
+                                    if(order.getStatus() == Order.OrderStatusWaiting){
+                                        if(order.getShared())
+                                            goFetchGroup(order);
+                                        break;
+                                    }
+                                }
                                 findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
                                 break;
                             }
@@ -1089,6 +1116,36 @@ AlertDialog builder;
                         }
                     });
 
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+    
+    private void goFetchGroup(Order order) {
+        String group_id = Helper.getConcatenatedID(order.getOrder_id(),order.getDriver_id());
+        DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(group_id);
+        db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    SharedRide sharedRide = dataSnapshot.getValue(SharedRide.class);
+                    if(sharedRide != null){
+                        if(sharedRide.getOrder_id().equals(order.getOrder_id())) {
+                            MapFragment.new_order = order;
+                            mapFragment.setIsJoiningOtherRide(false);
+                            MapFragment.CREATE_NEW_GROUP = true;
+                            Constants.group_id = sharedRide.getGroup_id();
+                            Constants.group_radius = sharedRide.getRadius_constraint();
+                            mapFragment.resetUI();
+                        }
+    
+                    }
+                    
                 }
             }
 

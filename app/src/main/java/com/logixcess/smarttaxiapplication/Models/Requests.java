@@ -9,7 +9,7 @@ public class Requests implements Parcelable{
     @Exclude
     public static int STATUS_ACCEPTED = 1, STATUS_PENDING = 0, STATUS_REJECTED = 2;
     boolean forSharedRide;
-    String receiverId, senderId;
+    String receiverId, senderId, driverId, group_id, order_id;
     int status;
     
     
@@ -30,7 +30,31 @@ public class Requests implements Parcelable{
         status = in.readInt();
         
     }
-
+    
+    public String getGroup_id() {
+        return group_id;
+    }
+    
+    public void setGroup_id(String group_id) {
+        this.group_id = group_id;
+    }
+    
+    public String getOrder_id() {
+        return order_id;
+    }
+    
+    public void setOrder_id(String order_id) {
+        this.order_id = order_id;
+    }
+    
+    public String getDriverId() {
+        return driverId;
+    }
+    
+    public void setDriverId(String driverId) {
+        this.driverId = driverId;
+    }
+    
     public static final Creator<Requests> CREATOR = new Creator<Requests>() {
         @Override
         public Requests createFromParcel(Parcel in) {

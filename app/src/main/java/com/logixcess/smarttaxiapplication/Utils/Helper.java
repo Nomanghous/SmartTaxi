@@ -44,8 +44,9 @@ public class Helper {
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000; // it's in meters
     public static boolean IS_FROM_CHILD = false;
-
-
+    public static boolean isAcceptingInvites = false;
+    
+    
     public static String getRefinedLatLngKeyForHashMap(String latlng){
         return latlng.replace("(","").replace(")","").replace(",",commaSeparator).replace(".",dotSeparator);
     }

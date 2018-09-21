@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -43,6 +44,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -123,6 +125,7 @@ import static com.logixcess.smarttaxiapplication.Utils.Constants.group_radius;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -134,12 +137,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public static EditText et_drop_off, et_pickup;
     public static Order new_order;
     public static HashMap<Integer, String> route_details;
-    public static HashMap<String, Marker> driver_in_map = new HashMap<>(); // driver_id,
+    public static HashMap<String, Marker> driver_in_map = new HashMap<>();
+    public static HashMap<String, Marker> nearby_passengers_in_map;
     public static HashMap<String, Integer> driver_list_index = new HashMap<>();
     public static boolean CREATE_NEW_GROUP = false, IS_RIDE_SCHEDULED = false;
     static boolean isOrderAccepted = false, isDriverResponded = false;
     public GoogleMap gMap;
     CheckBox cb_shared, cb_scheduled;
+    Switch cb_accepting;
     Firebase firebase_instance;
     ArrayList<Driver> driverList;
     Location MY_LOCATION;
@@ -147,7 +152,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     Button btn_select_vehicle, btn_hide_details;
     android.app.AlertDialog builder;
     LinearLayout ct_address;
-    RelativeLayout ct_vehicles;
+    RelativeLayout ct_vehicles,btn_invites_container,car_container;
     Button btn_confirm;
     LinearLayout layout_cost_detail;
     EditText radius_input;
@@ -172,6 +177,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         }
     };
+    
     private DatabaseReference db_ref_user;
     private ArrayList<Polyline> polyLineList;
     private UserLocationManager gps;
@@ -197,11 +203,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private boolean isTimeoutForPassenger = false;
     private boolean isPassengerResponded = false;
     private boolean isPassengerAccepted = false;
+    private boolean isJoiningOtherSharedRide = false;
+    private Requests mRequest = null;
     
     
     public MapFragment() {
         // Required empty public constructor
-
+        
     }
 
     /**
@@ -212,7 +220,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
      * @param param2 Parameter 2.
      * @return A new instance of fragment MapFragment.
      */
-FareCalculation fareCalculation;
+    FareCalculation fareCalculation;
     public static MapFragment newInstance(String param1, String param2) {
         MapFragment fragment = new MapFragment();
         Bundle args = new Bundle();
@@ -240,8 +248,6 @@ FareCalculation fareCalculation;
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.dialog_shared_user_selection,
                 null);
-//        View layout = inflater.inflate(R.layout.dialog_shared_user_selection,
-//                (ViewGroup) findViewById(R.id.rating_linear_layout));
         EditText edt_user_numbers = layout.findViewById(R.id.edt_user_numbers);
         Button btn_done = layout.findViewById(R.id.btn_done);
 
@@ -255,8 +261,8 @@ FareCalculation fareCalculation;
                     Snackbar snackbar = Snackbar.make(getActivity().findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
                     snackbar.show();
                 } else {
-                    builder.dismiss();
                     builder.cancel();
+                    builder.dismiss();
                     builder = null;
                 }
 
@@ -287,7 +293,11 @@ FareCalculation fareCalculation;
         vehicle4 = view.findViewById(R.id.vehicle4);
         vehicle5 = view.findViewById(R.id.vehicle5);
         ct_details = view.findViewById(R.id.ct_details);
-
+        cb_accepting = view.findViewById(R.id.cb_accepting);
+        
+        Helper.isAcceptingInvites = readPrefs("accepting_invites").equalsIgnoreCase("true");
+        cb_accepting.setChecked(Helper.isAcceptingInvites);
+        
         layout_vehicle1 = view.findViewById(R.id.layout_vehicle1);
         layout_vehicle1.setOnClickListener(this);
         layout_vehicle2 = view.findViewById(R.id.layout_vehicle2);
@@ -304,10 +314,12 @@ FareCalculation fareCalculation;
         txtDestination = view.findViewById(R.id.txtDestination);
         btn_hide_details = view.findViewById(R.id.btn_hide_details);
         txt_cost = view.findViewById(R.id.txt_cost);
-        ct_address = view.findViewById(R.id.ct_address);// .setVisibility(View.VISIBLE);
-        ct_vehicles = view.findViewById(R.id.ct_vehicles);//.setVisibility(View.GONE);
-        radius_input = view.findViewById(R.id.radius_input);//.setVisibility(View.GONE);
-        btn_confirm = view.findViewById(R.id.btn_confirm);//.setVisibility(View.VISIBLE);
+        ct_address = view.findViewById(R.id.ct_address);
+        ct_vehicles = view.findViewById(R.id.ct_vehicles);
+        car_container = view.findViewById(R.id.car_container);
+        btn_invites_container = view.findViewById(R.id.btn_invites_container);
+        radius_input = view.findViewById(R.id.radius_input);
+        btn_confirm = view.findViewById(R.id.btn_confirm);
         btn_select_vehicle = view.findViewById(R.id.btn_select_vehicle);
 
         btn_add_members.setOnClickListener(new View.OnClickListener() {
@@ -335,8 +347,7 @@ FareCalculation fareCalculation;
                 showNearbyPassengersForSharedRide();
             }
         });
-
-
+        
         mapFragment.onCreate(savedInstanceState);
         mapFragment.getMapAsync(this);
         new_order = new Order();
@@ -361,10 +372,12 @@ FareCalculation fareCalculation;
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 new_order.setShared(isChecked);
-                if(isChecked)
+                if(isChecked) {
                     radius_input.setVisibility(View.VISIBLE);
-                else
+                }
+                else {
                     radius_input.setVisibility(View.GONE);
+                }
             }
         });
         cb_scheduled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -377,6 +390,19 @@ FareCalculation fareCalculation;
                     btn_add_members.setVisibility(View.GONE);
             }
         });
+      
+        cb_accepting.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    savePrefs("accepting_invites", "true");
+                }else{
+                    savePrefs("accepting_invites", "false");
+                }
+                Helper.isAcceptingInvites = isChecked;
+            }
+        });
+        
         everyTenSecondsTask();
         MY_LOCATION = LocationManagerService.mLastLocation;
         if(getActivity() != null) {
@@ -384,6 +410,14 @@ FareCalculation fareCalculation;
             listenerForRequests(userId);
         }
         return view;
+    }
+    
+    private void savePrefs(String key, String value) {
+        PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putString(key, value).apply();
+    }
+    
+    private String readPrefs(String key){
+        return PreferenceManager.getDefaultSharedPreferences(getContext()).getString(key,"");
     }
     
     public void showCalculatedCost() {
@@ -402,6 +436,7 @@ FareCalculation fareCalculation;
             tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
         }
         ct_address.setVisibility(View.VISIBLE);
+        btn_invites_container.setVisibility(View.VISIBLE);
         ct_vehicles.setVisibility(View.GONE);
         if (btn_confirm.getVisibility() == View.VISIBLE)
             btn_confirm.setVisibility(View.GONE);
@@ -469,8 +504,6 @@ FareCalculation fareCalculation;
         String driverId = driverid;
         final CharSequence[] items = { "SELECT", "OPEN PROFILE",
                 "CANCEL" };
-        //final CharSequence[] items = { "SEL   ECT",
-        //      "CANCEL" };
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Driver Detail");
 
@@ -498,9 +531,10 @@ FareCalculation fareCalculation;
                         public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot)
                         {
                             if(dataSnapshot.exists())
-                            {     User driver = dataSnapshot.getValue(User.class);
-                                //int index = driver_list_index.get(driverId);
-                                //Driver driver = driverList.get(index);
+                            {
+                                User driver = dataSnapshot.getValue(User.class);
+                                if(driver == null)
+                                    return;
                                 open_profile(driver.getUser_id(),driver.getName(),driver.getUser_image_url(),driver.getPhone(), TO_SHOW_INFO_OF_DRIVER);
 
                             }
@@ -524,9 +558,10 @@ FareCalculation fareCalculation;
 
     private void open_profile(String user_id, String name, String url, String phone, int purpose)
     {
-
+        if(getActivity() == null)
+            return;
         ImageView image = new ImageView(getActivity());
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(350,300);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(300,300);
         image.setLayoutParams(layoutParams);
         if(url != null && (!TextUtils.isEmpty(url)) )
         {
@@ -541,11 +576,8 @@ FareCalculation fareCalculation;
                 public void onSuccess(Uri uri)
                 {
                     String imageURL = uri.toString();
-
                     Glide.with(getActivity()).setDefaultRequestOptions(finalRequestOptions).load(imageURL)
                             .into(image);
-
-                    //Glide.with(getApplicationContext()).load(imageURL).into(i1);
                 }
             }).addOnCompleteListener(new OnCompleteListener<Uri>() {
                 @Override
@@ -565,7 +597,6 @@ FareCalculation fareCalculation;
                         text = "Send Invitation";
                     if(purpose == TO_ACCEPT_INVITATION)
                         text = "Accept Invitation";
-                    
                     builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -573,9 +604,14 @@ FareCalculation fareCalculation;
                             new_order.setDriver_id(user_id);
                             if(purpose == TO_SHOW_INFO_OF_DRIVER)
                                 sendNotificationToRequestGroupRide(user_id);
-                            else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
-                                sendInvitationForGroupRide(user_id);
-                            else if(purpose == TO_ACCEPT_INVITATION) {
+                            else if(purpose == TO_SHOW_INFO_OF_PASSENGER){
+                                if(group_id != null) {
+                                    if (!group_id.isEmpty()) {
+                                        sendInvitationForGroupRide(user_id);
+                                    }showToast("Please create order first after that you can send request to other passengers.");
+                                }else
+                                    showToast("Please create order first after that you can send request to other passengers.");
+                            } else if(purpose == TO_ACCEPT_INVITATION) {
                                 goAcceptInvitation(user_id);
                             }
                             dialog.dismiss();
@@ -617,11 +653,8 @@ FareCalculation fareCalculation;
         else
         {
             if(progressDialog!=null && progressDialog.isShowing())
-            {
                 progressDialog.dismiss();
-            }
-            String status = "OFFLINE";
-            
+            String status;
             status = "ONLINE";
             final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
             AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
@@ -641,7 +674,12 @@ FareCalculation fareCalculation;
                     if(purpose == TO_SHOW_INFO_OF_DRIVER)
                         sendNotificationToRequestGroupRide(user_id);
                     else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
-                        sendInvitationForGroupRide(user_id);
+                        if(group_id != null) {
+                            if (!group_id.isEmpty()) {
+                                sendInvitationForGroupRide(user_id);
+                            }showToast("Please create order first after that you can send request to other passengers.");
+                        }else
+                            showToast("Please create order first after that you can send request to other passengers.");
                     else if(purpose == TO_ACCEPT_INVITATION) {
                         goAcceptInvitation(user_id);
                     }
@@ -660,16 +698,9 @@ FareCalculation fareCalculation;
                 @Override
                 public void onClick(DialogInterface dialog, int item)
                 {
-//                if (items[item].equals("SendRequest"))
-//                {
-//                    driver_selected(user_id);
-//                }
                     if (items[item].equals("CANCEL")) {
                         dialog.dismiss();
                         dialog_already_showing = false;
-                    }
-                    else
-                    {
                     }
                 }
             });
@@ -677,9 +708,6 @@ FareCalculation fareCalculation;
             builder.show();
             dialog_already_showing = true;
         }
-
-
-
     }
     
 
@@ -771,6 +799,8 @@ FareCalculation fareCalculation;
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+       
+        
         if(marker.getSnippet() != null){
             if(marker.getSnippet().equals("Nearby")){
                 showUserDetails(marker.getTitle());
@@ -782,8 +812,11 @@ FareCalculation fareCalculation;
             String driverId = (String) marker.getTag();
             if (driverId != null && !driverId.isEmpty()) {
                 // do whatever with driver id.
+                if(isJoiningOtherSharedRide){
+                    showToast("You are joining with Other user Please Create order Directly.");
+                    return true;
+                }
                 goCheckDriverStatus(driverId);
-        
                 return true;
             } else
                 return false;
@@ -880,6 +913,15 @@ FareCalculation fareCalculation;
 
     public void setThereIsActiveOrder(boolean thereIsActiveOrder) {
         this.thereIsActiveOrder = thereIsActiveOrder;
+    }
+    
+
+    public boolean getisJoiningOtherRide() {
+        return this.isJoiningOtherSharedRide;
+    }
+
+    public void setIsJoiningOtherRide(boolean thereIsActiveOrder) {
+        this.isJoiningOtherSharedRide = thereIsActiveOrder;
     }
 
     public void showDateTimePicker() {
@@ -1079,15 +1121,16 @@ FareCalculation fareCalculation;
                         Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
                         return;
                     } else if (dataSnapshot.hasChild(Helper.REF_GROUP_ORDER)) {
-                        group_id = dataSnapshot.child(Helper.REF_GROUP_ORDER).getValue().toString();
-                        if (new_order.getShared()) {
-                            new_order.setDriver_id(driverId);
-                            goFetchGroupByID(group_id);
-                            return;
-                        } else {
+//                        group_id = dataSnapshot.child(Helper.REF_GROUP_ORDER).getValue().toString();
+//                        if (new_order.getShared()) {
+//                            new_order.setDriver_id(driverId);
+//                            goFetchGroupByID(group_id);
+//                            return;
+//                        } else {
                             Toast.makeText(getContext(), "Driver already has an active order.", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
+//                            return;
+//                        }
+                        return;
                     }else{
                         if(new_order.getShared()) {
                             CREATE_NEW_GROUP = true;
@@ -1111,7 +1154,7 @@ FareCalculation fareCalculation;
     }
 
     private void goCheckSharedRideDriver(String driverId, Driver driver) {
-        if (isOrderAccepted || firebase_db == null)
+        if (isOrderAccepted || firebase_db == null || driverId == null)
             return;
         
         if(thereIsActiveOrder)
@@ -1253,7 +1296,8 @@ FareCalculation fareCalculation;
                     for(com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()){
                         Passenger passenger = snapshot.getValue(Passenger.class);
                         if(passenger != null){
-                            addMarkersForPassenger(passenger);
+                            if(passenger.getFk_user_id().equals(new_order.getUser_id()))
+                                addMarkersForPassenger(passenger);
                         }
                     }
                 }
@@ -1288,6 +1332,10 @@ FareCalculation fareCalculation;
     private void addMarkersForPassenger(Passenger passenger) {
         if(mNearbyPassengers == null)
             mNearbyPassengers = new ArrayList<>();
+        if(nearby_passengers_in_map == null)
+            nearby_passengers_in_map = new HashMap<>();
+        if(nearby_passengers_in_map.containsKey(passenger.getFk_user_id()))
+            return;
         for(Passenger p : mNearbyPassengers){
             if(p.getFk_user_id().equals(passenger.getFk_user_id()))
                 return;
@@ -1300,7 +1348,8 @@ FareCalculation fareCalculation;
         Location pickup = new Location("pickup");
         pickup.setLatitude(new_order.getPickupLat());
         pickup.setLongitude(new_order.getPickupLong());
-
+        if(getActivity() == null)
+            return;
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -1309,7 +1358,8 @@ FareCalculation fareCalculation;
 
                             BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
                             .position(new LatLng(passenger.getLatitude(), passenger.getLongitude())).snippet("Nearby");
-                    gMap.addMarker(markerOptions);
+                    Marker marker = gMap.addMarker(markerOptions);
+                    nearby_passengers_in_map.put(passenger.getFk_user_id(),marker);
                     mNearbyPassengers.add(passenger);
                 }
             }
@@ -1356,6 +1406,10 @@ FareCalculation fareCalculation;
     }
     
     private void checkForResponseOfPassenger(ProgressDialog progressDialog, CountDownTimer timer, String otherId) {
+        if(getActivity() == null) {
+            timer.cancel();
+            return;
+        }
         if (isPassengerAccepted) {
             progressDialog.dismiss();
             if(mPassengerList == null)
@@ -1365,6 +1419,7 @@ FareCalculation fareCalculation;
                 currentSharedRide = new SharedRide();
             currentSharedRide.setPassengers(mPassengerList);
             calculateTheCosts();
+            goRemoveRequest(otherId,((MainActivity)getActivity()).getmFirebaseUser().getUid());
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             timer.cancel();
         }
@@ -1376,6 +1431,7 @@ FareCalculation fareCalculation;
             else{
                 Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
             }
+            goRemoveRequest(otherId,((MainActivity)getActivity()).getmFirebaseUser().getUid());
             timer.cancel();
         }
     }
@@ -1387,19 +1443,21 @@ FareCalculation fareCalculation;
                 if (dataSnapshot.exists()) {
                     currentSharedRide = dataSnapshot.getValue(SharedRide.class);
                     if (currentSharedRide != null) {
-
                         Location starting = new Location("starting");
                         starting.setLatitude(currentSharedRide.getStartingLat());
                         starting.setLongitude(currentSharedRide.getStartingLng());
                         Location myPickup = new Location("myPickup");
-                        myPickup.setLatitude(currentSharedRide.getStartingLat());
-                        myPickup.setLongitude(currentSharedRide.getStartingLng());
+                        myPickup.setLatitude(new_order.getPickupLat());
+                        myPickup.setLongitude(new_order.getPickupLong());
                         if(starting.distanceTo(myPickup) > currentSharedRide.getRadius_constraint()){
                             Toast.makeText(getContext(), "Sorry, You cannot join this ride.", Toast.LENGTH_SHORT).show();
                             currentSharedRide = null;
                         }else{
-                            show_driverDetail(new_order.getDriver_id());
-                            new_order.setDriver_id(null);
+//                            show_driverDetail(new_order.getDriver_id());
+//                            new_order.setDriver_id(null);
+                        
+                        
+                        
                         }
 
                     }
@@ -1418,6 +1476,7 @@ FareCalculation fareCalculation;
     private void showRadiusInputField() {
         ct_vehicles.setVisibility(View.VISIBLE);
         radius_input.setVisibility(View.VISIBLE);
+        btn_invites_container.setVisibility(View.GONE);
     }
 
     private void calculateTheCosts() {
@@ -1501,21 +1560,41 @@ FareCalculation fareCalculation;
     }
 
     public void resetUI() {
-        et_pickup.setText("");
-        et_drop_off.setText("");
-        gMap.clear();
-        radius_input.setVisibility(View.GONE);
-        tv_distance.setText("");
-        tv_estimated_cost.setText("");
-        ct_details.setVisibility(View.GONE);
-        new_order = new Order();
-        currentSharedRide = null;
-        if(mNearbyPassengers != null)
-            mNearbyPassengers.clear();
-        btn_confirm.setVisibility(View.GONE);
-        layout_cost_detail.setVisibility(View.GONE);
-        btn_select_vehicle.setVisibility(View.VISIBLE);
-
+        
+        if(CREATE_NEW_GROUP && !isJoiningOtherSharedRide){
+            et_pickup.setText("");
+            et_drop_off.setText("");
+            if(gMap != null)
+                gMap.clear();
+            ct_address.setVisibility(View.GONE);
+            ct_vehicles.setVisibility(View.GONE);
+            btn_invites_container.setVisibility(View.GONE);
+            radius_input.setVisibility(View.GONE);
+            btn_confirm.setVisibility(View.GONE);
+            layout_cost_detail.setVisibility(View.GONE);
+            if(nearby_passengers_in_map != null)
+                nearby_passengers_in_map.clear();
+            nearby_passengers_in_map = null;
+            if(mNearbyPassengers != null)
+                mNearbyPassengers.clear();
+            showNearbyPassengersForSharedRide();
+        }else{
+            et_pickup.setText("");
+            et_drop_off.setText("");
+            gMap.clear();
+            radius_input.setVisibility(View.GONE);
+            tv_distance.setText("");
+            tv_estimated_cost.setText("");
+            ct_details.setVisibility(View.GONE);
+            new_order = new Order();
+            currentSharedRide = null;
+            if(mNearbyPassengers != null)
+                mNearbyPassengers.clear();
+            btn_confirm.setVisibility(View.GONE);
+            layout_cost_detail.setVisibility(View.GONE);
+            btn_select_vehicle.setVisibility(View.VISIBLE);
+    
+        }
     }
 
     private void listenForDriverResponse(String driverId, String userId, ProgressDialog dialog, CountDownTimer timer) {
@@ -1611,19 +1690,19 @@ FareCalculation fareCalculation;
             return false;
         }
         else if(new_order.getShared()) {
-//            if (CREATE_NEW_GROUP) {
-            CREATE_NEW_GROUP = true;
+            if (CREATE_NEW_GROUP) {
                 if(group_radius < 10) {
                     showToast("Please enter Radius for Shared Ride");
                     showRadiusInputField();
                     return false;
                 }
-//            }else{
-//                if(TextUtils.isEmpty(Constants.group_id)){
-//                    showToast("Group must be selected first");
-//                    return false;
-//                }
-//            }
+            }else{
+                if(isJoiningOtherSharedRide)
+                if(TextUtils.isEmpty(Constants.group_id)){
+                    showToast("Group must be selected first");
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -1852,30 +1931,31 @@ FareCalculation fareCalculation;
     
     public void sendInvitationForGroupRide(String otherId) {
         generateNewRequest(otherId, new_order.getUser_id(),false);
+        isPassengerAccepted = false;
+        isPassengerResponded = false;
         waitForPassengerResponse(new_order.getUser_id(),otherId);
     }
     
     private void showUserDetails(String title) {
+        if(isJoiningOtherSharedRide)
+            return;
         if(progressDialog == null) {
             progressDialog = new ProgressDialog(getActivity());
-            progressDialog.setMessage("Please Wait...");
         }
+        progressDialog.setMessage("Please wait...");
         progressDialog.show();
         db_ref_user_general.child(title).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists())
-                {
+                if(dataSnapshot.exists()) {
                     User sender = dataSnapshot.getValue(User.class);
                     if(sender != null)
-                        open_profile(sender.getUser_id(),sender.getName(),sender.getUser_image_url(),sender.getPhone(), TO_SHOW_INFO_OF_PASSENGER);
+                        open_profile(sender.getUser_id(), sender.getName(), sender.getUser_image_url(),sender.getPhone(), TO_SHOW_INFO_OF_PASSENGER);
                 }
-    
             }
-    
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-        
+            
             }
         });
     }
@@ -1886,10 +1966,11 @@ FareCalculation fareCalculation;
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if (dataSnapshot.exists()) {
-                    Requests request = dataSnapshot.getValue(Requests.class);
-                    if (request != null) {
-                        if (request.getReceiverId().equals(mUserId) && request.getStatus() == Requests.STATUS_PENDING) {
-                            showRequestedInvitation(request);
+                    mRequest = dataSnapshot.getValue(Requests.class);
+                    if (mRequest != null) {
+                        if (mRequest.getReceiverId().equals(mUserId) && mRequest.getStatus() == Requests.STATUS_PENDING) {
+                            if(cb_accepting.isChecked())
+                                showRequestedInvitation(mRequest);
                         }
                     }
                 }
@@ -1933,8 +2014,9 @@ FareCalculation fareCalculation;
     }
     
     private void showRequestedInvitation(Requests request) {
-        progressDialog = new ProgressDialog(getActivity());
-        progressDialog.setMessage("Please Wait...");
+        if(progressDialog == null)
+            progressDialog = new ProgressDialog(getActivity());
+        progressDialog.setMessage("Incoming Invitation...");
         progressDialog.show();
         db_ref_user_general.child(request.getSenderId()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -1956,11 +2038,25 @@ FareCalculation fareCalculation;
     }
     
     private void goAcceptInvitation(String user_id) {
-        String myid = ((MainActivity)getActivity()).getmFirebaseUser().getUid();
-        String req_id = Helper.getConcatenatedID(user_id,myid);
+        String myid = getActivity() != null ? ((MainActivity)getActivity()).getmFirebaseUser().getUid() : "";
+        String req_id = Helper.getConcatenatedID(user_id, myid);
         db_ref_requests.child(req_id).child("status").setValue(Requests.STATUS_ACCEPTED);
         Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+        isJoiningOtherSharedRide = true;
+        car_container.setVisibility(View.GONE);
+        btn_add_members.setVisibility(View.GONE);
+        group_id = mRequest.getGroup_id();
+        new_order.setDriver_id(mRequest.getDriverId());
+        if(driver_in_map != null)
+            for(HashMap.Entry<String,Marker> dm : driver_in_map.entrySet())
+                dm.getValue().remove();
+        if(nearby_passengers_in_map != null)
+            for(HashMap.Entry<String,Marker> dm : nearby_passengers_in_map.entrySet())
+                dm.getValue().remove();
+        goFetchGroupByID(mRequest.getGroup_id());
         
     }
   
+    
+    
 }

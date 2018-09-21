@@ -22,6 +22,7 @@
         android:orientation="vertical"
         android:background="#902FCBE5"
         android:id="@+id/ct_address"
+
         >
         <!--<AutoCompleteTextView-->
             <!--android:id="@+id/et_pickup"-->
@@ -153,6 +154,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="100dp"
         android:background="@drawable/bg_vehicle_selector"
+        android:id="@+id/car_container"
         >
 
         <TextView
@@ -167,7 +169,29 @@
             android:drawableLeft="@drawable/ic_vehicle"
             android:drawablePadding="8dp"
             />
+
     </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="#802ECAE5"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/btn_invites_container"
+        >
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textColor="#19ADC8"
+            android:background="#90FFFFFF"
+            android:text="Accepting Invites "
+            android:id="@+id/cb_accepting"
+            android:textSize="18sp"
+            android:checked="true"
+            android:layout_centerInParent="true"
+            />
+    </RelativeLayout>
+
     <Button
         android:layout_width="match_parent"
         android:layout_height="50dp"
