@@ -62,6 +62,7 @@ import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -98,6 +99,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     private HashMap<String, Marker> PickupMarkers;
     private CountDownTimer mCountDowntimer;
+    private Marker pmarker;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -243,6 +245,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             NotificationsDone[1] = true;
             NotificationsDone[2] = true;
             NotificationsDone[3] = true;
+            // TODO: change the color of driver marker.
+            
             payload.setDescription(escapeValue("Driver is reaching soon"));
             payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
             String str = new Gson().toJson(payload);
@@ -296,39 +300,48 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     /*calculate pickup distance for notification*/
     private void calculatePickupDistance(){
-        if(currentPassengers == null)
-            return;
-        double distanceRemaining;
-        Location pickup = new Location("pickup");
-        for(User user : currentPassengers){
-            Marker marker = PickupMarkers.get(user.getUser_id());
-            pickup.setLatitude(marker.getPosition().latitude);
-            pickup.setLongitude(marker.getPosition().longitude);
-            distanceRemaining = myLocation.distanceTo(pickup);
-            int counter = 0;
-            for(Order order : ordersInSharedRide){
-                if(distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
-                    order = goUpdateOrderStatus(order);
-                    ordersInSharedRide.add(counter,order);
-                }
-                
-                counter++;
-                if(order.getUser_id().equals(user.getUser_id())){
-                    checkForDistanceToSendNotification(order,user,distanceRemaining);
-                    
-                    if(order.getStatus() == Order.OrderStatusInProgress) {
-                            order.setOnRide(true);
-                    }else if(order.getStatus() == Order.OrderStatusCompleted) {
-                        order.setOnRide(false);
+        
+        if(currentPassengers == null && currentUser != null){
+    
+            Location pickup = new Location("pickup");
+            pmarker = PickupMarkers.get(currentUser.getUser_id());
+            pickup.setLatitude(pmarker.getPosition().latitude);
+            pickup.setLongitude(pmarker.getPosition().longitude);
+            double distanceRemaining = myLocation.distanceTo(pickup);
+            checkForDistanceToSendNotification(currentOrder, currentUser, distanceRemaining);
+        } else if(currentPassengers != null) {
+            
+            double distanceRemaining;
+            Location pickup = new Location("pickup");
+            for (User user : currentPassengers) {
+                Marker marker = PickupMarkers.get(user.getUser_id());
+                pickup.setLatitude(marker.getPosition().latitude);
+                pickup.setLongitude(marker.getPosition().longitude);
+                distanceRemaining = myLocation.distanceTo(pickup);
+                int counter = 0;
+                for (Order order : ordersInSharedRide) {
+                    if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
+                        order = goUpdateOrderStatus(order);
+                        ordersInSharedRide.add(counter, order);
                     }
-                    
-                    
-                    break;
+            
+                    counter++;
+                    if (order.getUser_id().equals(user.getUser_id())) {
+                        checkForDistanceToSendNotification(order, user, distanceRemaining);
+                
+                        if (order.getStatus() == Order.OrderStatusInProgress) {
+                            order.setOnRide(true);
+                        } else if (order.getStatus() == Order.OrderStatusCompleted) {
+                            order.setOnRide(false);
+                        }
+                
+                
+                        break;
+                    }
                 }
             }
+    
         }
-    
-    
     
     }
     
@@ -516,7 +529,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             dropoff = new LatLng(currentOrder.getDropoffLat(), currentOrder.getDropoffLat());
             MarkerOptions options = new MarkerOptions();
             options.title("Pickup").position(pickup).icon(BitmapDescriptorFactory.fromResource(R.drawable.pickup_pin));
-            mMap.addMarker(options);
+            pmarker = mMap.addMarker(options);
             MarkerOptions options2 = new MarkerOptions();
             options2.title("Dropoff").position(dropoff).icon(BitmapDescriptorFactory.fromResource(R.drawable.dropoff_pin));
             mMap.addMarker(options2);
@@ -675,7 +688,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void goFetchOrderById(){
         
         orderIDs = currentSharedRide.getOrderIDs();
-
         if(currentSharedRide.getGroup_id() == null) {
             fetchThatGroup();
             return;
@@ -876,6 +888,19 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         });
     }
     
+    
+    /*
+    *
+    *
+    * How route thing will work
+    *  8 points route
+    *
+    *
+    * */
+    
+    
+    
+    
   /*
     Shared Ride Fare Calculation
     */
@@ -921,5 +946,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             }
         }
     };
+    
+    
     
 }

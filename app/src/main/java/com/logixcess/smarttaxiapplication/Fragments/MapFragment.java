@@ -451,6 +451,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     public void addDriverMarker(Driver driver1, int index) {
+        if(isJoiningOtherSharedRide)
+            return;
         //now update the routes and remove markers if already present in it.
         LatLng driverLatLng = new LatLng(driver1.getLatitude(), driver1.getLongitude());
         if (driver_in_map.containsKey(driver1.getFk_user_id())) {
@@ -1769,16 +1771,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
+    
     public interface OnFragmentInteractionListener {
 
         void onFragmentInteraction(Uri uri);
@@ -2067,6 +2060,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
     
     private void showRequestedInvitation(Requests request) {
+        if(getActivity() == null)
+            return;
         if(progressDialog == null)
             progressDialog = new ProgressDialog(getActivity());
         progressDialog.setMessage("Incoming Invitation...");

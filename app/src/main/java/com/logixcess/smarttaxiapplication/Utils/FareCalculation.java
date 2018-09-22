@@ -333,7 +333,7 @@ public class FareCalculation
         markerOptions.icon(getDrawableByType(context,vehicleType));
         return markerOptions;
     }
-
+    
     private BitmapDescriptor getDrawableByType(Context context, String vehicleType) {
         Drawable drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
         switch (vehicleType){

@@ -74,7 +74,7 @@ public class DriverMainActivity extends AppCompatActivity {
     protected List<Order> ordersInSharedRide = null;
     protected HashMap<String, Boolean> orderIDs;
     protected List<User> currentPassengers;
-
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,6 +94,7 @@ public class DriverMainActivity extends AppCompatActivity {
             listenForDriverResponse(this,userMe.getUid());
         }
     }
+    
     /**
      * Showing google speech input dialog
      * */
@@ -330,7 +331,7 @@ public class DriverMainActivity extends AppCompatActivity {
                         currentUserId = currentOrder.getUser_id();
                         CURRENT_ORDER_ID = currentOrder.getOrder_id();
 
-                        if(TextUtils.isEmpty(currentUserId)){
+                        if(!TextUtils.isEmpty(currentUserId)){
                             goFetchCustomerById(isAlreadyAccepted);
                         }
     
@@ -342,7 +343,7 @@ public class DriverMainActivity extends AppCompatActivity {
                                 Toast.makeText(DriverMainActivity.this, "Order Accepted", Toast.LENGTH_SHORT).show();
                             }
                             goGetOrdersForGroup();
-                        }else if(CURRENT_ORDER_ID != null && !CURRENT_ORDER_ID.isEmpty()) {
+                        }else if(TextUtils.isEmpty(CURRENT_ORDER_ID)) {
                             openOrderActivity();
                         }else{
                             Toast.makeText(DriverMainActivity.this, "No Order in Progress", Toast.LENGTH_SHORT).show();
