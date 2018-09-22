@@ -67,7 +67,7 @@ public class DriverMainActivity extends AppCompatActivity {
     protected String CURRENT_GROUP_ID = null;
     protected SharedRide currentSharedRide;
     protected String currentUserId = "";
-    private TextToSpeech tts;
+    
     protected FareCalculation mFareCalc = new FareCalculation();
     private static final int REQ_CODE_SPEECH_INPUT = 100;
     Boolean isPromptDismissed = false;

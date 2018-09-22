@@ -4,8 +4,10 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -399,7 +401,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         else
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
-
+    
+    
 }
 

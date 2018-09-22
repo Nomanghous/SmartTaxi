@@ -8,14 +8,17 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.View;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
@@ -94,6 +97,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private boolean IS_ROUTE_ADDED = false;
     
     private HashMap<String, Marker> PickupMarkers;
+    private CountDownTimer mCountDowntimer;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -212,7 +216,29 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(escapeValue(currentOrder.getOrder_id()));
         String token = currentUser.getUser_token();
-        if(distanceRemaining < 100 && !NotificationsDone[0]){
+        if(distanceRemaining < 10 && NotificationsDone[0] && mCountDowntimer == null) {
+            mCountDowntimer = new CountDownTimer(300000, 60000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    payload.setDescription(escapeValue("Driver is Waiting outside"));
+                    payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
+                    String str = new Gson().toJson(payload);
+                    try {
+                        JSONObject json = new JSONObject(str);
+                        new PushNotifictionHelper(getApplicationContext()).execute(token,json);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+    
+                }
+    
+                @Override
+                public void onFinish() {
+                    findViewById(R.id.phone_call_container).setVisibility(View.VISIBLE);
+                }
+            }.start();
+            
+        }else if(distanceRemaining < 100 && !NotificationsDone[0]){
             NotificationsDone[0] = true;
             NotificationsDone[1] = true;
             NotificationsDone[2] = true;
@@ -530,12 +556,30 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     public void onMapReady(GoogleMap googleMap)
     {
         mMap = googleMap;
-
         populateMap();
         showDataOnMap();
     }
-
-
+    
+    public void callCurrentPassenger(View view) {
+        String phone = getPassengerPhoneNumber();
+        if(phone != null && !phone.isEmpty()) {
+            Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone));
+            startActivity(intent);
+        } else{
+            Toast.makeText(this, "Phone number is not correct", Toast.LENGTH_SHORT).show();
+        }
+        
+    }
+    
+    private String getPassengerPhoneNumber() {
+        for(User u : currentPassengers)
+            if(u.getUser_id().equals(currentOrder.getUser_id()))
+                return u.getPhone();
+        
+        return null;
+    }
+    
+    
     private class Every10Seconds extends TimerTask{
         @Override
         public void run() {
@@ -574,8 +618,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void initNextOrderVars(){
         totalDistance = 0;
         totalTime = 0;
-//        distanceRemaining = 0;
-        
+        findViewById(R.id.phone_call_container).setVisibility(View.GONE);
+        if(mCountDowntimer != null)
+            mCountDowntimer.cancel();
+        mCountDowntimer = null;
     }
     
 

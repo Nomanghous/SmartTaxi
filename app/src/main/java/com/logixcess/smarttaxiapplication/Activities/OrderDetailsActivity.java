@@ -192,7 +192,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
     }
 
     private void updateOrderForSharedRide() {
-        new_order.setStatus(Order.OrderStatusInProgress);
+        new_order.setStatus(Order.OrderStatusWaiting);
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

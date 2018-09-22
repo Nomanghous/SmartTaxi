@@ -608,7 +608,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                                 if(group_id != null) {
                                     if (!group_id.isEmpty()) {
                                         sendInvitationForGroupRide(user_id);
-                                    }showToast("Please create order first after that you can send request to other passengers.");
+                                    } else
+                                        showToast("Please create order first after that you can send request to other passengers.");
                                 }else
                                     showToast("Please create order first after that you can send request to other passengers.");
                             } else if(purpose == TO_ACCEPT_INVITATION) {
@@ -677,7 +678,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         if(group_id != null) {
                             if (!group_id.isEmpty()) {
                                 sendInvitationForGroupRide(user_id);
-                            }showToast("Please create order first after that you can send request to other passengers.");
+                            } else showToast("Please create order first after that you can send request to other passengers.");
                         }else
                             showToast("Please create order first after that you can send request to other passengers.");
                     else if(purpose == TO_ACCEPT_INVITATION) {
@@ -1086,6 +1087,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             distance = String.valueOf(Double.valueOf(distance.replace("m", "")) / 1000);
         tv_distance.setText("Distance: ".concat(distance).concat(" km"));
         new_order.setTotal_kms(distance);
+        calculateTheCosts();
         ////Toast.makeText(getContext(), "Distance: ".concat(distance).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
     }
 
@@ -1296,20 +1298,60 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     for(com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()){
                         Passenger passenger = snapshot.getValue(Passenger.class);
                         if(passenger != null){
-                            if(passenger.getFk_user_id().equals(new_order.getUser_id()))
+                            if(!passenger.getFk_user_id().equals(new_order.getUser_id())
+                                    && passenger.getInOnline())
                                 addMarkersForPassenger(passenger);
                         }
                     }
                 }
+                goSetLiveListenerForPassengers(db_passengers);
+                
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
+            
             }
         });
     }
-
+    
+    private void goSetLiveListenerForPassengers(DatabaseReference db_passengers) {
+        db_passengers.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Passenger passenger = dataSnapshot.getValue(Passenger.class);
+                if(passenger != null){
+                    if(!passenger.getFk_user_id().equals(new_order.getUser_id()))
+                        addMarkersForPassenger(passenger);
+                }
+            }
+    
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Passenger passenger = dataSnapshot.getValue(Passenger.class);
+                if(passenger != null){
+                    if(!passenger.getFk_user_id().equals(new_order.getUser_id()))
+                        addMarkersForPassenger(passenger);
+                }
+            }
+    
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+        
+            }
+    
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+        
+            }
+    
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+            }
+        });
+    }
+    
     public void addMarkersAfterRefresh(){
         if(mNearbyPassengers == null)
             return;
@@ -1418,14 +1460,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             if(currentSharedRide == null)
                 currentSharedRide = new SharedRide();
             currentSharedRide.setPassengers(mPassengerList);
-            calculateTheCosts();
+            if(new_order.getEstimated_cost() == null)
+                calculateTheCosts();
             goRemoveRequest(otherId,((MainActivity)getActivity()).getmFirebaseUser().getUid());
             Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
             timer.cancel();
         }
         else if (isPassengerResponded || isTimeoutForPassenger) {
             progressDialog.dismiss();
-            calculateTheCosts();
+            if(new_order.getEstimated_cost() == null)
+                calculateTheCosts();
             if(isTimeout)
                 Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
             else{
@@ -1443,6 +1487,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if (dataSnapshot.exists()) {
                     currentSharedRide = dataSnapshot.getValue(SharedRide.class);
                     if (currentSharedRide != null) {
+                        if(isJoiningOtherSharedRide)
+                            return;
                         Location starting = new Location("starting");
                         starting.setLatitude(currentSharedRide.getStartingLat());
                         starting.setLongitude(currentSharedRide.getStartingLng());
@@ -1455,9 +1501,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         }else{
 //                            show_driverDetail(new_order.getDriver_id());
 //                            new_order.setDriver_id(null);
-                        
-                        
-                        
                         }
 
                     }
@@ -1568,6 +1611,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 gMap.clear();
             ct_address.setVisibility(View.GONE);
             ct_vehicles.setVisibility(View.GONE);
+            car_container.setVisibility(View.GONE);
             btn_invites_container.setVisibility(View.GONE);
             radius_input.setVisibility(View.GONE);
             btn_confirm.setVisibility(View.GONE);
@@ -1578,10 +1622,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             if(mNearbyPassengers != null)
                 mNearbyPassengers.clear();
             showNearbyPassengersForSharedRide();
-        }else{
+        } else{
             et_pickup.setText("");
             et_drop_off.setText("");
             gMap.clear();
+            ct_address.setVisibility(View.GONE);
             radius_input.setVisibility(View.GONE);
             tv_distance.setText("");
             tv_estimated_cost.setText("");
@@ -1642,6 +1687,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private void generateNewRequest(String otherId, String userId, boolean forDriver) {
         Requests requests = new Requests(otherId, userId, Requests.STATUS_PENDING,new_order.getShared());
+        if(group_id != null)
+            requests.setGroup_id(Constants.group_id);
+        else {
+            showToast("Group id not found");
+            return;
+        }
+        requests.setVehicle_type(new_order.getVehicle_id());
+        requests.setDriverId(new_order.getDriver_id());
+        requests.setOrder_id(new_order.getOrder_id());
         String res_id = Helper.getConcatenatedID(userId, otherId);
         db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
@@ -1822,12 +1876,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     ct_details.setVisibility(View.VISIBLE);
                     tv_distance.setText("Distance: ".concat(distance).concat(" km"));
                     new_order.setTotal_kms(distance);
-    
+                    calculateTheCosts();
                 }
                 
                 polyLineList.add(polyline);
                 refreshDrivers();
-                
             }
         }
     }
@@ -2044,9 +2097,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
         isJoiningOtherSharedRide = true;
         car_container.setVisibility(View.GONE);
+        btn_invites_container.setVisibility(View.GONE);
         btn_add_members.setVisibility(View.GONE);
         group_id = mRequest.getGroup_id();
+        if(new_order == null)
+            new_order = new Order();
         new_order.setDriver_id(mRequest.getDriverId());
+        new_order.setVehicle_id(mRequest.getVehicle_type());
+        new_order.setShared(true);
         if(driver_in_map != null)
             for(HashMap.Entry<String,Marker> dm : driver_in_map.entrySet())
                 dm.getValue().remove();

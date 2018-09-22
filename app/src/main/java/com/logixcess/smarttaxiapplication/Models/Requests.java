@@ -9,7 +9,7 @@ public class Requests implements Parcelable{
     @Exclude
     public static int STATUS_ACCEPTED = 1, STATUS_PENDING = 0, STATUS_REJECTED = 2;
     boolean forSharedRide;
-    String receiverId, senderId, driverId, group_id, order_id;
+    String receiverId, senderId, driverId, group_id, order_id, vehicle_type;
     int status;
     
     
@@ -29,6 +29,14 @@ public class Requests implements Parcelable{
         senderId = in.readString();
         status = in.readInt();
         
+    }
+    
+    public String getVehicle_type() {
+        return vehicle_type;
+    }
+    
+    public void setVehicle_type(String vehicle_type) {
+        this.vehicle_type = vehicle_type;
     }
     
     public String getGroup_id() {

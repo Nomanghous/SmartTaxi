@@ -1044,6 +1044,8 @@ AlertDialog builder;
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 if(!isForConditionCheck)
                                     openOrderActivity(order);
+                                findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
+                                
                                 if(mapFragment != null) {
                                     mapFragment.setThereIsActiveOrder(true);
                                     if(order.getStatus() == Order.OrderStatusWaiting){
@@ -1142,6 +1144,14 @@ AlertDialog builder;
                             Constants.group_id = sharedRide.getGroup_id();
                             Constants.group_radius = sharedRide.getRadius_constraint();
                             mapFragment.resetUI();
+                        }else{
+                            MapFragment.new_order = order;
+                            mapFragment.setIsJoiningOtherRide(true);
+                            MapFragment.CREATE_NEW_GROUP = false;
+                            Constants.group_id = sharedRide.getGroup_id();
+                            Constants.group_radius = sharedRide.getRadius_constraint();
+                            mapFragment.resetUI();
+    
                         }
     
                     }

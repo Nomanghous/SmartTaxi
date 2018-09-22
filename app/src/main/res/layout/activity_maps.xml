@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Activities.MapsActivity">
+    tools:context=".DriverModule.MapsActivity">
     
 
     
@@ -17,19 +17,24 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:background="#802ECAE5"
+        android:background="@color/colorPrimary"
         android:layout_alignParentBottom="true"
+        android:id="@+id/phone_call_container"
+        android:visibility="gone"
         >
-        <Switch
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="8dp"
-            android:textColor="#19ADC8"
-            android:background="#90FFFFFF"
-            android:text="Online "
+            android:textColor="@color/colorOrange"
+            android:drawableLeft="@drawable/ic_phone"
+            android:background="@drawable/round_btn"
+            android:text="Call Now"
+            android:gravity="center_vertical"
             android:textStyle="bold"
             android:textSize="18sp"
             android:checked="true"
+            android:onClick="callCurrentPassenger"
             android:layout_centerInParent="true"
             />
     </RelativeLayout>
