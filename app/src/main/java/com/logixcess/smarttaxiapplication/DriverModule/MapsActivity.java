@@ -168,6 +168,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     }
 
     private void requestNewRoute() {
+        
         if(myLocation == null || IS_ROUTE_ADDED)
             return;
         driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
@@ -217,14 +218,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
         
         
-        Routing routing = new Routing.Builder()
-                .travelMode(AbstractRouting.TravelMode.DRIVING)
-                .withListener(this)
-                .alternativeRoutes(false)
-                .waypoints(mPassengerPoints)
-                .optimize(true)
-                .build();
-        routing.execute();
+//        Routing routing = new Routing.Builder()
+//                .travelMode(AbstractRouting.TravelMode.DRIVING)
+//                .withListener(this)
+//                .alternativeRoutes(false)
+//                .waypoints(mPassengerPoints)
+//                .optimize(true)
+//                .build();
+//        routing.execute();
     }
     
     private ArrayList<LatLng> sortPointsByDistance() {
@@ -396,7 +397,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             pickup.setLongitude(pmarker.getPosition().longitude);
             double distanceRemaining = myLocation.distanceTo(pickup);
             
-            checkForDistanceToSendNotification(currentOrder, currentUser, distanceRemaining);
+//            checkForDistanceToSendNotification(currentOrder, currentUser, distanceRemaining);
         } else if(currentPassengers != null) {
             
             double distanceRemaining;
@@ -415,7 +416,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             
                     counter++;
                     if (order.getUser_id().equals(user.getUser_id())) {
-                        checkForDistanceToSendNotification(order, user, distanceRemaining);
+//                        checkForDistanceToSendNotification(order, user, distanceRemaining);
                 
                         if (order.getStatus() == Order.OrderStatusInProgress) {
                             order.setOnRide(true);
