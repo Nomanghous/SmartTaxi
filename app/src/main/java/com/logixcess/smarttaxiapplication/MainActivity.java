@@ -83,6 +83,7 @@ import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
+import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Config;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
@@ -1042,6 +1043,7 @@ AlertDialog builder;
                         if(order != null){
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
+                                startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck)
                                     openOrderActivity(order);
                                 findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
@@ -1060,12 +1062,14 @@ AlertDialog builder;
                         }
                     }
                     if(!mapFragment.getThereIsActiveOrder() ){
+                        stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                         if(!isForConditionCheck)
                             Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                         mapFragment.setThereIsActiveOrder(false);
                         findViewById(R.id.current_order_view).setVisibility(View.GONE);
                     }
                 }else{
+                    stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                     if(!isForConditionCheck)
                         Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                     mapFragment.setThereIsActiveOrder(false);
@@ -1078,6 +1082,7 @@ AlertDialog builder;
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 progressbar.setVisibility(View.GONE);
+                stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                 Toast.makeText(MainActivity.this, "Something went Wrong", Toast.LENGTH_SHORT).show();
 
             }
@@ -1234,11 +1239,14 @@ AlertDialog builder;
         });
     }
     
-    
     private class Every10Seconds extends TimerTask {
         @Override
         public void run() {
             updateUserLocation();
         }
     }
+    
+    
+    
+    
 }

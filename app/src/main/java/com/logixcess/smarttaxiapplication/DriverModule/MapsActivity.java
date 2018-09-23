@@ -100,6 +100,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private HashMap<String, Marker> PickupMarkers;
     private CountDownTimer mCountDowntimer;
     private Marker pmarker;
+    private ArrayList<LatLng> mPassengerPoints;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -143,8 +144,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(dataSnapshot.exists()){
                         currentUser = dataSnapshot.getValue(User.class);
                         if(currentUser != null && mMap != null) {
-                            if(currentOrder.getShared())
-                                requestNewRoute();
+                            if(currentOrder.getShared()){}
+//                                requestNewRoute();
                         }
                     }
                 }
@@ -172,18 +173,105 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         driver = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         if(pickup == null)
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
-        List<LatLng> points = new ArrayList<>();
-        points.add(driver);
-        points.add(pickup);
+        mPassengerPoints = new ArrayList<>();
+        mPassengerPoints.add(driver);
+        Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
+        Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
+        LatLng temp = new LatLng(currentOrder.getDropoffLat(),currentOrder.getDropoffLong());
+    
+        if(currentOrder.getShared()){
+            for(Order order : ordersInSharedRide){
+                LatLng pickup = new LatLng(order.getPickupLat(), order.getPickupLong());
+                LatLng dropoff = new LatLng(order.getDropoffLat(), order.getDropoffLong());
+                mPassengerPoints.add(pickup);
+                if(!order.getOrder_id().equals(currentOrder.getOrder_id()))
+                    mPassengerPoints.add(dropoff);
+                
+                
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MarkerOptions options = new MarkerOptions();
+                        options.position(pickup);
+                        options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
+                        options.title(order.getPickup());
+                        if(PickupMarkers == null)
+                            PickupMarkers = new HashMap<>();
+                        if(!PickupMarkers.containsKey(order.getUser_id()))
+                            PickupMarkers.put(order.getUser_id(),mMap.addMarker(options));
+                        // End marker
+                        options = new MarkerOptions();
+                        options.position(dropoff);
+                        options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
+                        mMap.addMarker(options);
+                    }
+                });
+                
+            }
+        }else{
+            mPassengerPoints.add(pickup);
+        }
+        if(currentOrder.getShared()) {
+            mPassengerPoints.add(temp);
+            mPassengerPoints = sortPointsByDistance();
+        }
+        
+        
         Routing routing = new Routing.Builder()
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
                 .alternativeRoutes(false)
-                .waypoints(points)
+                .waypoints(mPassengerPoints)
+                .optimize(true)
                 .build();
         routing.execute();
     }
-
+    
+    private ArrayList<LatLng> sortPointsByDistance() {
+        List<LatLng> points = new ArrayList<>();
+        int[] indexes = new int[mPassengerPoints.size()];
+        for(int i = 0; i < indexes.length; i++)
+            indexes[i] = i;
+        double prevD = 0;
+        double dist = 0;
+        points.add(mPassengerPoints.get(0));
+        for(int i = mPassengerPoints.size() - 1; i > 0; i--){
+            dist = distance(mPassengerPoints.get(0).latitude, mPassengerPoints.get(0).longitude,
+                    mPassengerPoints.get(i).latitude,
+                    mPassengerPoints.get(i).longitude, 0.0, 0.0);
+            if (dist > prevD) {
+                prevD = dist;
+                if(i == mPassengerPoints.size() - 1)
+                    continue;
+                int item = indexes[i];
+                indexes[i] = indexes[i + 1];
+                indexes[i + 1] = item;
+                Log.i("Indexes ",indexes[i] + " and " + indexes[i + 1]);
+            }
+        }
+        
+        return mPassengerPoints;
+        
+    }
+    public static double distance(double lat1, double lat2, double lon1,
+                                  double lon2, double el1, double el2) {
+        
+        final int R = 6371; // Radius of the earth
+        
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+        
+        double height = el1 - el2;
+        
+        distance = Math.pow(distance, 2) + Math.pow(height, 2);
+        
+        return Math.sqrt(distance);
+    }
     private void populateMap() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -193,7 +281,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
         mMap.setMyLocationEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        addRoute();
+        if(!currentOrder.getShared())
+            addRoute();
     }
 
     private void askLocationPermission() {
@@ -300,14 +389,13 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     /*calculate pickup distance for notification*/
     private void calculatePickupDistance(){
-        
         if(currentPassengers == null && currentUser != null){
-    
             Location pickup = new Location("pickup");
             pmarker = PickupMarkers.get(currentUser.getUser_id());
             pickup.setLatitude(pmarker.getPosition().latitude);
             pickup.setLongitude(pmarker.getPosition().longitude);
             double distanceRemaining = myLocation.distanceTo(pickup);
+            
             checkForDistanceToSendNotification(currentOrder, currentUser, distanceRemaining);
         } else if(currentPassengers != null) {
             
@@ -371,6 +459,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
         animateMarker(myMap, marker, directionPoint, false);
     }
+    
     private void animateMarker(GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint,
                                final boolean hideMarker) {
         final Handler handler = new Handler();
@@ -597,8 +686,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         @Override
         public void run() {
             updateUserLocation();
-            if(!IS_ROUTE_ADDED)
-                requestNewRoute();
+            if(!IS_ROUTE_ADDED ) {
+                if(!currentOrder.getShared())
+                    requestNewRoute();
+                else{
+                    if(ordersInSharedRide.size() > 0)
+                        requestNewRoute();
+                }
+            }
             else {
                 try {
                     if(mDriverMarker != null && driver != null && myLocation != null) {
@@ -704,7 +799,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         return;
                     Order order = dataSnapshot.getValue(Order.class);
                     if(order != null){
-                        if(order.getStatus() == Order.OrderStatusInProgress &&
+                        if((order.getStatus() == Order.OrderStatusWaiting
+                                || order.getStatus() == Order.OrderStatusInProgress) &&
                                 order.getDriver_id().equals(userMe.getUid())){
                             if(!checkIfOrderExists(order.getOrder_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
@@ -713,6 +809,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(orderIDs.size() == ordersInSharedRide.size()) {
                         addMarkersForNewRiders();
                         addOrdersListener();
+                        requestNewRoute();
+    
                     }
                 }
             

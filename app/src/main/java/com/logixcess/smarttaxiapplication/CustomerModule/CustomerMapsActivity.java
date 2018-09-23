@@ -94,7 +94,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private ArrayList<LatLng> waypoints;
     private boolean IS_ROUTE_ADDED = false;
     public static final String KEY_CURRENT_ORDER = "current_order";
-    private Marker mDriverMarker;
+    public static Marker mDriverMarker;
     private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
