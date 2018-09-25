@@ -138,11 +138,18 @@ public class FareCalculation
     }
     
     public SharedRide calculateFareForSharedRide(List<Order> ordersInSharedRide, SharedRide currentSharedRide, Location myLocation, String vehicleType) {
+        // contains record of points every 10 seconds
         HashMap<String,List<RoutePoints>> allPoints = currentSharedRide.getAllJourneyPoints();
+        // contains record of user fare
         HashMap<String,UserFareRecord> allFareRecords = currentSharedRide.getPassengerFares();
+        // passenger count
         int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
+        if(totalOnRide < 1)
+            return currentSharedRide;
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
+            
+            // in case : for initial point
             if(!allPoints.containsKey(key)){
                 List<RoutePoints> routePoints = new ArrayList<>();
                 Order order = getOrderByID(key,ordersInSharedRide);
@@ -153,6 +160,8 @@ public class FareCalculation
                 }else
                     continue;
             }
+            
+            
             if(allPoints.containsKey(key)){
                 List<RoutePoints> latLngList = allPoints.get(key);
                 boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
@@ -163,14 +172,12 @@ public class FareCalculation
                     lastPointLocation.setLongitude(latLngList.get(latLngList.size() - 1).getLongitude());
                     double totalDistanceFromPrevPoint = lastPointLocation.distanceTo(myLocation);
                     
-                    if(totalDistanceFromPrevPoint > 30){
-                        latLngList.add(new RoutePoints(myLocation.getLatitude()
-                                ,myLocation.getLongitude()));
-                        if(isOnRide)
-                            allPoints.put(key,latLngList);
-                    }
-                    UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     
+                    latLngList.add(new RoutePoints(myLocation.getLatitude()
+                            ,myLocation.getLongitude(), totalDistanceFromPrevPoint));
+                    if(isOnRide)
+                        allPoints.put(key,latLngList);
+                    UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
                             totalOnRide, vehicleType,myLocation,key,ordersInSharedRide);
                     if(isOnRide)
@@ -219,18 +226,68 @@ public class FareCalculation
         kmLatLng.add(cLatLng);
         fareRecord.setLatLngs(kmLatLng);
         double currentFare;
-        
-        switch (fareRecord.getLatLngs().size()){
+        switch (totalPassengers){
             case 1:
-                currentFare = getFirstKMFare(fareRecord);
+                switch (fareRecord.getLatLngs().size()){
+                    case 1:
+                        currentFare = getFirstKMFare(fareRecord);
+                        break;
+                    default:
+                        currentFare = getRegularKMFare(totalPassengers,fareRecord);
+                        break;
+                }
                 break;
             case 2:
-                currentFare = getSecondKMFare(fareRecord);
+                switch (fareRecord.getLatLngs().size()){
+                    case 1:
+                        currentFare = getFirstKMFare(fareRecord);
+                        break;
+                    case 2:
+                        currentFare = getSecondKMFare(fareRecord);
+                        break;
+                    default:
+                        currentFare = getRegularKMFare(totalPassengers,fareRecord);
+                        break;
+                }
+                break;
+            case 3:
+                switch (fareRecord.getLatLngs().size()){
+                    case 1:
+                        currentFare = getFirstKMFare(fareRecord);
+                        break;
+                    case 2:
+                        currentFare = getSecondKMFare(fareRecord);
+                        break;
+                    case 3:
+                        currentFare = fareRecord.getBaseFare() * .5;
+                        break;
+                    default:
+                        currentFare = getRegularKMFare(totalPassengers,fareRecord);
+                        break;
+                }
                 break;
             default:
-                currentFare = getRegularKMFare(totalPassengers,fareRecord);
+                switch (fareRecord.getLatLngs().size()){
+                    case 1:
+            
+                        currentFare = getFirstKMFare(fareRecord);
+                        break;
+                    case 2:
+                        currentFare = getSecondKMFare(fareRecord);
+                        break;
+                    case 3:
+                        currentFare = fareRecord.getBaseFare() * .5;
+                        break;
+                    case 4:
+                        currentFare = fareRecord.getBaseFare() * .4;
+                        break;
+                    default:
+                        currentFare = getRegularKMFare(totalPassengers,fareRecord);
+                        break;
+                }
                 break;
         }
+        
         HashMap<String,Double> fare = fareRecord.getUserFare();
         String latlngKey = String.valueOf(cLatLng.getLatitude()) + "," + String.valueOf(cLatLng.getLongitude());
         fare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),currentFare);
@@ -293,23 +350,23 @@ public class FareCalculation
     
     private double getTotalDistanceTraveled(List<RoutePoints> userLatLngs) {
         double totalDistance = 0;
-        Location lastPointLocation = null;
-        Location nextPointLocation = new Location("nextPoint");
-        
+//        Location lastPointLocation = null;
+//        Location nextPointLocation = new Location("nextPoint");
+//
         for(int i = 0; i < userLatLngs.size(); i++){
             RoutePoints c = userLatLngs.get(i);
-            
-            if(lastPointLocation == null){
-                lastPointLocation = new Location("lastPoint");
-                lastPointLocation.setLatitude(c.getLatitude());
-                lastPointLocation.setLongitude(c.getLongitude());
-            }else{
-                nextPointLocation.setLatitude(c.getLatitude());
-                nextPointLocation.setLongitude(c.getLongitude());
-                totalDistance += lastPointLocation.distanceTo(nextPointLocation);
-                lastPointLocation.setLatitude(c.getLatitude());
-                lastPointLocation.setLongitude(c.getLongitude());
-            }
+            totalDistance = totalDistance + c.getDistanceinmeters();
+//            if(lastPointLocation == null){
+//                lastPointLocation = new Location("lastPoint");
+//                lastPointLocation.setLatitude(c.getLatitude());
+//                lastPointLocation.setLongitude(c.getLongitude());
+//            }else{
+//                nextPointLocation.setLatitude(c.getLatitude());
+//                nextPointLocation.setLongitude(c.getLongitude());
+//                totalDistance += lastPointLocation.distanceTo(nextPointLocation);
+//                lastPointLocation.setLatitude(c.getLatitude());
+//                lastPointLocation.setLongitude(c.getLongitude());
+//            }
             
         }
         return totalDistance / 1000; // in kms
