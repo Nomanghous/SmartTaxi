@@ -69,6 +69,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -315,7 +316,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 pickup.setLongitude(marker.getPosition().longitude);
                 distanceRemaining = myLocation.distanceTo(pickup);
                 int counter = 0;
-                for (Order order : ordersInSharedRide) {
+                Iterator<Order> iter = ordersInSharedRide.iterator();
+                while (iter.hasNext()){
+                    Order order =iter.next();
                     if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
                         order = goUpdateOrderStatus(order);
                         ordersInSharedRide.add(counter, order);
@@ -483,7 +486,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if(requestCode == 1001){
+        if(requestCode == 1001 && grantResults.length > 0){
             if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 populateMap();
             }
@@ -937,17 +940,26 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     }
     
+    boolean flagModification = false;
     private void setUserFareSoFar(double total, String key) {
+        if(flagModification)
+            return;
         int index = 0;
-        for(Order order : ordersInSharedRide){
+        flagModification = true;
+        Iterator<Order> iter = ordersInSharedRide.iterator();
+    
+        while (iter.hasNext()){
+            Order order =iter.next();
             if(order.getUser_id().equals(key)){
                 order.setTotal_fare(total);
                 db_ref_order.child(order.getOrder_id()).setValue(order);
                 ordersInSharedRide.set(index,order);
+                break;
             }
             index++;
         }
         
+        flagModification = false;
     }
     
     @Override

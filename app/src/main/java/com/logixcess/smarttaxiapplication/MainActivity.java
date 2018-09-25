@@ -1051,6 +1051,7 @@ AlertDialog builder;
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 mRunningOrder = order;
+                                
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck) {
                                     openOrderActivity(order);
@@ -1155,6 +1156,7 @@ AlertDialog builder;
                     if(sharedRide != null){
                         if(sharedRide.getOrder_id().equals(order.getOrder_id())) {
                             mRunningOrder = order;
+                            new_order = order;
                             mapFragment.setIsJoiningOtherRide(false);
                             MapFragment.CREATE_NEW_GROUP = true;
                             Constants.group_id = sharedRide.getGroup_id();
@@ -1162,6 +1164,7 @@ AlertDialog builder;
                             mapFragment.resetUI();
                         }else{
                             mRunningOrder = order;
+                            new_order = order;
                             mapFragment.setIsJoiningOtherRide(true);
                             MapFragment.CREATE_NEW_GROUP = false;
                             Constants.group_id = sharedRide.getGroup_id();

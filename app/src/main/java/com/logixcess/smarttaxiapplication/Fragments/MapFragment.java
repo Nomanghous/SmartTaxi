@@ -179,13 +179,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     
     private DatabaseReference db_ref_user;
     private ArrayList<Polyline> polyLineList;
-    private UserLocationManager gps;
     private GregorianCalendar SELECTED_DATE_TIME;
-    private String mParam1;
-    private String mParam2;
+
     private OnFragmentInteractionListener mListener;
     private MapView mapFragment;
-    private FirebaseUser USER_ME;
     private SharedRide currentSharedRide;
     private DatabaseReference db_ref_group, db_ref_requests;
     public static HashMap<String, Boolean> mPassengerList;
@@ -232,13 +229,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        gps = new UserLocationManager(getContext());
         fareCalculation = new FareCalculation();
        
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+       
     }
 
     public void user_selection_dialog() {
@@ -275,7 +268,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         firebase_instance = SmartTaxiApp.getInstance().getFirebaseInstance();
         firebase_db = FirebaseDatabase.getInstance();
-        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
         db_ref_user = firebase_db.getReference().child(Helper.REF_PASSENGERS);
         db_ref_user_general = firebase_db.getReference().child(Helper.REF_USERS);
         db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
@@ -513,12 +505,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             public void onClick(DialogInterface dialog, int item) {
                 boolean result = PermissionHandler.checkPermission(getActivity());
                 if (items[item].equals("SELECT")) {
-                    //                    if (new_order.getShared()) {
                     new_order.setDriver_id(driverId);
                     sendNotificationToRequestGroupRide(driverId);
-//                    } else {//non shared
-
-//                    }
                     dialog_already_showing = false;
                     dialog.dismiss();
                 }
@@ -602,9 +590,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             //driver_selected(user_id);
-                            new_order.setDriver_id(user_id);
-                            if(purpose == TO_SHOW_INFO_OF_DRIVER)
+                            if(purpose == TO_SHOW_INFO_OF_DRIVER) {
                                 sendNotificationToRequestGroupRide(user_id);
+                                new_order.setDriver_id(user_id);
+                            }
                             else if(purpose == TO_SHOW_INFO_OF_PASSENGER){
                                 if(group_id != null) {
                                     if (!group_id.isEmpty()) {
@@ -672,9 +661,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     //driver_selected(user_id);
-                    new_order.setDriver_id(user_id);
-                    if(purpose == TO_SHOW_INFO_OF_DRIVER)
+                    if(purpose == TO_SHOW_INFO_OF_DRIVER) {
                         sendNotificationToRequestGroupRide(user_id);
+                        new_order.setDriver_id(user_id);
+                    }
                     else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
                         if(group_id != null) {
                             if (!group_id.isEmpty()) {
@@ -712,44 +702,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
     
-
-
-/*
-    public void show_driverDetail(String driverid) {
-
-        if (dialog_already_showing)
-            return;
-        String driverId = driverid;
-        final CharSequence[] items = {"SELECT", "OPEN PROFILE",
-                "CANCEL"};
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Driver Detail");
-        builder.setCancelable(false);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int item) {
-                boolean result = PermissionHandler.checkPermission(getActivity());
-                if (items[item].equals("SELECT")) {
-
-//                    if (new_order.getShared()) {
-                        new_order.setDriver_id(driverId);
-                        sendNotificationToRequestGroupRide(driverId);
-//                    } else {//non shared
-
-//                    }
-                    dialog_already_showing = false;
-                    dialog.dismiss();
-                } else if (items[item].equals("OPEN PROFILE")) {
-
-                } else if (items[item].equals("CANCEL")) {
-                    dialog.dismiss();
-                    dialog_already_showing = false;
-                }
-            }
-        });
-        builder.show();
-        dialog_already_showing = true;
-    }*/
 
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
@@ -1428,26 +1380,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             showRadiusInputField();
         }else if(isOrderAccepted){
             progressDialog.dismiss();
-           /* double total_cost = fareCalculation.getCostSingleRide(Constants.BASE_FAIR_PER_KM,Integer.valueOf(new_order.getTotal_kms())-1);
-            if (layout_cost_detail.getVisibility() == View.GONE) {
-                if (btn_confirm.getVisibility() == View.VISIBLE)
-                    btn_confirm.setVisibility(View.GONE);
-                layout_cost_detail.setVisibility(View.VISIBLE);
-                txtLocation.setText("Location : " + new_order.getPickup());
-                txtDestination.setText("Destination : " + new_order.getDropoff());
-                txt_cost.setText(String.valueOf(total_cost));
-                new_order.setEstimated_cost(String.valueOf(total_cost));
-                tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
-            }*/
             timer.cancel();
         }
         else if (isDriverResponded ||isTimeout) {
             progressDialog.dismiss();
+            new_order.setDriver_id("");
             if(isTimeout)
                 Toast.makeText(getContext(), "Other User Doesn't respond.", Toast.LENGTH_SHORT).show();
-            else{
-                Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
-            }
+        else{
+            Toast.makeText(getContext(), "Your request is declined", Toast.LENGTH_SHORT).show();
+        }
             timer.cancel();
         }
     }
@@ -1663,6 +1605,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         } else if (request.getStatus() == Requests.STATUS_REJECTED) {
                             isDriverResponded = true;
                             isOrderAccepted = false;
+                            new_order.setDriver_id("");
                             goRemoveRequest(request.getReceiverId(),userId);
                             checkForResponse(dialog,timer);
                         }

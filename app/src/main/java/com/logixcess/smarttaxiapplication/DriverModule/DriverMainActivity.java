@@ -503,11 +503,12 @@ public class DriverMainActivity extends AppCompatActivity {
     }
     
     private void checkOrderStatus(List<Order> ordersInSharedRide) {
-        boolean check = false;
+        boolean check = true;
         for(Order order : ordersInSharedRide)
             if(order.getStatus() == Order.OrderStatusCompleted){
-                check = true;
+                check = false;
             }
+            
         if(!check){
             // all orders completed
             db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
