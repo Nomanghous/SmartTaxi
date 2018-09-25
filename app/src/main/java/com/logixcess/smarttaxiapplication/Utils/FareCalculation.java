@@ -198,9 +198,14 @@ public class FareCalculation
     
     private int getActiveRideUsersCount(List<Order> ordersInSharedRide) {
         int Count = 0;
+        List<String> alreadyCounted = new ArrayList<>();
         for(Order order : ordersInSharedRide)
-            if(order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress)
+            if(order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress
+                    && !alreadyCounted.contains(order.getUser_id())
+                    ) {
                 Count++;
+                alreadyCounted.add(order.getUser_id());
+            }
         return Count;
     }
     

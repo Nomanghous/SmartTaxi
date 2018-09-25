@@ -3,9 +3,14 @@ package com.logixcess.smarttaxiapplication.Models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.database.Exclude;
+
 public class RoutePoints implements Parcelable {
 
     private double latitude, longitude, distanceinmeters, totalPassengers;
+    
+    @Exclude
+    private double totalKmSofar;
     
     public RoutePoints(double latitude, double longitude) {
         this.latitude = latitude;
@@ -21,7 +26,15 @@ public class RoutePoints implements Parcelable {
     public RoutePoints(){
 
     }
-
+    
+    public double getTotalKmSofar() {
+        return totalKmSofar;
+    }
+    
+    public void setTotalKmSofar(double totalKmSofar) {
+        this.totalKmSofar = totalKmSofar;
+    }
+    
     public RoutePoints(Parcel in) {
         latitude = in.readDouble();
         longitude = in.readDouble();

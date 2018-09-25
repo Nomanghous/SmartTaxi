@@ -101,8 +101,12 @@ public class FirebaseDataSync extends Service {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Order order = dataSnapshot.getValue(Order.class);
-                if(order != null)
+                if(order != null) {
                     currentOrder = order;
+                    if(total_fare != null) {
+                        total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
+                    }
+                }
     
             }
     
@@ -151,10 +155,7 @@ public class FirebaseDataSync extends Service {
             totalDistance = pickupLocation.distanceTo(driverLocation);
         }
         currentDistance = pickupLocation.distanceTo(driverLocation);
-        if(total_fare != null) {
-            if (currentOrder.getStatus() == Order.OrderStatusInProgress)
-                total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
-        }
+      
     }
     
     private void checkDistanceAndNotify() {
