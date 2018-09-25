@@ -16,10 +16,40 @@
         tools:context=".Activities.MapsActivity"/>
     <RelativeLayout
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorAccent"
+        android:layout_above="@+id/bottom"
+        >
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textStyle="bold"
+        android:textSize="30sp"
+        android:layout_centerInParent="true"
+        android:textColor="@color/white"
+        android:id="@+id/total_fare"
+        />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rupees"
+            android:layout_centerVertical="true"
+            android:paddingLeft="8dp"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+
+            />
+
+    </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="80dp"
         android:background="#80FDBC49"
         android:layout_alignParentBottom="true"
+        android:id="@+id/bottom"
         >
+
         <Button
             android:layout_width="wrap_content"
             android:layout_height="40dp"
@@ -33,5 +63,7 @@
             android:onClick="markOrderAsComplete"
             android:layout_centerInParent="true"
             />
+
+
     </RelativeLayout>
 </RelativeLayout>

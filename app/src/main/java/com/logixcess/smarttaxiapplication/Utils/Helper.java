@@ -81,9 +81,12 @@ public class Helper {
 
 
     public static double roundOffDouble(double value){
-        DecimalFormat f = new DecimalFormat("##.000000");
-        String formattedValue = f.format(value);
-        return Double.valueOf(formattedValue);
+        String val = String.valueOf(value);
+//        if(val.length() > 8)
+//            return Double.valueOf(val.substring(0,10));
+//        else
+//            return value;
+        return value;
     }
 
 }

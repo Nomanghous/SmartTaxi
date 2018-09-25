@@ -216,8 +216,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             mPassengerPoints.add(temp);
             mPassengerPoints = sortPointsByDistance();
         }
-        
-        
+        IS_ROUTE_ADDED = true;
+
+
 //        Routing routing = new Routing.Builder()
 //                .travelMode(AbstractRouting.TravelMode.DRIVING)
 //                .withListener(this)
@@ -292,100 +293,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     }
 
-    private void checkForDistanceToSendNotification(Order currentOrder,User currentUser, double distanceRemaining )  {
-//      int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
-        boolean[] NotificationsDone = currentOrder.getNotificaionsDone();
-        mDriverMarker.setPosition(driver);
-        NotificationPayload payload = new NotificationPayload();
-        payload.setDriver_id(escapeValue(userMe.getUid()));
-        payload.setUser_id(escapeValue(currentOrder.getUser_id()));
-        String group_id = "--NA--";
-        if(currentOrder.getShared())
-            group_id = Helper.getConcatenatedID(currentOrder.getOrder_id(), userMe.getUid());
-        payload.setGroup_id(escapeValue(group_id));
-        payload.setTitle(escapeValue("Order Updates"));
-        payload.setPercentage_left(escapeValue(""+distanceRemaining));
-        payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
-        payload.setOrder_id(escapeValue(currentOrder.getOrder_id()));
-        String token = currentUser.getUser_token();
-        if(distanceRemaining < 10 && NotificationsDone[0] && mCountDowntimer == null) {
-            mCountDowntimer = new CountDownTimer(300000, 60000) {
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    payload.setDescription(escapeValue("Driver is Waiting outside"));
-                    payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
-                    String str = new Gson().toJson(payload);
-                    try {
-                        JSONObject json = new JSONObject(str);
-                        new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-    
-                }
-    
-                @Override
-                public void onFinish() {
-                    findViewById(R.id.phone_call_container).setVisibility(View.VISIBLE);
-                }
-            }.start();
-            
-        }else if(distanceRemaining < 100 && !NotificationsDone[0]){
-            NotificationsDone[0] = true;
-            NotificationsDone[1] = true;
-            NotificationsDone[2] = true;
-            NotificationsDone[3] = true;
-            // TODO: change the color of driver marker.
-            
-            payload.setDescription(escapeValue("Driver is reaching soon"));
-            payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
-            String str = new Gson().toJson(payload);
-            try {
-                JSONObject json = new JSONObject(str);
-                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }else if(distanceRemaining < 200 && !NotificationsDone[1]){
-            NotificationsDone[1] = true;
-            NotificationsDone[2] = true;
-            NotificationsDone[3] = true;
-            payload.setDescription(escapeValue("Driver is reaching soon"));
-            String str = new Gson().toJson(payload);
-            try {
-                JSONObject json = new JSONObject(str);
-                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }else if(distanceRemaining < 250 && !NotificationsDone[2]){
-            NotificationsDone[2] = true;
-            NotificationsDone[3] = true;
-            payload.setDescription(escapeValue("Driver is reaching soon"));
-            String str = new Gson().toJson(payload);
-            try {
-                JSONObject json = new JSONObject(str);
-                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }else if(!NotificationsDone[3]){
-            NotificationsDone[3] = true;
-            payload.setDescription(escapeValue("Driver is coming your way"));
-            String str = new Gson().toJson(payload);
-            try {
-                JSONObject json = new JSONObject(str);
-                new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            
-        }
-        currentOrder.setNotificaionsDone(NotificationsDone);
-    }
 
     
     /*calculate pickup distance for notification*/
@@ -698,6 +605,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             else {
                 try {
                     if(mDriverMarker != null && driver != null && myLocation != null) {
+                        if(start == null)
+                            start = new LatLng(currentOrder.getPickupLat(),currentOrder.getPickupLong());
                         Location location = new Location("pickup");
                         location.setLatitude(start.latitude);
                         location.setLongitude(start.longitude);
@@ -1013,6 +922,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 String key = entry.getKey();
                 UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                 if(fareRecord != null && fareRecord.getUserFare() != null) {
+                    double total = 0;
+                    for(Map.Entry<String,Double> e : fareRecord.getUserFare().entrySet()){
+                         total = e.getValue() + total;
+                    }
+                    setUserFareSoFar(total,key);
                     Log.i("FareCalculation",fareRecord.getUserFare().toString());
                     Log.i("FareCalculation", "Count: " + fareRecord.getUserFare().size());
                 }
@@ -1021,6 +935,19 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }else{
         
         }
+    }
+    
+    private void setUserFareSoFar(double total, String key) {
+        int index = 0;
+        for(Order order : ordersInSharedRide){
+            if(order.getUser_id().equals(key)){
+                order.setTotal_fare(total);
+                db_ref_order.child(order.getOrder_id()).setValue(order);
+                ordersInSharedRide.set(index,order);
+            }
+            index++;
+        }
+        
     }
     
     @Override

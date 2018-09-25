@@ -105,6 +105,7 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
 import static com.logixcess.smarttaxiapplication.Services.LocationManagerService.mLastLocation;
 
 public class MainActivity extends BaseActivity
@@ -473,9 +474,9 @@ AlertDialog builder;
                 if(place != null && place.getAddress() != null) {
                     Log.d("FULL ADDRESS****", place.toString());
                     MapFragment.et_pickup.setText(place.getAddress());
-                    MapFragment.new_order.setPickup(place.getAddress().toString());
-                    MapFragment.new_order.setPickupLat(place.getLatLng().latitude);
-                    MapFragment.new_order.setPickupLong(place.getLatLng().longitude);
+                    new_order.setPickup(place.getAddress().toString());
+                    new_order.setPickupLat(place.getLatLng().latitude);
+                    new_order.setPickupLong(place.getLatLng().longitude);
                     mapFragment.showCalculatedCost();
 
                 }
@@ -493,14 +494,14 @@ AlertDialog builder;
                 if(place != null && place.getAddress() != null) {
                     Log.d("FULL ADDRESS****", place.toString());
                     MapFragment.et_drop_off.setText(place.getAddress());
-                    MapFragment.new_order.setDropoff(place.getAddress().toString());
-                    MapFragment.new_order.setDropoffLat(place.getLatLng().latitude);
-                    MapFragment.new_order.setDropoffLong(place.getLatLng().longitude);
+                    new_order.setDropoff(place.getAddress().toString());
+                    new_order.setDropoffLat(place.getLatLng().latitude);
+                    new_order.setDropoffLong(place.getLatLng().longitude);
                     mapFragment.showCalculatedCost();
                     if (!TextUtils.isEmpty(MapFragment.et_pickup.getText())) {
                         MarkerOptions options = new MarkerOptions();
-                        Double pickupLat = MapFragment.new_order.getPickupLat();
-                        Double pickupLng = MapFragment.new_order.getPickupLong();
+                        Double pickupLat = new_order.getPickupLat();
+                        Double pickupLng = new_order.getPickupLong();
                         options.position(new LatLng(pickupLat, pickupLng));
                         options.position(new LatLng(place.getLatLng().latitude, place.getLatLng().longitude));
                         mapFragment.getgMap().addMarker(options);
@@ -533,7 +534,7 @@ AlertDialog builder;
             }
         }else if(requestCode == REQUEST_CODE_MAPS){
             if(resultCode == RESULT_OK){
-                MapFragment.new_order = null;
+                new_order = null;
                 mapFragment.setIsJoiningOtherRide(false);
                 MapFragment.CREATE_NEW_GROUP = false;
                 Constants.group_id = "";
@@ -1043,11 +1044,12 @@ AlertDialog builder;
                         if(order != null){
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
+                                new_order = order;
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
-                                if(!isForConditionCheck)
+                                if(!isForConditionCheck) {
                                     openOrderActivity(order);
+                                }
                                 findViewById(R.id.current_order_view).setVisibility(View.VISIBLE);
-                                
                                 if(mapFragment != null) {
                                     mapFragment.setThereIsActiveOrder(true);
                                     if(order.getStatus() == Order.OrderStatusWaiting){
@@ -1062,6 +1064,7 @@ AlertDialog builder;
                         }
                     }
                     if(!mapFragment.getThereIsActiveOrder() ){
+                        new_order = null;
                         stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                         if(!isForConditionCheck)
                             Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
@@ -1070,6 +1073,7 @@ AlertDialog builder;
                     }
                 }else{
                     stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
+                    new_order = null;
                     if(!isForConditionCheck)
                         Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                     mapFragment.setThereIsActiveOrder(false);
@@ -1082,6 +1086,7 @@ AlertDialog builder;
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 progressbar.setVisibility(View.GONE);
+                new_order = null;
                 stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                 Toast.makeText(MainActivity.this, "Something went Wrong", Toast.LENGTH_SHORT).show();
 
@@ -1143,14 +1148,14 @@ AlertDialog builder;
                     SharedRide sharedRide = dataSnapshot.getValue(SharedRide.class);
                     if(sharedRide != null){
                         if(sharedRide.getOrder_id().equals(order.getOrder_id())) {
-                            MapFragment.new_order = order;
+                            new_order = order;
                             mapFragment.setIsJoiningOtherRide(false);
                             MapFragment.CREATE_NEW_GROUP = true;
                             Constants.group_id = sharedRide.getGroup_id();
                             Constants.group_radius = sharedRide.getRadius_constraint();
                             mapFragment.resetUI();
                         }else{
-                            MapFragment.new_order = order;
+                            new_order = order;
                             mapFragment.setIsJoiningOtherRide(true);
                             MapFragment.CREATE_NEW_GROUP = false;
                             Constants.group_id = sharedRide.getGroup_id();

@@ -2,18 +2,21 @@ package com.logixcess.smarttaxiapplication.Services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.view.View;
-import android.widget.Toast;
+import android.util.Log;
 
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -23,27 +26,30 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
-import com.logixcess.smarttaxiapplication.MainActivity;
+import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
-import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
+import com.logixcess.smarttaxiapplication.Utils.PolyUtil;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.text.DecimalFormat;
 
 import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.mDriverMarker;
+import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.total_fare;
+import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
+import static com.logixcess.smarttaxiapplication.Utils.SphericalUtil.computeDistanceBetween;
 
 public class FirebaseDataSync extends Service {
 
     DatabaseReference db_ref, db_user, db_order, db_group, db_passenger, db_driver;
-    Order currentOrder;
+    public static Order currentOrder;
     FirebaseUser mUser;
-    Location pickupLocation, driverLocation;
-    private Driver mDriver;
+    Location pickupLocation;
+    public static Location driverLocation;
+    public static Driver currentDriver;
     double totalDistance;
     double currentDistance;
     private CountDownTimer mCountDowntimer;
@@ -57,34 +63,41 @@ public class FirebaseDataSync extends Service {
         db_group = db_ref.child(Helper.REF_GROUPS);
         db_order = db_ref.child(Helper.REF_ORDERS);
         db_passenger = db_ref.child(Helper.REF_PASSENGERS);
-        
-        Query query = db_order.orderByChild("user_id").equalTo(mUser.getUid());
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()) {
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        Order order = snapshot.getValue(Order.class);
-                        if (order != null) {
-                            if (order.getStatus() == Order.OrderStatusWaiting ||
-                                    order.getStatus() == Order.OrderStatusInProgress) {
-                                currentOrder = order;
-                                setDriverUpdates();
-                                setOrderUpdates();
-                                break;
+        mUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(mUser == null)
+            return;
+        if(new_order != null) {
+            currentOrder = new_order;
+            setDriverUpdates();
+            setOrderUpdates();
+        } else {
+            Query query = db_order.orderByChild("user_id").equalTo(mUser.getUid());
+            query.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Order order = snapshot.getValue(Order.class);
+                            if (order != null) {
+                                if (order.getStatus() == Order.OrderStatusWaiting ||
+                                        order.getStatus() == Order.OrderStatusInProgress) {
+                                    currentOrder = order;
+                                    setDriverUpdates();
+                                    setOrderUpdates();
+                                    break;
+                                }
+                        
                             }
-    
                         }
                     }
                 }
-            }
         
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
             
-            }
-        });
-        
+                }
+            });
+        }
         
     }
     
@@ -92,27 +105,13 @@ public class FirebaseDataSync extends Service {
         pickupLocation = new Location("pickup");
         pickupLocation.setLatitude(currentOrder.getPickupLat());
         pickupLocation.setLongitude(currentOrder.getPickupLong());
-        db_order.child(currentOrder.getOrder_id()).addChildEventListener(new ChildEventListener() {
+        db_order.child(currentOrder.getOrder_id()).addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-            
-            }
-    
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Order order = dataSnapshot.getValue(Order.class);
                 if(order != null)
                     currentOrder = order;
-            }
     
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-        
-            }
-    
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-        
             }
     
             @Override
@@ -124,19 +123,19 @@ public class FirebaseDataSync extends Service {
     
     private void setDriverUpdates() {
         driverLocation = new Location("Driver");
-        db_driver.child(currentOrder.getDriver_id()).addChildEventListener(new ChildEventListener() {
+        Log.i("DriverId",currentOrder.getDriver_id());
+        db_driver.child(currentOrder.getDriver_id()).addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-            
-            }
-    
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Driver driver = dataSnapshot.getValue(Driver.class);
                 if(driver != null) {
-                    mDriver = driver;
-                    driverLocation.setLatitude(mDriver.getLatitude());
-                    driverLocation.setLongitude(mDriver.getLongitude());
+                    currentDriver = driver;
+                    driverLocation.setLatitude(currentDriver.getLatitude());
+                    driverLocation.setLongitude(currentDriver.getLongitude());
+                    if(mDriverMarker != null) {
+                        mDriverMarker.setPosition(new LatLng(driverLocation.getLatitude()
+                                ,driverLocation.getLongitude()));
+                    }
                     try {
                         calculateDistance();
                         checkDistanceAndNotify();
@@ -147,30 +146,27 @@ public class FirebaseDataSync extends Service {
             }
     
             @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-        
-            }
-    
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-        
-            }
-    
-            @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
         
             }
         });
+        
+
     }
     
     private void calculateDistance() {
-        if(totalDistance == 0)
+        if(totalDistance == 0) {
             totalDistance = pickupLocation.distanceTo(driverLocation);
-        currentDistance = totalDistance - pickupLocation.distanceTo(driverLocation);
+        }
+        currentDistance = pickupLocation.distanceTo(driverLocation);
+        if(total_fare != null) {
+            if (currentOrder.getStatus() == Order.OrderStatusInProgress)
+                total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
+        }
     }
     
     private void checkDistanceAndNotify() {
-        int percentageLeft = (int) ((int) currentDistance / totalDistance * 100);
+        double percentageLeft = currentDistance / totalDistance * 100;
         if(mDriverMarker != null) {
             LatLng markerPosition = mDriverMarker.getPosition();
             String title = mDriverMarker.getTitle();
@@ -187,10 +183,18 @@ public class FirebaseDataSync extends Service {
         payload.setPercentage_left(""+ currentDistance);
         payload.setType(Helper.NOTI_TYPE_ORDER_WAITING);
         payload.setOrder_id(currentOrder.getOrder_id());
+        Log.i("percentage", percentageLeft + " cd: " + currentDistance + " td: " + totalDistance);
+        
         if(percentageLeft < 5 && mCountDowntimer == null) {
             mCountDowntimer = new CountDownTimer(300000, 60000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
+                    if(pickupLocation.distanceTo(driverLocation) > 20 ||
+                            currentOrder.getStatus() == Order.OrderStatusInProgress) {
+                        mCountDowntimer.cancel();
+                        mCountDowntimer = null;
+                        return;
+                    }
                     payload.setDescription("Driver is Waiting outside");
                     payload.setType(Helper.NOTI_TYPE_ORDER_WAITING_LONG);
                     String str = new Gson().toJson(payload);
@@ -212,7 +216,7 @@ public class FirebaseDataSync extends Service {
             String str = new Gson().toJson(payload);
             NotificationUtils.showNotificationForUserActions(getApplicationContext(),str);
             if(mDriverMarker != null)
-                mDriverMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),percentageLeft));
         }else if(percentageLeft < 50 && !NotificationsDone[1]){
             NotificationsDone[1] = true;
             NotificationsDone[2] = true;
@@ -222,7 +226,7 @@ public class FirebaseDataSync extends Service {
             String str = new Gson().toJson(payload);
             NotificationUtils.showNotificationForUserActions(getApplicationContext(),str);
             if(mDriverMarker != null)
-                mDriverMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+                mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),percentageLeft));
         }else if(percentageLeft < 75 && !NotificationsDone[2]){
             NotificationsDone[2] = true;
             NotificationsDone[3] = true;
@@ -231,7 +235,7 @@ public class FirebaseDataSync extends Service {
             String str = new Gson().toJson(payload);
             NotificationUtils.showNotificationForUserActions(getApplicationContext(),str);
             if(mDriverMarker != null)
-                mDriverMarker .setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE));
+                mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),percentageLeft));
         }else if(percentageLeft < 100 && !NotificationsDone[3]){
             NotificationsDone[3] = true;
             payload.setDescription("Driver is coming");
@@ -239,12 +243,110 @@ public class FirebaseDataSync extends Service {
             String str = new Gson().toJson(payload);
             NotificationUtils.showNotificationForUserActions(getApplicationContext(),str);
             if(mDriverMarker != null)
-                mDriverMarker .setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+            {
+                mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),percentageLeft));
+            }
+                ////mDriverMarker.setIcon(BitmapDescriptorFactory.fromBitmap());//mDriverMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
         }
         currentOrder.setNotificaionsDone(NotificationsDone);
     }
-    
-    
+    private BitmapDescriptor getDrawableByType(String vehicleType,double percentage) {
+        Drawable drawable = getResources().getDrawable(R.drawable.ic_option_nano);
+        switch (vehicleType){
+            case Helper.VEHICLE_CAR:
+                if(percentage <=100 && percentage>=75)
+                {
+                    drawable = getResources().getDrawable(R.drawable.ic_option_car);
+                }
+                else if(percentage<75 && percentage>=50)
+                {
+                    drawable = getResources().getDrawable(R.drawable.car_lb);
+                }
+                else if(percentage<50 && percentage>=25)
+                {
+                    drawable = getResources().getDrawable(R.drawable.car_lr);
+                }
+                else if(percentage<25 && percentage>=0)
+                {
+                    drawable = getResources().getDrawable(R.drawable.car_dr);
+                }
+                break;
+            case Helper.VEHICLE_MINI:
+                if(percentage<=100 && percentage>=75)
+                {
+                    drawable = getResources().getDrawable(R.drawable.ic_option_mini);
+                }
+                else if(percentage<75 && percentage>=50)
+                {
+                    drawable = getResources().getDrawable(R.drawable.mini_lb);
+                }
+                else if(percentage<50 && percentage>=25)
+                {
+                    drawable = getResources().getDrawable(R.drawable.mini_lr);
+                }
+                else if(percentage<25 && percentage>=0)
+                {
+                    drawable = getResources().getDrawable(R.drawable.mini_dr);
+                }
+                break;
+            case Helper.VEHICLE_NANO:
+                if(percentage<=100 && percentage>=75)
+                {
+                    drawable = getResources().getDrawable(R.drawable.ic_option_nano);
+                }
+                else if(percentage<75 && percentage>=50)
+                {
+                    drawable = getResources().getDrawable(R.drawable.nano_lb);
+                }
+                else if(percentage<50 && percentage>=25)
+                {
+                    drawable = getResources().getDrawable(R.drawable.nano_lr);
+                }
+                else if(percentage<25 && percentage>=0)
+                {
+                    drawable = getResources().getDrawable(R.drawable.nano_dr);
+                }
+                break;
+            case Helper.VEHICLE_THREE_WHEELER:
+                if(percentage<=100 && percentage>=75)
+                {
+                    drawable = getResources().getDrawable(R.drawable.ic_option_three_wheeler);
+                }
+                else if(percentage<75 && percentage>=50)
+                {
+                    drawable = getResources().getDrawable(R.drawable.three_wheeler_lb);
+                }
+                else if(percentage<50 && percentage>=25)
+                {
+                    drawable = getResources().getDrawable(R.drawable.three_wheeler_lr);
+                }
+                else if(percentage<25 && percentage>=0)
+                {
+                    drawable = getResources().getDrawable(R.drawable.three_wheeler_dr);
+                }
+                break;
+            case Helper.VEHICLE_VIP:
+                if(percentage<=100 && percentage>=75)
+                {
+                    drawable = getResources().getDrawable(R.drawable.ic_option_vip);
+                }
+                else if(percentage<75 && percentage>=50)
+                {
+                    drawable = getResources().getDrawable(R.drawable.vip_lb);
+                }
+                else if(percentage<50 && percentage>=25)
+                {
+                    drawable = getResources().getDrawable(R.drawable.vip_lr);
+                }
+                else if(percentage<25 && percentage>=0)
+                {
+                    drawable = getResources().getDrawable(R.drawable.vip_dr);
+                }
+                break;
+        }
+        Bitmap driverPin = Helper.convertToBitmap(drawable, 100, 100);
+        return BitmapDescriptorFactory.fromBitmap(driverPin);
+    }
     @Override
     public boolean stopService(Intent name) {
         currentDistance = 0;
@@ -253,7 +355,7 @@ public class FirebaseDataSync extends Service {
             mCountDowntimer.cancel();
         mCountDowntimer = null;
         currentOrder = null;
-        mDriver = null;
+        currentDriver = null;
         return super.stopService(name);
     }
     
@@ -262,5 +364,9 @@ public class FirebaseDataSync extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+    
+    public static Order getCurrentOrder() {
+        return currentOrder;
     }
 }

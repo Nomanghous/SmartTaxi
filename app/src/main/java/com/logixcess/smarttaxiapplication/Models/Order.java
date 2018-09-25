@@ -24,6 +24,9 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
             total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
+    
+    private double total_fare;
+    
 //    UserFareRecord fareRecord;
 //    private List<RoutePoints> journeyPoints;
     private String order_id;
@@ -87,6 +90,14 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         NotificaionsDone = notificaionsDone;
     }
     
+    public double getTotal_fare() {
+        return total_fare;
+    }
+    
+    public void setTotal_fare(double total_fare) {
+        this.total_fare = total_fare;
+    }
+    
     public String getEstimated_cost() {
         return estimated_cost;
     }
@@ -114,7 +125,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     public Double getPickupLat() {
         return pickupLat;
     }
-
+    
     public void setPickupLat(Double pickupLat) {
         this.pickupLat = pickupLat;
     }
@@ -295,6 +306,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         SelectedRoute = in.readArrayList(LatLng.class.getClassLoader());
         byte tmIsOnRide = in.readByte();
         isOnRide = tmIsOnRide == 0 ? null : tmIsOnRide == 1;
+        total_fare = in.readDouble();
 //        journeyPoints = in.readArrayList(LatLng.class.getClassLoader());
     }
     @Override
@@ -323,6 +335,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         dest.writeInt(passenger_status);
         dest.writeList(SelectedRoute);
         dest.writeByte((byte) (isOnRide == null ? 0 : isOnRide ? 1 : 2));
+        dest.writeDouble(total_fare);
 //        dest.writeList(journeyPoints);
     }
 

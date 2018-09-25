@@ -127,8 +127,7 @@ import static com.logixcess.smarttaxiapplication.Utils.Constants.group_radius;
  */
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener {
-
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+    
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     private static final int TO_SHOW_INFO_OF_PASSENGER = 113;
@@ -1088,6 +1087,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         else if (distance.contains("m"))
             distance = String.valueOf(Double.valueOf(distance.replace("m", "")) / 1000);
         tv_distance.setText("Distance: ".concat(distance).concat(" km"));
+        new_order.setPickupLat(polyline.getPoints().get(0).latitude);
+        new_order.setPickupLong(polyline.getPoints().get(0).longitude);
+        new_order.setDropoffLat(polyline.getPoints().get(polyline.getPoints().size() - 1).latitude);
+        new_order.setDropoffLong(polyline.getPoints().get(polyline.getPoints().size() - 1).longitude);
         new_order.setTotal_kms(distance);
         calculateTheCosts();
         ////Toast.makeText(getContext(), "Distance: ".concat(distance).concat(" and Duration: ").concat(value[1]), Toast.LENGTH_SHORT).show();
@@ -1654,7 +1657,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         if (request.getStatus() == Requests.STATUS_ACCEPTED) {
                             isDriverResponded = true;
                             isOrderAccepted = true;
-                            new_order.setDriver_id(request.getReceiverId());
+                            new_order.setDriver_id(driverId);
                             goRemoveRequest(request.getReceiverId(),userId);
                             checkForResponse(dialog,timer);
                         } else if (request.getStatus() == Requests.STATUS_REJECTED) {
@@ -1854,7 +1857,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if (i == 0) {
                     polyLineOptions.width(20);
                     polyLineOptions.color(Color.BLUE);
-
                 } else {
                     polyLineOptions.width(10);
                     polyLineOptions.color(Color.DKGRAY);
@@ -1868,6 +1870,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     addSelectedRoute(polyline);
                     ct_details.setVisibility(View.VISIBLE);
                     tv_distance.setText("Distance: ".concat(distance).concat(" km"));
+                    new_order.setPickupLat(points.get(0).latitude);
+                    new_order.setPickupLong(points.get(0).longitude);
+                    new_order.setDropoffLat(points.get(points.size() - 1).latitude);
+                    new_order.setDropoffLong(points.get(points.size() - 1).longitude);
                     new_order.setTotal_kms(distance);
                     calculateTheCosts();
                 }

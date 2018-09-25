@@ -14,19 +14,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
-import android.view.animation.Interpolator;
-import android.view.animation.LinearInterpolator;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.directions.route.AbstractRouting;
@@ -38,7 +32,6 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -50,38 +43,24 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
-import com.logixcess.smarttaxiapplication.Models.Driver;
-import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
-import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
-import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
+import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
-import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.driverLocation;
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentDriver;
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentOrder;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
-    private GoogleMap mMap;
-    private Order currentOrder = null;
-    private User CURRENT_USER = null;
+    public static GoogleMap mMap;
     private String CUSTOMER_USER_ID = "";
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
@@ -100,10 +79,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     private double totalDistance = 0, totalTime = 120; // total time in minutes
     private double distanceRemaining = 0;
-    private DatabaseReference db_ref, db_ref_driver;
+    private DatabaseReference db_ref;
     private LatLng driver = null;
-    private Location driverLocation = null  ;
-
+    public static TextView total_fare;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -116,8 +94,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
-
-            currentOrder = bundle.getParcelable(KEY_CURRENT_ORDER);
             if(currentOrder != null && currentOrder.getShared()){
             
             }else if(currentOrder != null) {
@@ -128,67 +104,17 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 finish();
                 return;
             }
-
             askLocationPermission();
             setContentView(R.layout.activity_maps_customer);
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
-            driverLocation = LocationManagerService.mLastLocation;
+            if(driverLocation == null)
+                driverLocation = new Location("driver");
             db_ref = FirebaseDatabase.getInstance().getReference();
-            db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(currentOrder.getDriver_id());
-            db_ref_driver.addChildEventListener(new ChildEventListener() {
-                @Override
-                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                }
-
-                @Override
-                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                    if(dataSnapshot.exists()){
-                        Driver driver = dataSnapshot.getValue(Driver.class);
-                        if(driver != null && mMap != null && driverLocation != null) {
-                            driverLocation.setLatitude(driver.getLatitude());
-                            driverLocation.setLongitude(driver.getLongitude());
-                            if(!IS_ROUTE_ADDED)
-                                requestNewRoute();
-                        }
-                    }
-                }
-
-                @Override
-                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                }
-
-                @Override
-                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-                    db_ref_user = db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id());
-            db_ref_user.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if(dataSnapshot.exists()){
-                        CURRENT_USER = dataSnapshot.getValue(User.class);
-                        if(CURRENT_USER != null && mMap != null) {
-
-                        }
-                    }
-                }
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-            new Timer().schedule(new Every10Seconds(),5000,10000);
+            
+            
         }else{
             // driver id not provided
             Intent returnIntent = new Intent();
@@ -196,50 +122,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             finish();
         }
 
-    }
-
-    private class Every10Seconds extends TimerTask {
-        @Override
-        public void run() {
-            updateUserLocation();
-            if(!IS_ROUTE_ADDED)
-                requestNewRoute();
-            else {
-                try {
-                    if(mDriverMarker != null && driver != null && driverLocation != null) {
-                        Location location = new Location("pickup");
-                        location.setLatitude(start.latitude);
-                        location.setLongitude(start.longitude);
-                        if(totalDistance == 0)
-                            totalDistance = driverLocation.distanceTo(location);
-                        distanceRemaining = driverLocation.distanceTo(location);
-                        driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
-                        if(distanceRemaining > totalDistance)
-                            return;
-
-                        runOnUiThread(CustomerMapsActivity.this::checkForDistanceToSendNotification);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    private void setupDriverLcoationListener(String driver_id) {
-        db_ref_driver.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    Driver driver = dataSnapshot.getValue(Driver.class);
-
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+        total_fare = findViewById(R.id.total_fare);
+        if(currentOrder.getStatus() == Order.OrderStatusInProgress)
+            total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
     }
 
     private void requestNewRoute() {
@@ -279,66 +164,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1001);
         }
     }
-
-    private void checkForDistanceToSendNotification()  {
-        int percentageLeft = (int) ((int) distanceRemaining  / totalDistance * 100);
-        mDriverMarker.setPosition(driver);
-        
-    }
-
-    private MarkerOptions getDesiredMarker(int kind, LatLng posToSet, String title) {
-        return new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(kind))
-                .position(posToSet).title(title);
-    }
-
-    public void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint, final Bitmap bitmap) {
-        Marker marker = myMap.addMarker(new MarkerOptions()
-                .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
-                .position(directionPoint.get(0))
-                .flat(true));
-
-        myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint.get(0), 10));
-
-        animateMarker(myMap, marker, directionPoint, false);
-    }
-
-    private void animateMarker(GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint,
-                               final boolean hideMarker) {
-        final Handler handler = new Handler();
-        final long start = SystemClock.uptimeMillis();
-        Projection proj = myMap.getProjection();
-        final long duration = 30000;
-
-        final Interpolator interpolator = new LinearInterpolator();
-
-        handler.post(new Runnable() {
-            int i = 0;
-
-            @Override
-            public void run() {
-                long elapsed = SystemClock.uptimeMillis() - start;
-                float t = interpolator.getInterpolation((float) elapsed
-                        / duration);
-                if (i < directionPoint.size())
-                    marker.setPosition(directionPoint.get(i));
-                i++;
-
-
-                if (t < 1.0) {
-                    // Post again 16ms later.
-                    handler.postDelayed(this, 16);
-                } else {
-                    if (hideMarker) {
-                        marker.setVisible(false);
-                    } else {
-                        marker.setVisible(true);
-                    }
-                }
-            }
-        });
-    }
-
-
     public void addRoute() {
         waypoints = new ArrayList<>();
         getRoutePoints();
@@ -408,8 +233,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
         distanceRemaining = shortestRoute.getDistanceValue();
 
-        if(mDriverMarker != null && driver != null && driverLocation != null)
-            checkForDistanceToSendNotification();
+        if(mDriverMarker != null && driver != null && driverLocation != null){
+        
+        }
+
 
     }
 
@@ -419,7 +246,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
-                    sendPushNotification();
                     Toast.makeText(CustomerMapsActivity.this, "Order Successfully Completed", Toast.LENGTH_SHORT).show();
                     Intent returnIntent = new Intent();
                     setResult(Activity.RESULT_OK,returnIntent);
@@ -429,54 +255,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         });
     }
 
-    private void goFetchGroupByID(String groupId) {
-        db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-//                 CURRENT_SHARED_RIDE = dataSnapshot.getValue(SharedRide.class);
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void sendPushNotification() {
-        NotificationPayload payload = new NotificationPayload();
-        payload.setOrder_id(CURRENT_ORDER_ID);
-        payload.setPercentage_left(escapeValue(""));
-        payload.setTitle(escapeValue("Order Completed"));
-        payload.setDescription(escapeValue("Congratulations, Your order is completed."));
-        payload.setType(Helper.NOTI_TYPE_ORDER_COMPLETED);
-        payload.setGroup_id(escapeValue("--NA--"));
-        payload.setUser_id(escapeValue(USER_ME.getUid()));
-        payload.setDriver_id(escapeValue("--NA--"));
-        String str = new Gson().toJson(payload);
-        try {
-            JSONObject json = new JSONObject(str);
-            new PushNotifictionHelper(getApplicationContext()).execute(CURRENT_USER.getUser_token(),json);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private String escapeValue(String value) {
-        return "\""+value+"\"";
-    }
-
-    private Bitmap getResizedBitmap(Drawable drawable, int width, int height){
-        Bitmap mutableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(mutableBitmap);
-        drawable.setBounds(0, 0, width, height);
-        drawable.draw(canvas);
-
-        return mutableBitmap;
-    }
-
+    
+    
+    
     @Override
     public void onRoutingCancelled() {
 
@@ -493,44 +274,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-
-    private void fetchThatGroup() {
-        db_ref_group.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    CURRENT_USER = dataSnapshot.getValue(User.class);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void fetchThatCustomer() {
-        db_ref_user.child(CUSTOMER_USER_ID).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    CURRENT_USER = dataSnapshot.getValue(User.class);
-                    if(CURRENT_USER != null){
-                        showDataOnMap();
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
     private void showDataOnMap() {
-        if(mMap != null && CURRENT_USER != null){
+        if(mMap != null && currentDriver != null){
             // show User
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
             dropoff = new LatLng(currentOrder.getDropoffLat(), currentOrder.getDropoffLat());
@@ -551,30 +296,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         }
     }
 
-
-    private void updateUserLocation(){
-
-        if(mDriverMarker == null)
-            return;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if(driverLocation == null)
-                    driverLocation = new Location("driver");
-                driverLocation.setLatitude(mDriverMarker.getPosition().latitude);
-                driverLocation.setLongitude(mDriverMarker.getPosition().longitude);
-
-            }
-        });
-
-    }
-
-    private void setupOrderOnMap(){
-        if(currentOrder != null){
-            MarkerOptions userMarker = new MarkerOptions();
-
-        }
-    }
 
 
     @Override
