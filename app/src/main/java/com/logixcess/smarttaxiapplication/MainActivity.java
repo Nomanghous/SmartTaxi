@@ -1041,7 +1041,7 @@ AlertDialog builder;
         progressbar.setVisibility(View.VISIBLE);
         DatabaseReference db_orders = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS);
         Query ref = db_orders.orderByChild("user_id").equalTo(mFirebaseUser.getUid());
-        ref.addValueEventListener(new ValueEventListener() {
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
