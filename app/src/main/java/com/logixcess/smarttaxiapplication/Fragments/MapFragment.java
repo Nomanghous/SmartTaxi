@@ -1641,6 +1641,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             showToast("Group id not found");
             return;
         }
+        if(TextUtils.isEmpty(new_order.getDriver_id())){
+            showToast("Driver is not selected yet");
+            return;
+        }
         requests.setVehicle_type(new_order.getVehicle_id());
         requests.setDriverId(new_order.getDriver_id());
         requests.setOrder_id(new_order.getOrder_id());

@@ -123,8 +123,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         }
 
         total_fare = findViewById(R.id.total_fare);
-        if(currentOrder.getStatus() == Order.OrderStatusInProgress)
-            total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
+//        if(currentOrder.getStatus() == Order.OrderStatusInProgress)
+//            total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
     }
 
     private void requestNewRoute() {

@@ -158,11 +158,12 @@ public class FirebaseDataSync extends Service {
     }
     
     private void checkDistanceAndNotify() {
-        double percentageLeft = currentDistance / totalDistance * 100;
-        if(mDriverMarker != null) {
-            LatLng markerPosition = mDriverMarker.getPosition();
-            String title = mDriverMarker.getTitle();
+        if(currentOrder.getStatus() == Order.OrderStatusInProgress) {
+            if(mDriverMarker != null)
+                mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),100));
+            return;
         }
+        double percentageLeft = currentDistance / totalDistance * 100;
         boolean[] NotificationsDone = currentOrder.getNotificaionsDone();
         NotificationPayload payload = new NotificationPayload();
         payload.setDriver_id(mUser.getUid());
@@ -181,8 +182,7 @@ public class FirebaseDataSync extends Service {
             mCountDowntimer = new CountDownTimer(300000, 60000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
-                    if(pickupLocation.distanceTo(driverLocation) > 20 ||
-                            currentOrder.getStatus() == Order.OrderStatusInProgress) {
+                    if(currentOrder.getStatus() == Order.OrderStatusInProgress) {
                         mCountDowntimer.cancel();
                         mCountDowntimer = null;
                         return;

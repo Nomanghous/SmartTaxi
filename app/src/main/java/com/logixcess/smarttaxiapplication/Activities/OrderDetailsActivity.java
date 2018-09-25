@@ -114,7 +114,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
             public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 new_order.setOrder_id(databaseReference.getKey());
                 if(new_order.getShared()) {
-                    if(!CREATE_NEW_GROUP) {
+                    if(!CREATE_NEW_GROUP && !Constants.group_id.isEmpty()) {
                         goFetchGroupByID(Constants.group_id);
                     }else{
                         goCreateGroupForSharedRide();
