@@ -5,17 +5,18 @@ import android.os.Parcelable;
 
 public class RoutePoints implements Parcelable {
 
-    private double latitude, longitude, distanceinmeters;
+    private double latitude, longitude, distanceinmeters, totalPassengers;
     
     public RoutePoints(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
     
-    public RoutePoints(double latitude, double longitude, double distance) {
+    public RoutePoints(double latitude, double longitude, double distance, double totalPassengers) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.distanceinmeters = distance;
+        this.totalPassengers = totalPassengers;
     }
     public RoutePoints(){
 
@@ -24,6 +25,14 @@ public class RoutePoints implements Parcelable {
     public RoutePoints(Parcel in) {
         latitude = in.readDouble();
         longitude = in.readDouble();
+    }
+    
+    public double getTotalPassengers() {
+        return totalPassengers;
+    }
+    
+    public void setTotalPassengers(double totalPassengers) {
+        this.totalPassengers = totalPassengers;
     }
     
     public double getDistanceinmeters() {

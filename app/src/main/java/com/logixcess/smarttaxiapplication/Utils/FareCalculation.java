@@ -174,7 +174,7 @@ public class FareCalculation
                     
                     if(totalDistanceFromPrevPoint > 0) {
                         latLngList.add(new RoutePoints(myLocation.getLatitude()
-                                , myLocation.getLongitude(), totalDistanceFromPrevPoint));
+                                , myLocation.getLongitude(), totalDistanceFromPrevPoint,totalOnRide));
                         if (isOnRide)
                             allPoints.put(key, latLngList);
                     }

@@ -434,7 +434,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
     
     public void getDriverList(List<Driver> drivers) {
-        if (new_order == null || thereIsActiveOrder || MainActivity.mRunningOrder == null)
+        if (new_order == null || thereIsActiveOrder || MainActivity.mRunningOrder != null)
             return;
         for (Driver driver : drivers)
             goCheckSharedRideDriver(driver.getFk_user_id(), driver);
