@@ -23,10 +23,8 @@ import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
 
-import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
-import com.directions.route.Routing;
 import com.directions.route.RoutingListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -49,8 +47,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
-import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
@@ -60,11 +56,6 @@ import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
-import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -297,7 +288,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
 
     
     /*calculate pickup distance for notification*/
-    private void calculatePickupDistance(){
+    private void calculatePickupDistance(List<Order> ordersInSharedRide){
         if(currentPassengers == null && currentUser != null){
             Location pickup = new Location("pickup");
             pmarker = PickupMarkers.get(currentUser.getUser_id());
@@ -316,25 +307,23 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 pickup.setLongitude(marker.getPosition().longitude);
                 distanceRemaining = myLocation.distanceTo(pickup);
                 int counter = 0;
-                Iterator<Order> iter = ordersInSharedRide.iterator();
-                while (iter.hasNext()){
-                    Order order =iter.next();
+                for (Order order : ordersInSharedRide) {
                     if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
                         order = goUpdateOrderStatus(order);
                         ordersInSharedRide.add(counter, order);
                     }
-            
+                    this.ordersInSharedRide = ordersInSharedRide;
                     counter++;
                     if (order.getUser_id().equals(user.getUser_id())) {
 //                        checkForDistanceToSendNotification(order, user, distanceRemaining);
-                
+            
                         if (order.getStatus() == Order.OrderStatusInProgress) {
                             order.setOnRide(true);
                         } else if (order.getStatus() == Order.OrderStatusCompleted) {
                             order.setOnRide(false);
                         }
-                
-                
+            
+            
                         break;
                     }
                 }
@@ -473,7 +462,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(mDriverMarker == null)
             mDriverMarker = mMap.addMarker(new FareCalculation().getVehicleMarkerOptions(MapsActivity.this, driver, currentOrder.getVehicle_id()));
         if(mDriverMarker != null && driver != null && myLocation != null){
-            calculatePickupDistance();
+            calculatePickupDistance(ordersInSharedRide);
         }
         
 //            checkForDistanceToSendNotification();
@@ -622,7 +611,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                calculatePickupDistance();
+                                calculatePickupDistance(ordersInSharedRide);
                             }
                         });
 
@@ -929,7 +918,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     for(Map.Entry<String,Double> e : fareRecord.getUserFare().entrySet()){
                          total = e.getValue() + total;
                     }
-                    setUserFareSoFar(total,key);
+                    setUserFareSoFar(total,key,ordersInSharedRide);
                     Log.i("FareCalculation",fareRecord.getUserFare().toString());
                     Log.i("FareCalculation", "Count: " + fareRecord.getUserFare().size());
                 }
@@ -941,24 +930,21 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     }
     
     boolean flagModification = false;
-    private void setUserFareSoFar(double total, String key) {
+    private void setUserFareSoFar(double total, String key, List<Order> ordersInSharedRide) {
         if(flagModification)
             return;
         int index = 0;
         flagModification = true;
-        Iterator<Order> iter = ordersInSharedRide.iterator();
-    
-        while (iter.hasNext()){
-            Order order =iter.next();
-            if(order.getUser_id().equals(key)){
+        for (Order order : ordersInSharedRide) {
+            if (order.getUser_id().equals(key)) {
                 order.setTotal_fare(total);
                 db_ref_order.child(order.getOrder_id()).setValue(order);
-                ordersInSharedRide.set(index,order);
+                ordersInSharedRide.set(index, order);
                 break;
             }
             index++;
         }
-        
+        this.ordersInSharedRide = ordersInSharedRide;
         flagModification = false;
     }
     

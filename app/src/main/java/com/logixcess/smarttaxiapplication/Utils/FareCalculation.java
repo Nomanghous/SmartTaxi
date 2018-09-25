@@ -172,11 +172,12 @@ public class FareCalculation
                     lastPointLocation.setLongitude(latLngList.get(latLngList.size() - 1).getLongitude());
                     double totalDistanceFromPrevPoint = lastPointLocation.distanceTo(myLocation);
                     
-                    
-                    latLngList.add(new RoutePoints(myLocation.getLatitude()
-                            ,myLocation.getLongitude(), totalDistanceFromPrevPoint));
-                    if(isOnRide)
-                        allPoints.put(key,latLngList);
+                    if(totalDistanceFromPrevPoint > 0) {
+                        latLngList.add(new RoutePoints(myLocation.getLatitude()
+                                , myLocation.getLongitude(), totalDistanceFromPrevPoint));
+                        if (isOnRide)
+                            allPoints.put(key, latLngList);
+                    }
                     UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
                             totalOnRide, vehicleType,myLocation,key,ordersInSharedRide);
@@ -195,9 +196,8 @@ public class FareCalculation
     private int getActiveRideUsersCount(List<Order> ordersInSharedRide) {
         int Count = 0;
         for(Order order : ordersInSharedRide)
-            if(order.getOnRide())
+            if(order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress)
                 Count++;
-        
         return Count;
     }
     

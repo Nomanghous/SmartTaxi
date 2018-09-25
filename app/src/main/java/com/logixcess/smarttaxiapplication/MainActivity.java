@@ -1110,8 +1110,9 @@ AlertDialog builder;
     public void DriversListAdded(List<Driver> drivers) {
         DriversInRadius = drivers;
         // drivers refreshed
-        if (mapFragment != null)
-            mapFragment.getDriverList(DriversInRadius);
+        if(mRunningOrder == null)
+            if (mapFragment != null)
+                mapFragment.getDriverList(DriversInRadius);
     }
     
     private void goFetchOrder() {
