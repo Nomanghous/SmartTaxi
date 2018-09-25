@@ -148,6 +148,7 @@ public class FareCalculation
             return currentSharedRide;
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
+            boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
             
             // in case : for initial point
             if(!allPoints.containsKey(key)){
@@ -161,10 +162,12 @@ public class FareCalculation
                     continue;
             }
             
-            
+            if(!isOnRide)
+                continue;
             if(allPoints.containsKey(key)){
                 List<RoutePoints> latLngList = allPoints.get(key);
-                boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
+                
+                
                 if(latLngList != null){
                     
                     Location lastPointLocation = new Location("lastPoint");
@@ -378,7 +381,7 @@ public class FareCalculation
         // checking if driver is on ride
         for(Order order : orders){
             if(order.getUser_id().equals(key)){
-                return order.getOnRide();
+                return order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress;
             }
         }
         return false;

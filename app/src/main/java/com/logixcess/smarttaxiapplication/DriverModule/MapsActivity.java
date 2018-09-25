@@ -143,9 +143,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                
                 }
             });
+    
+            
+            
             try {
                 if(currentOrder.getShared()) {
                     ordersInSharedRide = new ArrayList<>();
@@ -289,7 +292,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     /*calculate pickup distance for notification*/
     private void calculatePickupDistance(List<Order> ordersInSharedRide){
-        if(currentPassengers == null && currentUser != null){
+        if(currentOrder != null && !currentOrder.getShared()){
             Location pickup = new Location("pickup");
             pmarker = PickupMarkers.get(currentUser.getUser_id());
             pickup.setLatitude(pmarker.getPosition().latitude);
@@ -488,7 +491,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         if(currentSharedRide != null)
             return;
         String groupId = Helper.getConcatenatedID(currentOrder.getOrder_id(), userMe.getUid());
-        db_ref_group.child(groupId).addValueEventListener(new ValueEventListener() {
+        db_ref_group.child(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 currentSharedRide = dataSnapshot.exists() ? dataSnapshot.getValue(SharedRide.class) : null;
@@ -497,8 +500,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     finish();
                 }else{
                     orderIDs = currentSharedRide.getOrderIDs();
-                    
                     goGetOrdersForGroup();
+                    addListenersForOrders(orderIDs,ordersInSharedRide);
                 }
             }
 
@@ -508,7 +511,41 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             }
         });
     }
-
+    
+    private void addListenersForOrders(HashMap<String, Boolean> orderIDs, List<Order> orderList) {
+        for(Map.Entry<String,Boolean> entry : orderIDs.entrySet()){
+            db_ref_order.child(entry.getKey()).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.exists()){
+                        Order order = dataSnapshot.getValue(Order.class);
+                        if(order != null){
+                            if(!checkIfOrderExists(order.getUser_id(),orderList)){
+                                orderList.add(order);
+                            }else {
+                                int index = 0;
+                                for(Order o : orderList){
+                                    if(o.getUser_id().equals(order.getUser_id())) {
+                                        orderList.set(index, order);
+                                        break;
+                                    }
+                                    index++;
+                                }
+                            }
+                            ordersInSharedRide = orderList;
+                            getTheNextNearestDropOff();
+                        }
+                    }
+                }
+    
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+                }
+            });
+        }
+    }
+    
     
     private void showDataOnMap() {
 
@@ -681,7 +718,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             });
         }
     }
-
+    
     private void goFetchOrderById(){
         
         orderIDs = currentSharedRide.getOrderIDs();
@@ -704,7 +741,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         if((order.getStatus() == Order.OrderStatusWaiting
                                 || order.getStatus() == Order.OrderStatusInProgress) &&
                                 order.getDriver_id().equals(userMe.getUid())){
-                            if(!checkIfOrderExists(order.getOrder_id(), ordersInSharedRide))
+                            if(!checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
                         }
                     }
@@ -724,12 +761,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     }
     
-    private boolean checkIfOrderExists(String key, List<Order> ordersInSharedRide) {
-        for(Order order : ordersInSharedRide)
-            if(order.getOrder_id().equals(key))
-                return true;
-        return false;
-    }
+    
     
     private void addOrdersListener() throws NullPointerException{
         db_ref_order.child(currentOrderId).addChildEventListener(new ChildEventListener() {
@@ -824,7 +856,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                             isToRefresh = true;
                         }
                     }
-                    ordersInSharedRide.add(index, order);
+                    ordersInSharedRide.set(index, order);
                 }
                 index++;
             }

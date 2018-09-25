@@ -485,7 +485,7 @@ public class DriverMainActivity extends AppCompatActivity {
                         if((order.getStatus() == Order.OrderStatusInProgress
                                 || order.getStatus() == Order.OrderStatusWaiting)
                                 && order.getDriver_id().equals(userMe.getUid())){
-                            if(!checkIfOrderExists(order.getOrder_id(), ordersInSharedRide))
+                            if(!checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
                         }
                     }
@@ -501,7 +501,15 @@ public class DriverMainActivity extends AppCompatActivity {
             });
         }
     }
-    
+    protected boolean checkIfOrderExists(String key, List<Order> ordersInSharedRide) {
+        boolean check = false;
+        for(Order order : ordersInSharedRide)
+            if(order.getUser_id().equals(key)) {
+                check = true;
+                break;
+            }
+        return check;
+    }
     private void checkOrderStatus(List<Order> ordersInSharedRide) {
         boolean check = true;
         for(Order order : ordersInSharedRide)
@@ -521,13 +529,7 @@ public class DriverMainActivity extends AppCompatActivity {
         }
     }
     
-    private boolean checkIfOrderExists(String key, List<Order> ordersInSharedRide) {
-        for(Order order : ordersInSharedRide)
-            if(order.getOrder_id().equals(key))
-                return true;
-        return false;
-    }
-    
+   
     public void acceptingVoice()
     {
         if(TextUtils.isEmpty(Constants.notificationPayload))
