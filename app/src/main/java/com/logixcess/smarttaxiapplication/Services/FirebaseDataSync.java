@@ -3,7 +3,6 @@ package com.logixcess.smarttaxiapplication.Services;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.CountDownTimer;
@@ -15,10 +14,8 @@ import android.util.Log;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -26,21 +23,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
-import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
-import com.logixcess.smarttaxiapplication.Utils.PolyUtil;
-
-import java.text.DecimalFormat;
 
 import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.mDriverMarker;
 import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.total_fare;
-import static com.logixcess.smarttaxiapplication.Fragments.MapFragment.new_order;
-import static com.logixcess.smarttaxiapplication.Utils.SphericalUtil.computeDistanceBetween;
+import static com.logixcess.smarttaxiapplication.MainActivity.mRunningOrder;
 
 public class FirebaseDataSync extends Service {
 
@@ -66,8 +58,8 @@ public class FirebaseDataSync extends Service {
         mUser = FirebaseAuth.getInstance().getCurrentUser();
         if(mUser == null)
             return;
-        if(new_order != null) {
-            currentOrder = new_order;
+        if(mRunningOrder != null) {
+            currentOrder = mRunningOrder;
             setDriverUpdates();
             setOrderUpdates();
         } else {

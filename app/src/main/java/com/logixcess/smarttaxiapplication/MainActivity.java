@@ -125,7 +125,7 @@ public class MainActivity extends BaseActivity
     private ProgressBar progressbar;
     private DrawerLayout drawer;
     BroadcastReceiver mRegistrationBroadcastReceiver;
-    
+    public static Order mRunningOrder = null;
     public static FirebaseUser mFirebaseUser;
     private int CURRENT_ORDER_STATUS = 0;
     private String CURRENT_ORDER_ID = "";
@@ -400,6 +400,8 @@ AlertDialog builder;
     }*/
 
     public void openVehicles(View view) {
+        if(new_order == null)
+            new_order = new Order();
         findViewById(R.id.ct_address).setVisibility(View.GONE);
         findViewById(R.id.ct_vehicles).setVisibility(View.VISIBLE);
         findViewById(R.id.btn_confirm).setVisibility(View.GONE);
@@ -407,6 +409,8 @@ AlertDialog builder;
     }
 
     public void openPickupActivity(View view) {
+        if(new_order == null)
+            new_order = new Order();
         if(mapFragment.getThereIsActiveOrder()){
             Toast.makeText(this, "There is already an order in Progress.", Toast.LENGTH_SHORT).show();
             return;
@@ -466,6 +470,8 @@ AlertDialog builder;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(new_order == null)
+            new_order = new Order();
         if (requestCode == REQUEST_CODE_LOCATION)
         {
             if(resultCode == RESULT_OK){
@@ -1044,7 +1050,7 @@ AlertDialog builder;
                         if(order != null){
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
-                                new_order = order;
+                                mRunningOrder = order;
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck) {
                                     openOrderActivity(order);
@@ -1064,8 +1070,8 @@ AlertDialog builder;
                         }
                     }
                     if(!mapFragment.getThereIsActiveOrder() ){
-                        new_order = null;
                         stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
+                        mRunningOrder = null;
                         if(!isForConditionCheck)
                             Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                         mapFragment.setThereIsActiveOrder(false);
@@ -1073,7 +1079,7 @@ AlertDialog builder;
                     }
                 }else{
                     stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
-                    new_order = null;
+                    mRunningOrder = null;
                     if(!isForConditionCheck)
                         Toast.makeText(MainActivity.this, "No Order is Currently in Progress", Toast.LENGTH_SHORT).show();
                     mapFragment.setThereIsActiveOrder(false);
@@ -1086,7 +1092,7 @@ AlertDialog builder;
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 progressbar.setVisibility(View.GONE);
-                new_order = null;
+                mRunningOrder = null;
                 stopService(new Intent(MainActivity.this, FirebaseDataSync.class));
                 Toast.makeText(MainActivity.this, "Something went Wrong", Toast.LENGTH_SHORT).show();
 
@@ -1148,14 +1154,14 @@ AlertDialog builder;
                     SharedRide sharedRide = dataSnapshot.getValue(SharedRide.class);
                     if(sharedRide != null){
                         if(sharedRide.getOrder_id().equals(order.getOrder_id())) {
-                            new_order = order;
+                            mRunningOrder = order;
                             mapFragment.setIsJoiningOtherRide(false);
                             MapFragment.CREATE_NEW_GROUP = true;
                             Constants.group_id = sharedRide.getGroup_id();
                             Constants.group_radius = sharedRide.getRadius_constraint();
                             mapFragment.resetUI();
                         }else{
-                            new_order = order;
+                            mRunningOrder = order;
                             mapFragment.setIsJoiningOtherRide(true);
                             MapFragment.CREATE_NEW_GROUP = false;
                             Constants.group_id = sharedRide.getGroup_id();
