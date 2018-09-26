@@ -375,14 +375,14 @@ AlertDialog builder;
             @Override
             public void onClick(View view)
             {
-                    if(TextUtils.isEmpty(edt_user_numbers.getText().toString()))
-                    {
-                        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
-                        snackbar.show();
-                    }
-                    else {
-                        builder.dismiss();
-                    }
+                if(TextUtils.isEmpty(edt_user_numbers.getText().toString()))
+                {
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Please select number of users first !", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                }
+                else {
+                    builder.dismiss();
+                }
 
             }
         });
@@ -1053,6 +1053,7 @@ AlertDialog builder;
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 mRunningOrder = order;
+                                if(order.getShared())
                                 if(order.getStatus() == Order.OrderStatusInProgress)
                                     findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
                                 else

@@ -61,25 +61,21 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     public static GoogleMap mMap;
-    private String CUSTOMER_USER_ID = "";
+
+
     private FirebaseDatabase firebase_db;
     private DatabaseReference db_ref_order;
-    private DatabaseReference db_ref_user;
-    private DatabaseReference db_ref_group;
-    private FirebaseUser USER_ME;
-    private LatLng dropoff, pickup;
-    private String CURRENT_ORDER_ID = "";
+
+    private LatLng  pickup;
     private LatLng start, end;
     private ArrayList<LatLng> waypoints;
     private boolean IS_ROUTE_ADDED = false;
     public static final String KEY_CURRENT_ORDER = "current_order";
     public static Marker mDriverMarker;
-    private ArrayList<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
     private double totalDistance = 0, totalTime = 120; // total time in minutes
     private double distanceRemaining = 0;
-    private DatabaseReference db_ref;
     private LatLng driver = null;
     public static TextView total_fare;
     @Override
@@ -88,9 +84,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         super.onCreate(savedInstanceState);
         firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
-        db_ref_user = firebase_db.getReference().child(Helper.REF_USERS);
-        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
-        USER_ME = FirebaseAuth.getInstance().getCurrentUser();
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
@@ -112,8 +105,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             mapFragment.getMapAsync(this);
             if(driverLocation == null)
                 driverLocation = new Location("driver");
-            db_ref = FirebaseDatabase.getInstance().getReference();
-            
+
             
         }else{
             // driver id not provided
@@ -216,7 +208,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
 //        polylines = new ArrayList<>();
         //add route(s) to the map.
-        polylines = new ArrayList<>();
         //add route(s) to the map.
         IS_ROUTE_ADDED = true;
         Route shortestRoute = route.get(shortestRouteIndex);
@@ -228,7 +219,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         polyOptions.width(10 + shortestRouteIndex * 3);
         polyOptions.addAll(shortestRoute.getPoints());
         Polyline polyline = mMap.addPolyline(polyOptions);
-        polylines.add(polyline);
         if (driver == null && driverLocation != null)
             driver = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
         distanceRemaining = shortestRoute.getDistanceValue();
@@ -278,7 +268,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         if(mMap != null && currentDriver != null){
             // show User
             pickup = new LatLng(currentOrder.getPickupLat(), currentOrder.getPickupLong());
-            dropoff = new LatLng(currentOrder.getDropoffLat(), currentOrder.getDropoffLat());
             Bitmap pickupPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.pickup_pin),70,120);
             Bitmap dropoffPin = Helper.convertToBitmap(getResources().getDrawable(R.drawable.dropoff_pin),70,120);
             MarkerOptions options = new MarkerOptions();
