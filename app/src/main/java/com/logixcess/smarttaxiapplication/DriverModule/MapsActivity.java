@@ -248,9 +248,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 Log.i("Indexes ",indexes[i] + " and " + indexes[i + 1]);
             }
         }
-        
         return mPassengerPoints;
-        
     }
     public static double distance(double lat1, double lat2, double lon1,
                                   double lon2, double el1, double el2) {

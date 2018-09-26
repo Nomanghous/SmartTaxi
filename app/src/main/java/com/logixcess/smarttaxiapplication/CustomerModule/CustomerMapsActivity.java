@@ -11,6 +11,8 @@ package com.logixcess.smarttaxiapplication.CustomerModule;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -19,7 +21,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
+import android.text.TextUtils;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,8 +53,12 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.logixcess.smarttaxiapplication.Models.Feedback;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.R;
@@ -52,6 +66,7 @@ import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.driverLocation;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentDriver;
@@ -305,6 +320,92 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         showDataOnMap();
     }
 
+    String driver_id,driver_name,order_id,pending_dest,pending_pickup;
+    RatingBar rb_review1,rb_review2,rb_review3;
+    TextView tv_Destination,tv_Pickup,tv_driver_name;
+    Button btn_feedback;
+    EditText et_complaint;
+    HashMap<String,Float> feedback11 = new HashMap<>();
+    HashMap<String,Float> feedback22 = new HashMap<>();
+    HashMap<String,Float> feedback33 = new HashMap<>();
+    public void showRatingDialog(final Context context, final Order order) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View view = inflater.inflate(R.layout.dialog_feedback, null, false);
+        btn_feedback = view.findViewById(R.id.btn_feedback);
+        rb_review1 = view.findViewById(R.id.rb_review1);
+        rb_review2 = view.findViewById(R.id.rb_review2);
+        rb_review3 = view.findViewById(R.id.rb_review3);
+        tv_Destination = view.findViewById(R.id.tv_Destination);
+        et_complaint = view.findViewById(R.id.et_complaint);
+        tv_Pickup = view.findViewById(R.id.tv_Pickup);
+        tv_driver_name = view.findViewById(R.id.tv_driver_name);
+        tv_Pickup.setText(order.getPickup());
+        tv_Destination.setText(order.getDropoff());
+        tv_driver_name.setText(order.getDriver_name());
+        btn_feedback.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                if(tv_Pickup.getText().toString().equalsIgnoreCase("empty") || tv_Destination.getText().toString().equalsIgnoreCase("empty"))
+                {
+                    Toast.makeText(CustomerMapsActivity.this,"No Driver Found",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Feedback feedback = new Feedback();
+                feedback.setFk_driver_id(driver_id);
+                feedback.setFk_order_id(order_id);
+                if(!TextUtils.isEmpty(et_complaint.getText()))
+                    feedback.setComplaint(et_complaint.getText().toString());
+                feedback11.put(getString(R.string.review1),rb_review1.getRating());
+                feedback22.put(getString(R.string.review2),rb_review2.getRating());
+                feedback33.put(getString(R.string.review3),rb_review3.getRating());
+                feedback.setFeedback1(feedback11);
+                feedback.setFeedback2(feedback22);
+                feedback.setFeedback3(feedback33);
+                DatabaseReference db_ref_feedback = FirebaseDatabase.getInstance().getReference().child(Helper.REF_FEEBACK).child(order_id);
+                DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(order_id);
+                db_ref_feedback.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists())
+                        {
 
+                        }
+                        else
+                        {
+                            db_ref_feedback.setValue(feedback).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful())
+                                        Toast.makeText(CustomerMapsActivity.this, "Thank you for your Feeback !", Toast.LENGTH_SHORT).show();
+                                    db_ref_order.child("status").setValue(Order.OrderStatusCompletedReview).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if (task.isSuccessful())
+                                                Toast.makeText(CustomerMapsActivity.this, "Order Mark As Complete !", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
 
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+                Toast.makeText(CustomerMapsActivity.this,"Published",Toast.LENGTH_SHORT).show();
+            }
+        });
+        ((Activity) context).getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        dialog.setContentView(view);
+        final Window window = dialog.getWindow();
+        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+        window.setBackgroundDrawableResource(R.color.colorAccent);
+        window.setGravity(Gravity.CENTER);
+        dialog.show();
+    }
 }

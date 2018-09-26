@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -53,7 +54,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class DriverMainActivity extends AppCompatActivity {
+public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
     protected FirebaseDatabase firebase_db;
     protected DatabaseReference db_ref_order;
     protected DatabaseReference db_ref_drivers,db_ref_users;
@@ -74,11 +75,12 @@ public class DriverMainActivity extends AppCompatActivity {
     protected List<Order> ordersInSharedRide = null;
     protected HashMap<String, Boolean> orderIDs;
     protected List<User> currentPassengers;
-    
+    TextToSpeech tts;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         promptSpeechInput();
+        tts = new TextToSpeech(this, this);
         if(!Helper.IS_FROM_CHILD) {
             setContentView(R.layout.activity_driver_main);
             setupBroadcastReceivers();
@@ -94,8 +96,8 @@ public class DriverMainActivity extends AppCompatActivity {
             listenForDriverResponse(this,userMe.getUid());
         }
     }
-    
-    /**
+
+        /**
      * Showing google speech input dialog
      * */
     private void promptSpeechInput() {
@@ -229,6 +231,32 @@ public class DriverMainActivity extends AppCompatActivity {
         new Timer().schedule(new TenSecondsTask(),5000,10000);
     }
 
+    @Override
+    public void onInit(int status) {
+
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = tts.setLanguage(Locale.US);
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } else {
+                ///btnSpeak.setEnabled(true);
+                ////speakOut();
+            }
+
+        } else {
+            Log.e("TTS", "Initilization Failed!");
+        }
+    }
+    private void speakOut(String text) {
+
+       //Notification : Request has come to <Destination> Do you want to open profile?
+       //Notification : Do you want accept or reject the request?
+
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+    }
     private class TenSecondsTask extends TimerTask {
         @Override
         public void run() {
@@ -242,6 +270,7 @@ public class DriverMainActivity extends AppCompatActivity {
             if(!TextUtils.isEmpty(Constants.notificationPayload) && (!isPromptDismissed))
             {
                 isPromptDismissed = true;
+                speakOut("Request has come to <Destination> Do you want to open profile?");
                 promptSpeechInput();
             }
         }
@@ -575,6 +604,10 @@ public class DriverMainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mAcceptOrderReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRejectOrderReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mViewOrderReceiver);
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
         super.onDestroy();
     }
 

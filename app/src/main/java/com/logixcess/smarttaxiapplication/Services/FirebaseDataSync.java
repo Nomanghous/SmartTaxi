@@ -116,7 +116,6 @@ public class FirebaseDataSync extends Service {
             }
         });
     }
-    
     private void setDriverUpdates() {
         driverLocation = new Location("Driver");
         Log.i("DriverId",currentOrder.getDriver_id());
