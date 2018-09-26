@@ -558,7 +558,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
         }
     }
     
-   
+    
     public void acceptingVoice()
     {
         if(TextUtils.isEmpty(Constants.notificationPayload))

@@ -93,6 +93,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private double distanceRemaining = 0;
     private LatLng driver = null;
     public static TextView total_fare;
+    private Button btn_close;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -252,9 +254,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
                     Toast.makeText(CustomerMapsActivity.this, "Order Successfully Completed", Toast.LENGTH_SHORT).show();
-                    Intent returnIntent = new Intent();
-                    setResult(Activity.RESULT_OK,returnIntent);
-                    finish();
+                    showRatingDialog(CustomerMapsActivity.this,currentOrder);
+                    
                 }
             }
         });
@@ -320,7 +321,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         showDataOnMap();
     }
 
-    String driver_id,driver_name,order_id,pending_dest,pending_pickup;
+    String driver_id,order_id;
     RatingBar rb_review1,rb_review2,rb_review3;
     TextView tv_Destination,tv_Pickup,tv_driver_name;
     Button btn_feedback;
@@ -334,6 +335,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = inflater.inflate(R.layout.dialog_feedback, null, false);
         btn_feedback = view.findViewById(R.id.btn_feedback);
+        btn_close = view.findViewById(R.id.btn_close);
         rb_review1 = view.findViewById(R.id.rb_review1);
         rb_review2 = view.findViewById(R.id.rb_review2);
         rb_review3 = view.findViewById(R.id.rb_review3);
@@ -344,6 +346,16 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         tv_Pickup.setText(order.getPickup());
         tv_Destination.setText(order.getDropoff());
         tv_driver_name.setText(order.getDriver_name());
+        btn_close.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                Intent returnIntent = new Intent();
+                setResult(Activity.RESULT_OK,returnIntent);
+                finish();
+            }
+        });
+        
         btn_feedback.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
@@ -354,8 +366,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     return;
                 }
                 Feedback feedback = new Feedback();
-                feedback.setFk_driver_id(driver_id);
-                feedback.setFk_order_id(order_id);
+                feedback.setFk_driver_id(order.getDriver_id());
+                feedback.setFk_order_id(order.getOrder_id());
                 if(!TextUtils.isEmpty(et_complaint.getText()))
                     feedback.setComplaint(et_complaint.getText().toString());
                 feedback11.put(getString(R.string.review1),rb_review1.getRating());
@@ -364,8 +376,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 feedback.setFeedback1(feedback11);
                 feedback.setFeedback2(feedback22);
                 feedback.setFeedback3(feedback33);
-                DatabaseReference db_ref_feedback = FirebaseDatabase.getInstance().getReference().child(Helper.REF_FEEBACK).child(order_id);
-                DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(order_id);
+                DatabaseReference db_ref_feedback = FirebaseDatabase.getInstance().getReference().child(Helper.REF_FEEBACK).child(order.getOrder_id());
+                DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_ORDERS).child(order.getOrder_id());
                 db_ref_feedback.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -385,6 +397,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if (task.isSuccessful())
                                                 Toast.makeText(CustomerMapsActivity.this, "Order Mark As Complete !", Toast.LENGTH_SHORT).show();
+                                            Intent returnIntent = new Intent();
+                                            setResult(Activity.RESULT_OK,returnIntent);
+                                            finish();
                                         }
                                     });
                                 }
