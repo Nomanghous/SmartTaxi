@@ -91,7 +91,8 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     }
     
     public double getTotal_fare() {
-        return total_fare;
+        String str = String.format("%.2f",String.valueOf(total_fare));
+        return Double.valueOf(str);
     }
     
     public void setTotal_fare(double total_fare) {

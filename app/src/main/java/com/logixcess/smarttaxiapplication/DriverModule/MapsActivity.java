@@ -153,6 +153,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 if(currentOrder.getShared()) {
                     ordersInSharedRide = new ArrayList<>();
                     goFetchOrderById();
+                }else{
+                    addOrdersListener();
                 }
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
@@ -679,9 +681,24 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void getTheNextNearestDropOff(){
         double totalDistance = 0;
         boolean isAllOrdersCompleted = true;
-        if(currentSharedRide == null)
-            return;
+        if(currentSharedRide == null) {
+            if(currentOrder.getStatus() == Order.OrderStatusCompleted)
+                db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+                db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                        currentOrder = null;
+                        ordersInSharedRide = null;
+                        orderIDs = null;
+                        currentSharedRide = null;
+                        currentPassengers = null;
+                        finish();
+                    }
+                });
+        }
         else{
+            
             for (Order order : ordersInSharedRide){
                 if(order.getStatus() == Order.OrderStatusInProgress
                         || order.getStatus() == Order.OrderStatusWaiting){
@@ -715,6 +732,12 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
                     Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
+                    currentOrder = null;
+                    ordersInSharedRide = null;
+                    orderIDs = null;
+                    currentSharedRide = null;
+                    currentPassengers = null;
+                    finish();
                 }
             });
         }
@@ -748,7 +771,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     }
                     if(orderIDs.size() == ordersInSharedRide.size()) {
                         addMarkersForNewRiders();
-                        addOrdersListener();
                         requestNewRoute();
     
                     }
@@ -765,76 +787,21 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     
     private void addOrdersListener() throws NullPointerException{
-        db_ref_order.child(currentOrderId).addChildEventListener(new ChildEventListener() {
+        db_ref_order.child(currentOrderId).addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                if(!dataSnapshot.exists())
-                    return;
-                Order order = dataSnapshot.getValue(Order.class);
-                if(order != null){
-                    if(order.getStatus() == Order.OrderStatusInProgress &&
-                            order.getDriver_id().equals(userMe.getUid()) && order.getShared()){
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Order order = dataSnapshot.getValue(Order.class);
+                    if(order != null){
+                        currentOrder = order;
                         getTheNextNearestDropOff();
-                        fetchThatGroup();
-                    }else {
-                        // order is single
-//                        markOrderComplete();
                     }
                 }
             }
-            
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                if(!dataSnapshot.exists())
-                    return;
-                Order order = dataSnapshot.getValue(Order.class);
-                if(order != null){
-                    if(currentOrder.getShared()){
-                        updateOrderLocally(order);
-
-//                        if(currentOrder.getOrder_id().equalsIgnoreCase(order.getOrder_id())
-//                                && order.getDriver_id().equals(userMe.getUid())) {
-//                            if (order.getStatus() == Order.OrderStatusInProgress) {
-//
-//                            }else if (order.getStatus() == Order.OrderStatusCompleted){
-//                                updateOrderLocally(order);
-//                                initNextOrderVars();
-//                                getTheNextNearestDropOff();
-//                            }else if (order.getStatus() == Order.OrderStatusPending){
-//
-//                            }
-//                        }
-                    }
-                    else {
-                        if(currentOrder.getOrder_id().equals(order.getOrder_id())
-                                && order.getDriver_id().equals(userMe.getUid())) {
-                            if (order.getStatus() == Order.OrderStatusInProgress) {
-                            }else if (order.getStatus() == Order.OrderStatusCompleted){
-                                markOrderComplete();
-                            }else if (order.getStatus() == Order.OrderStatusPending){
-
-                            }
-                        }
-                    }
-                }
-
-
-            }
-
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
+    
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
+        
             }
         });
        

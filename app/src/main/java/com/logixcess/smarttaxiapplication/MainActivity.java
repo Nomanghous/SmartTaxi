@@ -31,7 +31,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.TextureView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -1051,7 +1053,10 @@ AlertDialog builder;
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 mRunningOrder = order;
-                                
+                                if(order.getStatus() == Order.OrderStatusInProgress)
+                                    findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
+                                else
+                                    findViewById(R.id.post_radius_container).setVisibility(View.GONE);
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck) {
                                     openOrderActivity(order);
@@ -1249,9 +1254,24 @@ AlertDialog builder;
             }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
+            
             }
         });
+    }
+    
+    public void refreshPassengers(View view) {
+        EditText text = findViewById(R.id.post_radius_input);
+        String val = text.getText().toString();
+        if(TextUtils.isEmpty(val)){
+            Toast.makeText(this, "Please enter radius", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Constants.group_radius = Integer.valueOf(val);
+        if(mRunningOrder != null)
+            goFetchGroup(mRunningOrder);
+        else
+            getCurrentOrderId(true);
     }
     
     private class Every10Seconds extends TimerTask {
