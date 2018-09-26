@@ -3,23 +3,33 @@ package com.logixcess.smarttaxiapplication.DriverModule;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -28,6 +38,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
@@ -53,6 +65,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
 public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
     protected FirebaseDatabase firebase_db;
@@ -139,6 +153,13 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         rejectingVoice();
                         isPromptDismissed = false;
                     }
+                    else if(result.get(0).equalsIgnoreCase("open"))
+                    {
+                        openUserProfile();
+                        isPromptDismissed = false;
+                    }
+                    
+                    
                     //mVoiceInputTv.setText(result.get(0));
                 }
                 break;
@@ -146,7 +167,141 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
         }
     }
- 
+    
+    private void openUserProfile() {
+        db_ref_users.child(Constants.notificationPayloadObject.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    User user = dataSnapshot.getValue(User.class);
+                    if(user != null){
+                        open_profile(user.getUser_id(),user.getName(),user.getUser_image_url(), user.getPhone());
+                    }
+                }
+            }
+    
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+            }
+        });
+    }
+    
+    private void open_profile(String user_id, String name, String url, String phone)
+    {
+        ImageView image = new ImageView(this);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(300,300);
+        image.setLayoutParams(layoutParams);
+        if(url != null && (!TextUtils.isEmpty(url)) )
+        {
+            RequestOptions requestOptions = new RequestOptions();
+            requestOptions = requestOptions.placeholder(R.drawable.user_placeholder);
+            requestOptions = requestOptions.circleCrop();
+            requestOptions = requestOptions.centerInside();
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(url);
+            RequestOptions finalRequestOptions = requestOptions;
+            storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                @Override
+                public void onSuccess(Uri uri)
+                {
+                    String imageURL = uri.toString();
+                    Glide.with(getApplicationContext()).setDefaultRequestOptions(finalRequestOptions).load(imageURL)
+                            .into(image);
+                }
+            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                @Override
+                public void onComplete(@NonNull Task<Uri> task) {
+                    String status = "OFFLINE";
+                    status = "ONLINE";
+                    final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+                    AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getApplicationContext(),R.style.AlertDialogCustom));
+                    builder.setTitle("Information :");
+                    builder.setView(image);
+                    String text = "Request Now";
+                        text = "Accept Invitation";
+                    builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //driver_selected(user_id);
+                            goAcceptInvitation(user_id);
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+                    
+                    builder.setItems(items, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int item)
+                        {
+//                if (items[item].equals("SendRequest"))
+//                {
+//                    driver_selected(user_id);
+//                }
+                        }
+                    });
+                    
+                    builder.show();
+                }
+            })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            // Handle any errors
+                            //  Glide.with(this).setDefaultRequestOptions(requestOptions).load(url)
+                            //        .into(image);
+                            
+                        }
+                    });
+        }
+        else
+        {
+            String status;
+            status = "ONLINE";
+            final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+            AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this,R.style.AlertDialogCustom));
+            builder.setTitle("Information");
+            builder.setView(image);
+            String text = "Request Now";
+                text = "Accept Invitation";
+            
+            builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    //driver_selected(user_id);
+                    goAcceptInvitation(user_id);
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int item)
+                {
+                    if (items[item].equals("CANCEL")) {
+                        dialog.dismiss();
+                    }
+                }
+            });
+            
+            builder.show();
+        }
+    }
+    
+    private void goAcceptInvitation(String user_id) {
+        acceptingVoice();
+    }
+    
     public static void listenForDriverResponse(Context context, String driverId){
         
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
@@ -254,14 +409,15 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
        //Notification : Request has come to <Destination> Do you want to open profile?
        //Notification : Do you want accept or reject the request?
-
+        
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
+    
     private class TenSecondsTask extends TimerTask {
         @Override
         public void run() {
             updateUserLocation();
-            count_for_region ++;
+            count_for_region++;
             if(count_for_region == 60)
             {
                 count_for_region = 0;
@@ -272,6 +428,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 isPromptDismissed = true;
                 speakOut("Request has come to <Destination> Do you want to open profile?");
                 promptSpeechInput();
+                
             }
         }
     }

@@ -4,6 +4,7 @@ import android.location.Location;
 import android.net.Uri;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 
 public class Constants
 {
@@ -22,6 +23,7 @@ public class Constants
     public static String user_image_path = "";
     public static String group_id = "";
     public static String notificationPayload = "";
+    public static NotificationPayload notificationPayloadObject = null;
     public static int group_radius = 0;
 
 }

@@ -243,7 +243,7 @@ public class NotificationUtils {
             if(isAppIsInBackground(context)){
 
             }
-
+            Constants.notificationPayloadObject = notificationPayload;
             switch (notificationPayload.getType()) {
                 case Helper.NOTI_TYPE_ORDER_CREATED:
                     if(!isAppIsInBackground(context))
@@ -355,6 +355,7 @@ public class NotificationUtils {
         actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
         actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
         Constants.notificationPayload = payload;
+        
         sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent,id);
     }
 
