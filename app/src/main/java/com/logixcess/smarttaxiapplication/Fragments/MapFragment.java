@@ -545,6 +545,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         builder.show();
     }
 
+    
+    public void onMapReadyCustom(GoogleMap gMap){
+    
+    }
+    
+    
     private void open_profile(String user_id, String name, String url, String phone, int purpose)
     {
         if(getActivity() == null)
@@ -552,6 +558,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         ImageView image = new ImageView(getActivity());
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(300,300);
         image.setLayoutParams(layoutParams);
+        
+        
         if(url != null && (!TextUtils.isEmpty(url)) )
         {
             RequestOptions requestOptions = new RequestOptions();
@@ -577,6 +585,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     }
                     String status = "OFFLINE";
                     status = "ONLINE";
+                    String canceltext = "Cancel";
                     final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
                     AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
                     builder.setTitle("Information :");
@@ -584,8 +593,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                     String text = "Request Now";
                     if(purpose == TO_SHOW_INFO_OF_PASSENGER)
                         text = "Send Invitation";
-                    if(purpose == TO_ACCEPT_INVITATION)
+                    if(purpose == TO_ACCEPT_INVITATION) {
                         text = "Accept Invitation";
+                        canceltext = "Show Map";
+                    }
+                    
                     builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -608,11 +620,19 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             dialog.dismiss();
                         }
                     });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    
+    
+                    String finalCanceltext = canceltext;
+                    builder.setNegativeButton(canceltext, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            dialog_already_showing = false;
+                            
+                            if(finalCanceltext.equals("Cancel")) {
+                                dialog.dismiss();
+                                dialog_already_showing = false;
+                            }else{
+                                showRoute(mRequest.getOrder_id());
+                            }
                         }
                     });
 
@@ -647,15 +667,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 progressDialog.dismiss();
             String status;
             status = "ONLINE";
+            String canceltext = "Cancel";
             final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
             AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(),R.style.AlertDialogCustom));
-            builder.setTitle("Information");
+            builder.setTitle("Information :");
             builder.setView(image);
             String text = "Request Now";
             if(purpose == TO_SHOW_INFO_OF_PASSENGER)
                 text = "Send Invitation";
-            if(purpose == TO_ACCEPT_INVITATION)
+            if(purpose == TO_ACCEPT_INVITATION) {
                 text = "Accept Invitation";
+                canceltext = "Show Map";
+            }
     
             builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                 @Override
@@ -665,24 +688,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         sendNotificationToRequestGroupRide(user_id);
                         new_order.setDriver_id(user_id);
                     }
-                    else if(purpose == TO_SHOW_INFO_OF_PASSENGER)
+                    else if(purpose == TO_SHOW_INFO_OF_PASSENGER){
                         if(group_id != null) {
                             if (!group_id.isEmpty()) {
                                 sendInvitationForGroupRide(user_id);
-                            } else showToast("Please create order first after that you can send request to other passengers.");
+                            } else
+                                showToast("Please create order first after that you can send request to other passengers.");
                         }else
                             showToast("Please create order first after that you can send request to other passengers.");
-                    else if(purpose == TO_ACCEPT_INVITATION) {
+                    } else if(purpose == TO_ACCEPT_INVITATION) {
                         goAcceptInvitation(user_id);
                     }
                     dialog.dismiss();
                 }
             });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    
+    
+            String finalCanceltext = canceltext;
+            builder.setNegativeButton(canceltext, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    dialog_already_showing = false;
+            
+                    if(finalCanceltext.equals("Cancel")) {
+                        dialog.dismiss();
+                        dialog_already_showing = false;
+                    }else{
+                        showRoute(mRequest.getOrder_id());
+                    }
                 }
             });
 
@@ -702,7 +734,27 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
     
-
+    private void showRoute(String order_id) {
+        firebase_db.getReference().child(Helper.REF_ORDERS).child(order_id).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Order order = dataSnapshot.getValue(Order.class);
+                    if(order != null){
+                        CustomDialogClass customDialogClass = new CustomDialogClass(getActivity(),order);
+                        customDialogClass.show();
+                    }
+                }
+            }
+    
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+            }
+        });
+    }
+    
+    
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -2107,7 +2159,56 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         goFetchGroupByID(mRequest.getGroup_id());
         
     }
-  
+    
+    
+    
+    public class CustomDialogClass extends Dialog implements
+            android.view.View.OnClickListener, OnMapReadyCallback {
+        
+        public Activity c;
+        public Dialog d;
+        Button yes;
+        MapView miniMap;
+        List<LatLng> latLngs = new ArrayList<>();
+        public CustomDialogClass(Activity a,Order order) {
+            super(a);
+            this.c = a;
+            for(RoutePoints routePoints : order.getSelectedRoute()){
+                this.latLngs.add(new LatLng(routePoints.getLatitude(),routePoints.getLongitude()));
+            }
+        }
+        
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            setContentView(R.layout.mini_mapview);
+            miniMap = findViewById(R.id.map_mini);
+            miniMap.getMapAsync(this);
+            yes =  findViewById(R.id.btn_close);
+            yes.setOnClickListener(this);
+        }
+        
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.button:
+                    
+                    c.finish();
+                    break;
+                default:
+                    break;
+            }
+            dismiss();
+        }
+    
+    
+        @Override
+        public void onMapReady(GoogleMap googleMap) {
+            PolylineOptions polylineOptions = new PolylineOptions().addAll(latLngs).width(5f).color(Color.GREEN);
+            googleMap.addPolyline(polylineOptions);
+        }
+    }
     
     
 }

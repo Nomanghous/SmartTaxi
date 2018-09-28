@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) Logixcess, Inc - All Rights Reserved
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited
+  ~ Proprietary and confidential
+  ~ Written by Noman Ghous <Nomanghous@hotmail.com>, Copyright (c) 2018.
+  ~
+  -->
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="350dp"
+    android:orientation="vertical"
+    >
+
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/map_mini"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:onClick="closeMiniMapView"
+        android:text="Close"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:textColor="@color/white"
+        />
+
+
+
+</RelativeLayout>
