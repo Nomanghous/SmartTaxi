@@ -561,8 +561,8 @@ AlertDialog builder;
             return;
         Double lat = mLastLocation.getLatitude();
         Double lng = mLastLocation.getLongitude();
-        db_ref_user_general.child(mFirebaseUser.getUid()).child("latitude").setValue(Helper.roundOffDouble(lat));
-        db_ref_user_general.child(mFirebaseUser.getUid()).child("longitude").setValue(Helper.roundOffDouble(lng));
+        db_ref_user_general.child(mFirebaseUser.getUid()).child("latitude").setValue(lat);
+        db_ref_user_general.child(mFirebaseUser.getUid()).child("longitude").setValue(lng);
 
     }
 
@@ -1152,6 +1152,7 @@ AlertDialog builder;
     
     private void goFetchGroup(Order order) {
         DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(order.getGroup_id());
+        db_ref_order.child("radius_constraint").setValue(Constants.group_radius);
         db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
