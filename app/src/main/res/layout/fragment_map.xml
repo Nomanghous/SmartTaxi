@@ -577,8 +577,8 @@
     </LinearLayout>
 
     <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="300dp"
+        android:layout_height="60dp"
         android:background="@color/lightBlue"
         android:layout_alignParentBottom="true"
         android:visibility="gone"
@@ -587,8 +587,7 @@
 
         <EditText
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_margin="16dp"
+            android:layout_height="match_parent"
             android:inputType="number"
             android:id="@+id/post_radius_input"
             android:hint="Group Radius"
