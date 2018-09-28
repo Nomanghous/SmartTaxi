@@ -325,7 +325,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
         LatLng latLng = new LatLng(new_order.getPickupLat(),new_order.getPickupLong());
         String latlngKey = String.valueOf(latLng.latitude) + String.valueOf(latLng.longitude);
         userFare.put(Helper.getRefinedLatLngKeyForHashMap(latlngKey),0.0);
-        
+        new_order.setGroup_id(groupId);
         List<RoutePoints> latLngs = new ArrayList<>();
         latLngs.add(new RoutePoints(new_order.getPickupLat(),new_order.getPickupLong()));
         fareRecord.setLatLngs(latLngs);
