@@ -1733,8 +1733,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void showPostRadiusInput(Order order) {
         if(getActivity() == null)
             return;
-        if(order.getStatus() == Order.OrderStatusWaiting)
+        if(order.getStatus() == Order.OrderStatusWaiting) {
             getActivity().findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
+            ((EditText)getActivity().findViewById(R.id.post_radius_input)).setText(Constants.group_radius);
+        }
         else
             getActivity().findViewById(R.id.post_radius_container).setVisibility(View.GONE);
     }

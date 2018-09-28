@@ -1053,8 +1053,7 @@ AlertDialog builder;
                             if(order.getStatus() == Order.OrderStatusWaiting ||
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 mRunningOrder = order;
-                                if(order.getShared())
-                                 mapFragment.showPostRadiusInput(order);
+                                
                                 mapFragment.hideDetails();
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck) {
@@ -1167,6 +1166,8 @@ AlertDialog builder;
                             Constants.group_id = sharedRide.getGroup_id();
                             Constants.group_radius = sharedRide.getRadius_constraint();
                             mapFragment.resetUI();
+                            if(order.getShared())
+                                mapFragment.showPostRadiusInput(order);
                         }else{
                             mRunningOrder = order;
                             new_order = order;
