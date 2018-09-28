@@ -107,7 +107,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
                 }
             });
         }
-        getUserDetails();
+       
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -404,6 +404,11 @@ public class FirebaseDataSync extends Service implements RoutingListener {
     
     
     private void pingDistanceAPI(){
+        if(currentUser == null){
+            if(currentOrder != null)
+                getUserDetails();
+        }
+        
         if(driverLocation == null || pickupLocation == null)
             return;
         LatLng driver = new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude());
