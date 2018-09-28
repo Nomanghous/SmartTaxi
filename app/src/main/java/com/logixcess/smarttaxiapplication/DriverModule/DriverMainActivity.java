@@ -85,7 +85,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     protected String CURRENT_GROUP_ID = null;
     protected SharedRide currentSharedRide;
     protected String currentUserId = "";
-    
+
     protected FareCalculation mFareCalc = new FareCalculation();
     private static final int REQ_CODE_SPEECH_INPUT = 100;
     Boolean isPromptDismissed = false;
@@ -114,7 +114,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
         }
     }
 
-        /**
+    /**
      * Showing google speech input dialog
      * */
     private void promptSpeechInput() {
@@ -136,7 +136,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                             Toast.LENGTH_SHORT).show();
                 }
             });
-            
+
         }
     }
     @Override
@@ -162,8 +162,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         openUserProfile();
                         isPromptDismissed = false;
                     }
-                    
-                    
+
+
                     //mVoiceInputTv.setText(result.get(0));
                 }
                 break;
@@ -171,7 +171,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
         }
     }
-    
+
     private void openUserProfile() {
         db_ref_users.child(Constants.notificationPayloadObject.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -183,14 +183,14 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     }
                 }
             }
-    
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-        
+
             }
         });
     }
-    
+
     private void open_profile(String user_id, String name, String url, String phone)
     {
         ImageView image = new ImageView(this);
@@ -262,15 +262,15 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     }
                 }
             })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception exception) {
-                    // Handle any errors
-                    //  Glide.with(this).setDefaultRequestOptions(requestOptions).load(url)
-                    //        .into(image);
-                    
-                }
-            });
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            // Handle any errors
+                            //  Glide.with(this).setDefaultRequestOptions(requestOptions).load(url)
+                            //        .into(image);
+
+                        }
+                    });
         }
         else
         {
@@ -281,8 +281,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             builder.setTitle("Information");
             builder.setView(image);
             String text = "Request Now";
-                text = "Accept Invitation";
-            
+            text = "Accept Invitation";
+
             builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -291,14 +291,14 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     dialog.dismiss();
                 }
             });
-            
+
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                 }
             });
-            
+
             builder.setItems(items, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int item)
@@ -308,17 +308,17 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     }
                 }
             });
-            
+
             builder.show();
         }
     }
-    
+
     private void goAcceptInvitation(String user_id) {
         acceptingVoice();
     }
-    
+
     public static void listenForDriverResponse(Context context, String driverId){
-        
+
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
         db_ref_requests.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
@@ -357,7 +357,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             }
         });
     }
-    
+
     private void checkAssignedSingleOrder() {
         db_ref_order_to_driver.child(userMe.getUid())
                 .child(Helper.REF_SINGLE_ORDER).addValueEventListener(new ValueEventListener() {
@@ -423,8 +423,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     }
     private void speakOut(String text) {
 
-       //Notification : Request has come to <Destination> Do you want to open profile?
-       //Notification : Do you want accept or reject the request?
+        //Notification : Request has come to <Destination> Do you want to open profile?
+        //Notification : Do you want accept or reject the request?
         HashMap<String, String> myHashAlarm = new HashMap<String, String>();
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SOME MESSAGE");
@@ -452,7 +452,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 speakOut("Request has come to Destination Do you want to open profile");
                 speakOf = "openprofile";
                 ///promptSpeechInput();
-                
+
             }
         }
     }
@@ -491,7 +491,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
     public void openRunningOrder(View view) {
         checkAssignedSingleOrder();
-        
+
     }
 
     private void openOrderActivity() {
@@ -544,7 +544,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         if(!TextUtils.isEmpty(currentUserId)){
                             goFetchCustomerById(isAlreadyAccepted);
                         }
-    
+
                         if(currentOrder.getShared()) {
                             String groupId = Helper.getConcatenatedID(CURRENT_ORDER_ID, userMe.getUid());
                             if (CURRENT_GROUP_ID == null && currentOrder.getShared())
@@ -558,7 +558,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         }else{
                             Toast.makeText(DriverMainActivity.this, "No Order in Progress", Toast.LENGTH_SHORT).show();
                         }
-                        
+
                     }
                 }
             }
@@ -678,8 +678,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
         }
     };
-    
-    
+
+
     private void goGetOrdersForGroup() {
         if(ordersInSharedRide == null)
             ordersInSharedRide = new ArrayList<>();
@@ -703,10 +703,10 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         checkOrderStatus(ordersInSharedRide);
                     }
                 }
-                
+
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
-                
+
                 }
             });
         }
@@ -726,7 +726,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             if(order.getStatus() == Order.OrderStatusCompleted){
                 check = false;
             }
-            
+
         if(!check){
             // all orders completed
             db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -738,8 +738,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             });
         }
     }
-    
-    
+
+
     public void acceptingVoice()
     {
         if(TextUtils.isEmpty(Constants.notificationPayload))
