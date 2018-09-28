@@ -356,10 +356,13 @@ public class NotificationUtils {
         actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
         Constants.notificationPayload = payload;
         
-        sendNotificationsWithPendingIntent(context, userData.getTitle(), userData.getDescription(), actions, viewPendingIntent,id);
+        sendNotificationsWithPendingIntent(context, userData.getTitle(),
+                userData.getDescription(), actions, viewPendingIntent,id);
     }
 
-    private static void sendNotificationsWithPendingIntent(Context context,String title, String message, List<NotificationCompat.Action> actions,PendingIntent contentIntent,int id) {
+    private static void sendNotificationsWithPendingIntent(Context context,String title,
+                                                           String message, List<NotificationCompat.Action> actions
+            ,PendingIntent contentIntent,int id) {
         if (Build.VERSION.SDK_INT >= 27) {
             // Call some material design APIs here
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)

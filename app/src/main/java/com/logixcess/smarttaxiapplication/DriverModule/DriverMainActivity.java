@@ -277,6 +277,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     dialog.dismiss();
                 }
             });
+            
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -316,7 +317,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                             if (request.getReceiverId().equals(driverId) && request.getStatus() == Requests.STATUS_PENDING) {
                                 NotificationPayload notificationPayload = new NotificationPayload();
                                 notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
-                                notificationPayload.setTitle("New Reqeust");
+                                notificationPayload.setTitle("New Request");
                                 notificationPayload.setDescription("You have new Ride request");
                                 notificationPayload.setUser_id(request.getSenderId());
                                 notificationPayload.setDriver_id(request.getReceiverId());

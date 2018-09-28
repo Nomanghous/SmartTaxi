@@ -153,13 +153,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 if(currentOrder.getShared()) {
                     ordersInSharedRide = new ArrayList<>();
                     goFetchOrderById();
-                }else{
-                    addOrdersListener();
                 }
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
-            // driver id not provided
             finish();
         }
     }
@@ -214,16 +211,6 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             mPassengerPoints = sortPointsByDistance();
         }
         IS_ROUTE_ADDED = true;
-
-
-//        Routing routing = new Routing.Builder()
-//                .travelMode(AbstractRouting.TravelMode.DRIVING)
-//                .withListener(this)
-//                .alternativeRoutes(false)
-//                .waypoints(mPassengerPoints)
-//                .optimize(true)
-//                .build();
-//        routing.execute();
     }
     
     private ArrayList<LatLng> sortPointsByDistance() {
@@ -679,9 +666,16 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private void getTheNextNearestDropOff(){
         double totalDistance = 0;
         boolean isAllOrdersCompleted = true;
+        if(userMe == null)
+            userMe = FirebaseAuth.getInstance().getCurrentUser();
+        if(db_ref_order_to_driver == null)
+            db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+        
+        
         if(currentSharedRide == null) {
             if(currentOrder.getStatus() == Order.OrderStatusCompleted)
-                db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
+                if(db_ref_order_to_driver == null)
+                    return;
                 db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -785,7 +779,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     
     private void addOrdersListener() throws NullPointerException{
-        db_ref_order.child(currentOrderId).addValueEventListener(new ValueEventListener() {
+        db_ref_order.child(currentOrder.getOrder_id()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
@@ -872,7 +866,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     User user = dataSnapshot.getValue(User.class);
-                    if(user != null){
+                    if(user != null && currentPassengers != null){
                         if(!currentPassengers.contains(user))
                             currentPassengers.add(user);
                     }
@@ -936,7 +930,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         
         switch (totalPassengers){
             case 1:
-                if(rp.getTotalKmSofar() < 1) {
+                if(rp.getTotalKmSofar() < 1) {// 300 m and 50   300 / 1000 = .3 * 50
                     currentFare = (basefare * kmPercentage);
                 }else{
                     currentFare = (basefare * kmPercentage) * .6;
@@ -947,11 +941,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 if(rp.getTotalKmSofar() < 1) {
                     currentFare = (basefare * kmPercentage);
                 }else if(rp.getTotalKmSofar() < 2) {
-                    currentFare = (basefare * kmPercentage) * .6;
+                    currentFare = (basefare * kmPercentage) * .6; // discount of 40%
                 }else{
-                    currentFare = (basefare * kmPercentage) * .5;
+                    currentFare = (basefare * kmPercentage) * .5; // discount of 50%
                 }
-                break;
+                break; // 1.8 km for 71 (p 2)  1st -> 50rs, 2nd km .6
             case 3:
                 if(rp.getTotalKmSofar() < 1) {
                     currentFare = (basefare * kmPercentage);

@@ -1115,7 +1115,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private void goCheckSharedRideDriver(String driverId, Driver driver) {
         if (isOrderAccepted || firebase_db == null || driverId == null)
             return;
-        
+        if(getActivity() == null)
+            return;
         if(thereIsActiveOrder)
             return;
         DatabaseReference db_driver_order_vault =
