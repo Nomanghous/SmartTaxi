@@ -148,7 +148,7 @@ public class FareCalculation
             return currentSharedRide;
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
-            boolean isOnRide = isDriverOnRide(key,ordersInSharedRide);
+            boolean isOnRide = isDriverOnRide(key,currentSharedRide);
             
             // in case : for initial point
             if(!allPoints.containsKey(key)){
@@ -379,11 +379,12 @@ public class FareCalculation
     
     
     
-    private boolean isDriverOnRide(String key, List<Order> orders){
+    private boolean isDriverOnRide(String key, SharedRide sharedRide){
         // checking if driver is on ride
-        for(Order order : orders){
-            if(order.getUser_id().equals(key)){
-                return order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress;
+        HashMap<String,Boolean> ids = sharedRide.getOrderIDs();
+        for(Map.Entry<String, Boolean> entry : ids.entrySet()){
+            if(entry.getKey().equals(key)){
+                return entry.getValue();
             }
         }
         return false;

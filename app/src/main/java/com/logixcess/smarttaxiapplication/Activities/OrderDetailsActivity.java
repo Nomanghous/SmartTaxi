@@ -147,8 +147,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
                     if(currentSharedRide != null){
                         mPassengerList = currentSharedRide.getPassengers();
                         mOrderList = currentSharedRide.getOrderIDs();
-                        mPassengerList.put(MainActivity.mFirebaseUser.getUid(), true);
-                        mOrderList.put(new_order.getOrder_id(), true);
+                        mPassengerList.put(MainActivity.mFirebaseUser.getUid(), false);
+                        mOrderList.put(new_order.getOrder_id(), false);
                         currentSharedRide.setPassengers(mPassengerList);
                         currentSharedRide.setOrderIDs(mOrderList);
                         mPassengerFares = currentSharedRide.getPassengerFares();
@@ -276,7 +276,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         SharedRide sharedRide = snapshot.getValue(SharedRide.class);
                         HashMap<String, Boolean> passengersIds_old = sharedRide.getPassengers();
                         HashMap<String, Boolean> passengersIds_new = new HashMap<>();
-                        passengersIds_new.put(new_order.getUser_id(),true);
+                        passengersIds_new.put(new_order.getUser_id(),false);
                         //passengersIds_new.put(pa)
                     }
                 }
@@ -311,11 +311,11 @@ public class OrderDetailsActivity extends AppCompatActivity {
         ordersIds.put(new_order.getOrder_id(), false);
         sharedRide.setOrderIDs(ordersIds);
         if(MapFragment.IS_RIDE_SCHEDULED){
-            MapFragment.mPassengerList.put(new_order.getUser_id(),true);
+            MapFragment.mPassengerList.put(new_order.getUser_id(),false);
             sharedRide.setPassengers(MapFragment.mPassengerList);
         }else{
             HashMap<String, Boolean> passengersIds = new HashMap<>();
-            passengersIds.put(userId,true);
+            passengersIds.put(userId,false);
             //passengersIds.put(userId,true);
             sharedRide.setPassengers(passengersIds);
         }

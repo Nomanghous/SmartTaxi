@@ -386,6 +386,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 if(dataSnapshot.exists()){
                     CURRENT_GROUP_ID = (String) dataSnapshot.getValue();
                     goFetchGroupByID(CURRENT_GROUP_ID);
+                    addsharedRideListener(CURRENT_GROUP_ID);
                 }
             }
 
@@ -636,6 +637,25 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                                 openOrderActivity(currentSharedRide);
                             }
                         }
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+    
+    private void addsharedRideListener(String groupId) {
+        db_ref_order_to_driver.child(userMe.getUid()).child(Helper.REF_GROUP_ORDER).setValue(groupId);
+        db_ref_group.child(groupId).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    SharedRide currentRide = dataSnapshot.getValue(SharedRide.class);
+                    if(currentRide != null){
+                        currentSharedRide = currentRide;
                     }
                 }
             }

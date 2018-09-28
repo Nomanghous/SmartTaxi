@@ -62,6 +62,7 @@ import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Feedback;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
+import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
@@ -258,6 +259,32 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     public void markOrderAsComplete(View view) {
         // change the order status
+        if(currentOrder.getShared()){
+            DatabaseReference db_temp = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(currentOrder.getGroup_id());
+                    db_temp.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if(dataSnapshot.exists()){
+                                SharedRide sharedRide = dataSnapshot.getValue(SharedRide.class);
+                                if(sharedRide != null && sharedRide.getOrderIDs() != null){
+                                      HashMap<String,Boolean> orderId = sharedRide.getOrderIDs();
+                                      if(orderId.containsKey(currentOrder.getOrder_id())){
+                                          orderId.put(currentOrder.getOrder_id(),true);
+                                          sharedRide.setOrderIDs(orderId);
+                                          db_temp.setValue(sharedRide);
+                                      }
+                                      
+                                    
+                                }
+                            }
+                        }
+    
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+                        }
+                    });
+        }
         db_ref_order.child(currentOrder.getOrder_id()).child("status").setValue(Order.OrderStatusCompleted).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

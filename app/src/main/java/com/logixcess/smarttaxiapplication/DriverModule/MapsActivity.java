@@ -392,7 +392,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         getRoutePoints();
         start = waypoints.get(0);
         end = waypoints.get(waypoints.size() - 1);
-
+        
         CameraUpdate center = CameraUpdateFactory.newLatLngZoom(start,12);
         mMap.animateCamera(center);
         PolylineOptions line = new PolylineOptions().addAll(waypoints);
@@ -744,6 +744,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
         goGetOrdersForGroup();
     }
+    
     private void goGetOrdersForGroup() {
         for (Map.Entry<String, Boolean> entry : orderIDs.entrySet()) {
             String key = entry.getKey();
