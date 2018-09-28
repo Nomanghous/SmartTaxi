@@ -9,10 +9,17 @@
 
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="300dp"
-    android:layout_height="350dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#00000000"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="300dp"
+        android:layout_height="350dp"
+        android:layout_centerInParent="true"
+        >
 
     <fragment
         android:id="@+id/map_mini"
@@ -32,6 +39,6 @@
         android:id="@+id/btn_close"
         />
 
-
+    </RelativeLayout>
 
 </RelativeLayout>
