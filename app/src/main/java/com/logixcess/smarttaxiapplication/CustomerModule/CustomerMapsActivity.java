@@ -169,9 +169,11 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                 return;
             }
         }
-
+        
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        if(mDriverMarker != null)
+            return;
         addRoute();
     }
 
