@@ -357,7 +357,10 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 for (Order order : ordersInSharedRide) {
                     if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
                         order = goUpdateOrderStatus(order);
+                        orderIDs.put(order.getOrder_id(), true);
                         ordersInSharedRide.add(counter, order);
+                        currentSharedRide.setOrderIDs(orderIDs);
+                        db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
                     }
                     this.ordersInSharedRide = ordersInSharedRide;
                     counter++;
@@ -960,26 +963,48 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             if(myLocation.getLatitude() == 0 && myLocation.getLongitude() == 0)
                 return;
             currentSharedRide = mFareCalc.calculateFareForSharedRide(ordersInSharedRide, currentSharedRide, myLocation, currentOrder.getVehicle_id());
-            for (Map.Entry<String, UserFareRecord> entry : currentSharedRide.getPassengerFares().entrySet()) {
-                String key = entry.getKey();
-                double basefare = entry.getValue().getBaseFare();
-                List<RoutePoints> fareRecord = currentSharedRide.getAllJourneyPoints().get(key);
-                if(fareRecord != null) {
-                    double total = 0, totalDistanceTravelled = 0;
-                    for(RoutePoints rp : fareRecord){
-                        if(rp.getDistanceinmeters() > 0){
-                            totalDistanceTravelled = totalDistanceTravelled + rp.getDistanceinmeters();
-                            // if 1000m fare => basefare then 100 m fare => basefare * .1
-                            //basefare * (rp.getDistanceinmeters() / 1000)
-                            rp.setTotalKmSofar(totalDistanceTravelled / 1000);
-                            total = total + getFareThing((rp.getDistanceinmeters() / 1000), basefare,rp);
+            checkOrderStatus(currentSharedRide.getGroup_id());
+            
+        }
+    }
+    
+    private void checkOrderStatus(String group_id) {
+        db_ref_group.child(group_id).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    SharedRide sr = dataSnapshot.getValue(SharedRide.class);
+                    if(sr != null){
+                        orderIDs = sr.getOrderIDs();
+                        currentSharedRide.setOrderIDs(orderIDs);
+                        for (Map.Entry<String, UserFareRecord> entry : currentSharedRide.getPassengerFares().entrySet()) {
+                            String key = entry.getKey();
+                            double basefare = entry.getValue().getBaseFare();
+                            List<RoutePoints> fareRecord = currentSharedRide.getAllJourneyPoints().get(key);
+                            if(fareRecord != null) {
+                                double total = 0, totalDistanceTravelled = 0;
+                                for(RoutePoints rp : fareRecord){
+                                    if(rp.getDistanceinmeters() > 0){
+                                        totalDistanceTravelled = totalDistanceTravelled + rp.getDistanceinmeters();
+                                        // if 1000m fare => basefare then 100 m fare => basefare * .1
+                                        //basefare * (rp.getDistanceinmeters() / 1000)
+                                        rp.setTotalKmSofar(totalDistanceTravelled / 1000);
+                                        total = total + getFareThing((rp.getDistanceinmeters() / 1000), basefare,rp);
+                                    }
+                                }
+                                setUserFareSoFar(total,key,ordersInSharedRide);
+                            }
                         }
+                        db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
                     }
-                    setUserFareSoFar(total,key,ordersInSharedRide);
                 }
             }
-            db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
-        }
+    
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+        
+            }
+        });
     }
     
     private double getFareThing(double kmPercentage, double basefare, RoutePoints rp){
@@ -996,7 +1021,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 break;
             case 2:
     
-                if(rp.getTotalKmSofar() < 1) {
+                if(rp.getTotalKmSofar() < 1) { // 4.9  // 2nd passenger
                     currentFare = (basefare * kmPercentage);
                 }else if(rp.getTotalKmSofar() < 2) {
                     currentFare = (basefare * kmPercentage) * .6; // discount of 40%

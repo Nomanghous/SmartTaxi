@@ -1427,6 +1427,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
         if(passenger.getLatitude() == 0)
             return;
+        if(new_order == null)
+            return;
         Location ps = new Location("passsenger");
         ps.setLatitude(passenger.getLatitude());
         ps.setLongitude(passenger.getLongitude());

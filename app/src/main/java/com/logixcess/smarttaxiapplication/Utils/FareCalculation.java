@@ -143,23 +143,25 @@ public class FareCalculation
         // contains record of user fare
         HashMap<String,UserFareRecord> allFareRecords = currentSharedRide.getPassengerFares();
         // passenger count
-        int totalOnRide = getActiveRideUsersCount(ordersInSharedRide);
-        if(totalOnRide < 1)
-            return currentSharedRide;
+       
         for (Map.Entry<String, Boolean> entry : currentSharedRide.getPassengers().entrySet()) {
             String key = entry.getKey();
-            boolean isOnRide = isDriverOnRide(key,currentSharedRide);
-            
+            Order order = getOrderByID(key,ordersInSharedRide);
+            if(order == null)
+                continue;
+            int totalOnRide = getActiveRideUsersCount(currentSharedRide);
+            if(totalOnRide < 1)
+                return currentSharedRide;
+            boolean isOnRide = isDriverOnRide(order.getOrder_id(),currentSharedRide);
+    
             // in case : for initial point
             if(!allPoints.containsKey(key)){
                 List<RoutePoints> routePoints = new ArrayList<>();
-                Order order = getOrderByID(key,ordersInSharedRide);
-                if(order != null) {
+                
                     RoutePoints rP = new RoutePoints(order.getPickupLat(),order.getPickupLong());
                     routePoints.add(rP);
                     allPoints.put(key,routePoints);
-                }else
-                    continue;
+                
             }
             
             if(!isOnRide)
@@ -193,16 +195,13 @@ public class FareCalculation
     
  
     
-    private int getActiveRideUsersCount(List<Order> ordersInSharedRide) {
+    private int getActiveRideUsersCount(SharedRide sharedRide) {
         int Count = 0;
-        List<String> alreadyCounted = new ArrayList<>();
-        for(Order order : ordersInSharedRide)
-            if(order.getOnRide() && order.getStatus() == Order.OrderStatusInProgress
-                    && !alreadyCounted.contains(order.getUser_id())
-                    ) {
+        HashMap<String,Boolean> ids = sharedRide.getOrderIDs();
+        for(Map.Entry<String, Boolean> entry : ids.entrySet()){
+            if(entry.getValue())
                 Count++;
-                alreadyCounted.add(order.getUser_id());
-            }
+        }
         return Count;
     }
     
@@ -381,6 +380,7 @@ public class FareCalculation
     
     private boolean isDriverOnRide(String key, SharedRide sharedRide){
         // checking if driver is on ride
+        
         HashMap<String,Boolean> ids = sharedRide.getOrderIDs();
         for(Map.Entry<String, Boolean> entry : ids.entrySet()){
             if(entry.getKey().equals(key)){

@@ -129,7 +129,10 @@ public class FirebaseDataSync extends Service implements RoutingListener {
                 if(order != null) {
                     currentOrder = order;
                     if(total_fare != null) {
-                        total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
+                        if(currentOrder.getShared())
+                            total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
+                        else
+                            total_fare.setText(String.valueOf(currentOrder.getEstimated_cost()));
                     }
                 }
     
@@ -203,6 +206,10 @@ public class FirebaseDataSync extends Service implements RoutingListener {
                 mDriverMarker.setIcon(getDrawableByType(currentOrder.getVehicle_id(),100));
             return;
         }
+    
+        if(total_fare != null && !currentOrder.getShared()) {
+            total_fare.setText(String.valueOf(currentOrder.getEstimated_cost()));
+        }
         double percentageLeft = currentDistance / totalDistance * 100;
         boolean[] NotificationsDone = currentOrder.getNotificaionsDone();
         NotificationPayload payload = new NotificationPayload();
@@ -218,7 +225,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         payload.setOrder_id(currentOrder.getOrder_id());
         Log.i("percentage", percentageLeft + " cd: " + currentDistance + " td: " + totalDistance);
         
-        if(percentageLeft < 5 && mCountDowntimer == null) {
+        if(percentageLeft < 1 && mCountDowntimer == null) {
             mCountDowntimer = new CountDownTimer(300000, 60000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
@@ -458,7 +465,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time == 14 && !userIsReady){
+        }else if(time == 15 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);

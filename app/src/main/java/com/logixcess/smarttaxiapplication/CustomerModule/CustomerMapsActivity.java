@@ -269,7 +269,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                                 if(sharedRide != null && sharedRide.getOrderIDs() != null){
                                       HashMap<String,Boolean> orderId = sharedRide.getOrderIDs();
                                       if(orderId.containsKey(currentOrder.getOrder_id())){
-                                          orderId.put(currentOrder.getOrder_id(),true);
+                                          orderId.put(currentOrder.getOrder_id(), false);
                                           sharedRide.setOrderIDs(orderId);
                                           db_temp.setValue(sharedRide);
                                       }
@@ -337,7 +337,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         }
     }
 
-
+    
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -354,7 +354,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         });
 
         populateMap();
-        showDataOnMap();
+//        showDataOnMap();
     }
 
     String driver_id,order_id;
@@ -420,7 +420,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         if(dataSnapshot.exists())
                         {
-
+                        
                         }
                         else
                         {
