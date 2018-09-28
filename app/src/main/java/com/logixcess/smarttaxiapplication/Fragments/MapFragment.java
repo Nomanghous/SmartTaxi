@@ -55,6 +55,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -443,6 +444,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     }
 
+    private BitmapDescriptor getDrawableByType(Context context, String vehicleType) {
+        Drawable drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
+        switch (vehicleType){
+            case Helper.VEHICLE_CAR:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_car);
+                break;
+            case Helper.VEHICLE_MINI:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_mini);
+                break;
+            case Helper.VEHICLE_NANO:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_nano);
+                break;
+            case Helper.VEHICLE_THREE_WHEELER:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_three_wheeler);
+                break;
+            case Helper.VEHICLE_VIP:
+                drawable = context.getResources().getDrawable(R.drawable.ic_option_vip);
+                break;
+        }
+        Bitmap driverPin = Helper.convertToBitmap(drawable, 100, 100);
+        return BitmapDescriptorFactory.fromBitmap(driverPin);
+    }
     public void addDriverMarker(Driver driver1, int index) {
         if(isJoiningOtherSharedRide)
             return;
@@ -456,6 +479,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             if (gMap != null) {
                 marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
                         .title("Driver: ".concat(driver1.getFk_user_id())));
+                if(!TextUtils.isEmpty(Constants.selected_vehicle))
+                marker.setIcon(getDrawableByType(getActivity(),Constants.selected_vehicle));
+                else
                 marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
                 marker.setTag(driver1.getFk_user_id());
                 driver_in_map.put(driver1.getFk_user_id(), marker);
@@ -464,7 +490,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             if (gMap != null) {
                 Marker marker = gMap.addMarker(new MarkerOptions().position(driverLatLng)
                         .title("Driver: ".concat(driver1.getFk_user_id())));
-                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                if(!TextUtils.isEmpty(Constants.selected_vehicle))
+                    marker.setIcon(getDrawableByType(getActivity(),Constants.selected_vehicle));
+                else
+                    marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
                 marker.setTag(driver1.getFk_user_id());
                 driver_list_index.put(driver1.getFk_user_id(), index);
                 driver_in_map.put(driver1.getFk_user_id(), marker);

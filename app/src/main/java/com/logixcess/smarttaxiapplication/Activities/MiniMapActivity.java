@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -41,6 +40,7 @@ public class MiniMapActivity extends AppCompatActivity implements OnMapReadyCall
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        c = MiniMapActivity.this;
         latLngs = Helper.invitationLatlngs;
         setContentView(R.layout.activity_mini_map);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -55,7 +55,6 @@ public class MiniMapActivity extends AppCompatActivity implements OnMapReadyCall
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_close:
-                
                 c.finish();
                 break;
             default:

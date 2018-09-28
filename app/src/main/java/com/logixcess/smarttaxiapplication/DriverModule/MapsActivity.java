@@ -47,6 +47,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
@@ -93,6 +94,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private CountDownTimer mCountDowntimer;
     private Marker pmarker;
     private ArrayList<LatLng> mPassengerPoints;
+    Boolean isSharedRideCompleted =  true;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -159,8 +161,63 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }else{
             finish();
         }
+        //adding order status listener
+        checkOrderStatus();
     }
+    private void checkOrderStatus()
+    {
+        if(currentOrder != null)
+        {
+            db_ref_order.child(currentOrder.getOrder_id()).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
+                    if(dataSnapshot.exists())
+                    {
+                        Order order = dataSnapshot.getValue(Order.class);
+                        if(!order.getShared())
+                        {
+                            if(order.getStatus() == Order.OrderStatusCompleted || order.getStatus() == Order.OrderStatusCompletedReview)
+                            {
+                                currentOrder = null;
+                                finishAffinity();
+                                Intent returnIntent = new Intent(MapsActivity.this,MainActivity.class);
+                                startActivity(returnIntent);
+                            }
+                        }
+                        else// means shared ride
+                        {
+                            if(ordersInSharedRide.size()>0)
+                            {
+                                for (Order order1 : ordersInSharedRide) {
+                                    if (order1.getOnRide() || !((order1.getStatus() == Order.OrderStatusCompleted) || (order1.getStatus() == Order.OrderStatusCompletedReview))) { // means this order is in progress
+                                        isSharedRideCompleted = false;
+                                    }
+                                }
+                                if (isSharedRideCompleted)
+                                {
+                                    currentOrder = null;
+                                    ordersInSharedRide.clear();
+                                    finishAffinity();
+                                    Intent returnIntent = new Intent(MapsActivity.this,MainActivity.class);
+                                    startActivity(returnIntent);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+    }
     private void requestNewRoute() {
         
         if(myLocation == null || IS_ROUTE_ADDED)
@@ -309,7 +366,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             
                         if (order.getStatus() == Order.OrderStatusInProgress) {
                             order.setOnRide(true);
-                        } else if (order.getStatus() == Order.OrderStatusCompleted) {
+                        } else if (order.getStatus() == Order.OrderStatusCompleted || order.getStatus() == Order.OrderStatusCompletedReview) {
                             order.setOnRide(false);
                         }
             

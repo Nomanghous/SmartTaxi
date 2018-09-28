@@ -7,12 +7,11 @@
   ~
   -->
 
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="300dp"
     android:layout_height="350dp"
-    android:orientation="vertical"
-    >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical">
 
     <fragment
         android:id="@+id/map"
@@ -22,6 +21,7 @@
         tools:context=".Activities.MapsActivity"/>
 
     <Button
+        android:id="@+id/btn_close"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -29,7 +29,6 @@
         android:text="Close"
         style="@style/Widget.AppCompat.Button.Colored"
         android:textColor="@color/white"
-        android:id="@+id/btn_close"
         />
 
 
