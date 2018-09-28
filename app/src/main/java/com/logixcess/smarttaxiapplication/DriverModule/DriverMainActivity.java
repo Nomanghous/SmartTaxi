@@ -9,8 +9,10 @@ import android.content.IntentFilter;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -68,7 +70,7 @@ import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
-public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
+public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener {
     protected FirebaseDatabase firebase_db;
     protected DatabaseReference db_ref_order;
     protected DatabaseReference db_ref_drivers,db_ref_users;
@@ -93,7 +95,6 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        promptSpeechInput();
         tts = new TextToSpeech(this, this);
         if(!Helper.IS_FROM_CHILD) {
             setContentView(R.layout.activity_driver_main);
@@ -119,8 +120,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
+//        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+//                "Request has come to <Destination> Do you want to open profile?");
         try {
             startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
         } catch (ActivityNotFoundException a) {
@@ -401,8 +402,9 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 ///btnSpeak.setEnabled(true);
                 ////speakOut();
             }
-
-        } else {
+            tts.setOnUtteranceCompletedListener(this);
+        }
+        else {
             Log.e("TTS", "Initilization Failed!");
         }
     }
@@ -410,10 +412,17 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
        //Notification : Request has come to <Destination> Do you want to open profile?
        //Notification : Do you want accept or reject the request?
-        
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        HashMap<String, String> myHashAlarm = new HashMap<String, String>();
+        myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
+        myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SOME MESSAGE");
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, myHashAlarm);
     }
-    
+
+    @Override
+    public void onUtteranceCompleted(String s) {
+        promptSpeechInput();
+    }
+
     private class TenSecondsTask extends TimerTask {
         @Override
         public void run() {
@@ -427,8 +436,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             if(!TextUtils.isEmpty(Constants.notificationPayload) && (!isPromptDismissed))
             {
                 isPromptDismissed = true;
-                speakOut("Request has come to <Destination> Do you want to open profile?");
-                promptSpeechInput();
+                speakOut("Request has come to <Destination> Do you want to open profile?");;
+                ///promptSpeechInput();
                 
             }
         }
