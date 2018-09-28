@@ -1733,12 +1733,37 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void showPostRadiusInput(Order order) {
         if(getActivity() == null)
             return;
-        if(order.getStatus() == Order.OrderStatusWaiting) {
-            getActivity().findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
-            ((EditText)getActivity().findViewById(R.id.post_radius_input)).setText(Constants.group_radius);
-        }
-        else
-            getActivity().findViewById(R.id.post_radius_container).setVisibility(View.GONE);
+        
+        new CountDownTimer(4000, 4000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+        
+            }
+    
+            @Override
+            public void onFinish() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(order.getStatus() == Order.OrderStatusWaiting) {
+                            RelativeLayout layout = getActivity().findViewById(R.id.post_radius_container);
+                            if(layout != null)
+                                layout.setVisibility(View.VISIBLE);
+                            EditText editText = getActivity().findViewById(R.id.post_radius_input);
+                            if(editText != null)
+                                editText.setText(String.valueOf(Constants.group_radius));
+                        }
+                        else {
+                            RelativeLayout layout = getActivity().findViewById(R.id.post_radius_container);
+                            if (layout != null)
+                                layout.setVisibility(View.GONE);
+                        }
+                    }
+                });
+            }
+        }.start();
+        
+        
     }
     
     
