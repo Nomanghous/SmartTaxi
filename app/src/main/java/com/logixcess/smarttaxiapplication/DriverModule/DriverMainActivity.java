@@ -44,6 +44,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
+import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.Requests;
@@ -92,6 +93,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     protected HashMap<String, Boolean> orderIDs;
     protected List<User> currentPassengers;
     TextToSpeech tts;
+    String speakOf = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,6 +126,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 //                "Request has come to <Destination> Do you want to open profile?");
         try {
             startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+            speakOf = "";
         } catch (ActivityNotFoundException a) {
             runOnUiThread(new Runnable() {
                 @Override
@@ -211,42 +214,52 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 }
             }).addOnCompleteListener(new OnCompleteListener<Uri>() {
                 @Override
-                public void onComplete(@NonNull Task<Uri> task) {
-                    String status = "OFFLINE";
-                    status = "ONLINE";
-                    final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
-                    AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getApplicationContext(),R.style.AlertDialogCustom));
-                    builder.setTitle("Information :");
-                    builder.setView(image);
-                    String text = "Request Now";
+                public void onComplete(@NonNull Task<Uri> task)
+                {
+                    if(task.isSuccessful())
+                    {
+                        speakOut("Do you want to accept or reject the request");
+                        speakOf = "acceptreject";
+                        String status = "OFFLINE";
+                        status = "ONLINE";
+                        final CharSequence[] items = { "Name : "+name, "Phone No : "+phone,"Status : "+status };
+                        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getApplicationContext(),R.style.AlertDialogCustom));
+                        builder.setTitle("Information :");
+                        builder.setView(image);
+                        String text = "Request Now";
                         text = "Accept Invitation";
-                    builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            //driver_selected(user_id);
-                            goAcceptInvitation(user_id);
-                            dialog.dismiss();
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-                    
-                    builder.setItems(items, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int item)
-                        {
+                        builder.setPositiveButton(text, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                //driver_selected(user_id);
+                                goAcceptInvitation(user_id);
+                                dialog.dismiss();
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+
+                        builder.setItems(items, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int item)
+                            {
 //                if (items[item].equals("SendRequest"))
 //                {
 //                    driver_selected(user_id);
 //                }
-                        }
-                    });
-                    
-                    builder.show();
+                            }
+                        });
+
+                        builder.show();
+                    }
+                    else
+                    {
+                        Toast.makeText(DriverMainActivity.this,"Some thing went wrong while getting info",Toast.LENGTH_SHORT).show();
+                    }
                 }
             })
             .addOnFailureListener(new OnFailureListener() {
@@ -436,7 +449,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             if(!TextUtils.isEmpty(Constants.notificationPayload) && (!isPromptDismissed))
             {
                 isPromptDismissed = true;
-                speakOut("Request has come to <Destination> Do you want to open profile?");;
+                speakOut("Request has come to Destination Do you want to open profile");
+                speakOf = "openprofile";
                 ///promptSpeechInput();
                 
             }
