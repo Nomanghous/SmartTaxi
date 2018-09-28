@@ -746,8 +746,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                         Helper.invitationLatlngs = new ArrayList<>();
                         for(RoutePoints routePoints : order.getSelectedRoute()){
                             Helper.invitationLatlngs.add(new LatLng(routePoints.getLatitude(),routePoints.getLongitude()));
-                            startActivity(new Intent(getContext(),MiniMapActivity.class));
                         }
+                        startActivity(new Intent(getContext(),MiniMapActivity.class));
                     }
                 }
             }
