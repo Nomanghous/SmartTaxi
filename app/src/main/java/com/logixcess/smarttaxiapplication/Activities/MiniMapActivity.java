@@ -22,6 +22,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.logixcess.smarttaxiapplication.Fragments.MapFragment;
@@ -35,7 +36,6 @@ public class MiniMapActivity extends AppCompatActivity implements OnMapReadyCall
     public Activity c;
     public Dialog d;
     Button yes;
-    MapView miniMap;
     List<LatLng> latLngs = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,8 +43,9 @@ public class MiniMapActivity extends AppCompatActivity implements OnMapReadyCall
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         latLngs = Helper.invitationLatlngs;
         setContentView(R.layout.activity_mini_map);
-        miniMap = findViewById(R.id.map_mini);
-        miniMap.getMapAsync(this);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map_mini);
+        mapFragment.getMapAsync(this);
         yes =  findViewById(R.id.btn_close);
         yes.setOnClickListener(this);
         
