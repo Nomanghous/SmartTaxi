@@ -22,22 +22,22 @@
         android:required="false" />
 
     <application
-        android:largeHeap="true"
         android:name=".SmartTaxiApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+
         <!-- Firebase Notifications -->
         <service android:name=".Services.MyFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
         <service android:name=".Services.MyFirebaseInstanceIDService" />
         <service android:name=".Services.FirebaseDataSync" />
         <service android:name=".Services.LocationManagerService" />
@@ -72,22 +72,21 @@
             android:value="@string/google_maps_key" />
 
         <activity android:name=".InitialActivity" />
-
         <activity
             android:name=".Activities.ScheduleActivity"
             android:parentActivityName=".MainActivity" />
         <activity
             android:name=".Activities.OrderDetailsActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-             />
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".Activities.Register_Next_Step"
             android:parentActivityName=".Activities.RegisterActivity" />
         <activity
             android:name=".Activities.RegisterActivity"
             android:parentActivityName=".Activities.LoginActivity" />
-        <activity android:name=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".Activities.MapsActivity"
             android:parentActivityName=".MainActivity" />
@@ -100,10 +99,11 @@
 
         <activity android:name=".Activities.OrdersActivity" />
         <activity android:name=".Activities.calendar_layout" />
-        <activity android:name=".DriverModule.DriverMainActivity"/>
-        <activity android:name=".CustomerModule.CustomerMapsActivity"
-            android:parentActivityName=".MainActivity"
-            />
+        <activity android:name=".DriverModule.DriverMainActivity" />
+        <activity
+            android:name=".CustomerModule.CustomerMapsActivity"
+            android:parentActivityName=".MainActivity" />
+        <activity android:name=".Activities.MiniMapActivity"></activity>
     </application>
 
 </manifest>

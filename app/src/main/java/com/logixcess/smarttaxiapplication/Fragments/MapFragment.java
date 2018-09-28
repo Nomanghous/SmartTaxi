@@ -77,6 +77,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
+import com.logixcess.smarttaxiapplication.Activities.MiniMapActivity;
+import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
@@ -741,8 +743,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if(dataSnapshot.exists()){
                     Order order = dataSnapshot.getValue(Order.class);
                     if(order != null){
-                        CustomDialogClass customDialogClass = new CustomDialogClass(getActivity(),order);
-                        customDialogClass.show();
+                        Helper.invitationLatlngs = new ArrayList<>();
+                        for(RoutePoints routePoints : order.getSelectedRoute()){
+                            Helper.invitationLatlngs.add(new LatLng(routePoints.getLatitude(),routePoints.getLongitude()));
+                            startActivity(new Intent(getContext(),MiniMapActivity.class));
+                        }
                     }
                 }
             }
@@ -2181,10 +2186,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
             setContentView(R.layout.mini_mapview);
             miniMap = findViewById(R.id.map_mini);
-            miniMap.getMapAsync(this);
+            miniMap.getMapAsync(CustomDialogClass.this);
             yes =  findViewById(R.id.btn_close);
             yes.setOnClickListener(this);
         }

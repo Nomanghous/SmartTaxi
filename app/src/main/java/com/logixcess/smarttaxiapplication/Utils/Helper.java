@@ -9,6 +9,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.List;
 
 public class Helper {
     public static final int NOTI_TYPE_ORDER_CREATED = 101;
@@ -46,6 +47,7 @@ public class Helper {
     public static double SELECTED_RADIUS = 10000; // it's in meters
     public static boolean IS_FROM_CHILD = false;
     public static boolean isAcceptingInvites = false;
+    public static List<LatLng> invitationLatlngs;
     
     
     public static String getRefinedLatLngKeyForHashMap(String latlng){

@@ -194,9 +194,12 @@ public class MainActivity extends BaseActivity
                     @Override
                     public void onSuccess(Uri uri) {
                         String imageURL = uri.toString();
-
-                        Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
-                                .into(nav_user_image);
+                        try {
+                            Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
+                                    .into(nav_user_image);
+                        }catch (IllegalArgumentException ignore){
+                        
+                        }
                         //Glide.with(getApplicationContext()).load(imageURL).into(i1);
                     }
                 }).addOnFailureListener(new OnFailureListener() {
@@ -392,7 +395,7 @@ AlertDialog builder;
         if(cb_shared.isChecked())
         {
             user_selection_dialog();
-        }
+        }show
         findViewById(R.id.ct_address).setVisibility(View.VISIBLE);
         findViewById(R.id.ct_vehicles).setVisibility(View.GONE);
         findViewById(R.id.btn_confirm).setVisibility(View.VISIBLE);
