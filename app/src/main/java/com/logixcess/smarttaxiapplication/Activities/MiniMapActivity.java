@@ -54,7 +54,7 @@ public class MiniMapActivity extends AppCompatActivity implements OnMapReadyCall
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.button:
+            case R.id.btn_close:
                 
                 c.finish();
                 break;
