@@ -229,12 +229,14 @@ public class Register_Next_Step extends AppCompatActivity {
                                     passenger.setFk_user_id(user_data.getUser_id());
                                     firebaseHelper.pushUser(user_data,passenger);
                                     startActivity(new Intent(Register_Next_Step.this, MainActivity.class));
+                                    finish();
                                 }
                                 else if(user_data.getUser_type().equals("Driver"))
                                 {
                                     driver.setFk_user_id(user_data.getUser_id());
                                     firebaseHelper.pushUser(user_data,driver);
                                     startActivity(new Intent(Register_Next_Step.this, DriverMainActivity.class));
+                                    finish();
                                 }
 
                             }
