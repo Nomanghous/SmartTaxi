@@ -174,17 +174,14 @@ public class FareCalculation
                     lastPointLocation.setLatitude(latLngList.get(latLngList.size() - 1).getLatitude());
                     lastPointLocation.setLongitude(latLngList.get(latLngList.size() - 1).getLongitude());
                     double totalDistanceFromPrevPoint = lastPointLocation.distanceTo(myLocation);
-                    
                     if(totalDistanceFromPrevPoint > 0) {
                         latLngList.add(new RoutePoints(myLocation.getLatitude()
                                 , myLocation.getLongitude(), totalDistanceFromPrevPoint,totalOnRide));
-                        if (isOnRide)
                             allPoints.put(key, latLngList);
                     }
                     UserFareRecord fareRecord = currentSharedRide.getPassengerFares().get(key);
                     fareRecord = calculateFareOfSingleVehicle(latLngList,fareRecord,
                             totalOnRide, vehicleType,myLocation,key,ordersInSharedRide);
-                    if(isOnRide)
                         allFareRecords.put(key,fareRecord);
                 }
             }

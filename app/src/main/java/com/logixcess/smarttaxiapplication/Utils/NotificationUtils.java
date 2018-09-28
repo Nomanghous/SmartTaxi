@@ -281,6 +281,10 @@ public class NotificationUtils {
                     saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
                     preparePendingIntentForMessage(context,payload,notificationPayload);
                     break;
+                case Helper.NOTI_TYPE_CALL:
+                    saveDataToFirebase(notificationPayload,notificationPayload.getUser_id());
+                    preparePendingIntentForCall(context, payload);
+                    break;
             }
         }
     }
@@ -358,6 +362,45 @@ public class NotificationUtils {
         
         sendNotificationsWithPendingIntent(context, userData.getTitle(),
                 userData.getDescription(), actions, viewPendingIntent,id);
+    }
+    public static void preparePendingIntentForReadiness(Context context) {
+        int id = getUniqueInt();
+        Intent acceptIntent = new Intent(context, MyNotificationManager.class);
+        acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_READINESS_YES);
+        acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_READINESS_YES);
+        acceptIntent.putExtra("id", id);
+        PendingIntent acceptPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
+        Intent rejectIntent = new Intent(context, MyNotificationManager.class);
+        rejectIntent.setAction(MyNotificationManager.INTENT_FILTER_READINESS_NO);
+        rejectIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_READINESS_NO);
+        rejectIntent.putExtra("id", id);
+        PendingIntent rejectPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
+        
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", rejectPendingIntent));
+        
+        sendNotificationsWithPendingIntent(context, "Driver is Reaching",
+                "Are You Ready?", actions, null,id);
+    }
+    public static void preparePendingIntentForCall(Context context,String payload) {
+        int id = getUniqueInt();
+        Intent acceptIntent = new Intent(context, MyNotificationManager.class);
+        acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_CALL);
+        acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_CALL);
+        acceptIntent.putExtra("data", payload);
+        acceptIntent.putExtra("id", id);
+        PendingIntent acceptPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
+        
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", null));
+        
+        sendNotificationsWithPendingIntent(context, "Driver is Reaching",
+                "Are You Ready?", actions, null,id);
     }
 
     private static void sendNotificationsWithPendingIntent(Context context,String title,

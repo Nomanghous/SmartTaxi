@@ -40,6 +40,7 @@ public class Helper {
     public static final String commaSeparator = "-";
     public static final String dotSeparator = "_";
     public static final String BROADCAST_LOCATION = "location";
+    public static final int NOTI_TYPE_CALL = 21323;
     
     public static String polylinesSeparator = "___and___";
     public static double SELECTED_RADIUS = 10000; // it's in meters

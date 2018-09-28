@@ -1255,7 +1255,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if(dataSnapshot.exists()){
                     for(com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()){
                         Passenger passenger = snapshot.getValue(Passenger.class);
-                        if(passenger != null){
+                        if(passenger != null && passenger.getFk_user_id() != null && new_order != null){
                             if(!passenger.getFk_user_id().equals(new_order.getUser_id())
                                     && passenger.getInOnline())
                                 addMarkersForPassenger(passenger);
@@ -1278,7 +1278,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 Passenger passenger = dataSnapshot.getValue(Passenger.class);
-                if(passenger != null){
+                if(passenger != null && passenger.getFk_user_id() != null){
                     if(!passenger.getFk_user_id().equals(new_order.getUser_id()))
                         addMarkersForPassenger(passenger);
                 }
@@ -1287,7 +1287,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 Passenger passenger = dataSnapshot.getValue(Passenger.class);
-                if(passenger != null){
+                if(passenger != null && passenger.getFk_user_id() != null){
                     if(!passenger.getFk_user_id().equals(new_order.getUser_id()))
                         addMarkersForPassenger(passenger);
                 }
@@ -1590,6 +1590,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }
     }
 
+    public void hideDetails(){
+        ct_address.setVisibility(View.GONE);
+        ct_details.setVisibility(View.GONE);
+        ct_vehicles.setVisibility(View.GONE);
+        car_container.setVisibility(View.GONE);
+    }
+    
+    
     private void listenForDriverResponse(String driverId, String userId, ProgressDialog dialog, CountDownTimer timer) {
         db_ref_requests.child(Helper.getConcatenatedID(userId, driverId)).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -1721,7 +1729,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     private void showToast(String s) {
         Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
     }
-
+    
+    public void showPostRadiusInput(Order order) {
+        if(getActivity() == null)
+            return;
+        if(order.getStatus() == Order.OrderStatusWaiting)
+            getActivity().findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
+        else
+            getActivity().findViewById(R.id.post_radius_container).setVisibility(View.GONE);
+    }
+    
     
     public interface OnFragmentInteractionListener {
 

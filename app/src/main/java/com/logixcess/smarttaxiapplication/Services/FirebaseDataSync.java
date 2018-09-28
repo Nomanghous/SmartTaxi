@@ -10,7 +10,13 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.View;
 
+import com.directions.route.AbstractRouting;
+import com.directions.route.Route;
+import com.directions.route.RouteException;
+import com.directions.route.Routing;
+import com.directions.route.RoutingListener;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -26,15 +32,25 @@ import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
+import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.R;
+import com.logixcess.smarttaxiapplication.Utils.DeviceInfoUtils;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.btn_waiting_time;
 import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.mDriverMarker;
 import static com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity.total_fare;
 import static com.logixcess.smarttaxiapplication.MainActivity.mRunningOrder;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.playNotificationSound;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.userIsReady;
 
-public class FirebaseDataSync extends Service {
+public class FirebaseDataSync extends Service implements RoutingListener {
 
     DatabaseReference db_ref, db_user, db_order, db_group, db_passenger, db_driver;
     public static Order currentOrder;
@@ -45,6 +61,7 @@ public class FirebaseDataSync extends Service {
     double totalDistance;
     double currentDistance;
     private CountDownTimer mCountDowntimer;
+    public static User currentUser;
     
     @Override
     public void onCreate() {
@@ -90,6 +107,14 @@ public class FirebaseDataSync extends Service {
                 }
             });
         }
+        getUserDetails();
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                pingDistanceAPI();
+            }
+        }, 0, 10000);
+        
         
     }
     
@@ -148,12 +173,27 @@ public class FirebaseDataSync extends Service {
         
 
     }
-    
+    private void getUserDetails() {
+        db_driver.child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                User user = dataSnapshot.getValue(User.class);
+                if(user != null) {
+                    currentUser = user;
+                }
+            }
+            
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            
+            }
+        });
+    }
     private void calculateDistance() {
-        if(totalDistance == 0) {
-            totalDistance = pickupLocation.distanceTo(driverLocation);
-        }
-        currentDistance = pickupLocation.distanceTo(driverLocation);
+//        if(totalDistance == 0) {
+//            totalDistance = pickupLocation.distanceTo(driverLocation);
+//        }
+//        currentDistance = pickupLocation.distanceTo(driverLocation);
       
     }
     
@@ -360,5 +400,101 @@ public class FirebaseDataSync extends Service {
     
     public static Order getCurrentOrder() {
         return currentOrder;
+    }
+    
+    
+    private void pingDistanceAPI(){
+        if(driverLocation == null || pickupLocation == null)
+            return;
+        LatLng driver = new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude());
+        LatLng pickup = new LatLng(pickupLocation.getLatitude(),pickupLocation.getLongitude());
+        List<LatLng> points = new ArrayList<>();
+        points.add(driver);
+        points.add(pickup);
+        Routing routing = new Routing.Builder()
+            .travelMode(AbstractRouting.TravelMode.DRIVING)
+            .withListener(this)
+            .alternativeRoutes(true)
+            .waypoints(points)
+            .build();
+        routing.execute();
+    }
+    
+    
+    @Override
+    public void onRoutingFailure(RouteException e) {
+    
+    }
+    
+    @Override
+    public void onRoutingStart() {
+    
+    }
+    
+    @Override
+    public void onRoutingSuccess(ArrayList<Route> arrayList, int i) {
+        Route shortest = arrayList.get(i);
+        double distance = shortest.getDistanceValue();
+        if(totalDistance == 0) {
+            totalDistance = distance;
+        }
+        currentDistance = distance;
+        
+        
+        
+        
+        double time = shortest.getDurationValue();
+        if(time < 22 && time > 18 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }else if(time < 16 && time > 14 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }else if(time < 12 && time > 9 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }else if(time < 6 && time > 3 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }else if(time < 1 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            new CountDownTimer(4000, 500) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    playNotificationSound(FirebaseDataSync.this, R.raw.beep);
+                }
+    
+                @Override
+                public void onFinish() {
+        
+                }
+            }.start();
+            if(!NotificationUtils.isAppIsInBackground(this)){
+                if(btn_waiting_time != null) {
+                    if (currentOrder.getStatus() == Order.OrderStatusWaiting
+                            && !userIsReady) {
+                        btn_waiting_time.setVisibility(View.VISIBLE);
+                    }else
+                        btn_waiting_time.setVisibility(View.GONE);
+                }
+            }
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }
+        
+    }
+    
+    @Override
+    public void onRoutingCancelled() {
+    
     }
 }

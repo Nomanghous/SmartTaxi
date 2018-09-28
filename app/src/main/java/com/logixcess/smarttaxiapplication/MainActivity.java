@@ -1054,10 +1054,8 @@ AlertDialog builder;
                                     order.getStatus() == Order.OrderStatusInProgress){
                                 mRunningOrder = order;
                                 if(order.getShared())
-                                if(order.getStatus() == Order.OrderStatusInProgress)
-                                    findViewById(R.id.post_radius_container).setVisibility(View.VISIBLE);
-                                else
-                                    findViewById(R.id.post_radius_container).setVisibility(View.GONE);
+                                 mapFragment.showPostRadiusInput(order);
+                                mapFragment.hideDetails();
                                 startService(new Intent(MainActivity.this, FirebaseDataSync.class));
                                 if(!isForConditionCheck) {
                                     openOrderActivity(order);
@@ -1153,8 +1151,7 @@ AlertDialog builder;
     }
     
     private void goFetchGroup(Order order) {
-        String group_id = Helper.getConcatenatedID(order.getOrder_id(),order.getDriver_id());
-        DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(group_id);
+        DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(order.getGroup_id());
         db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

@@ -58,11 +58,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Feedback;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
+import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import java.util.ArrayList;
@@ -71,6 +73,7 @@ import java.util.List;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.driverLocation;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentDriver;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentOrder;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.userIsReady;
 
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
@@ -94,6 +97,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     private LatLng driver = null;
     public static TextView total_fare;
     private Button btn_close;
+    public static Button btn_waiting_time;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -109,9 +113,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             }else if(currentOrder != null) {
             
             }else{
-                Intent returnIntent = new Intent();
-                setResult(Activity.RESULT_OK,returnIntent);
-                finish();
+                finishAffinity();
+                Intent returnIntent = new Intent(CustomerMapsActivity.this,MainActivity.class);
+                startActivity(returnIntent);
                 return;
             }
             askLocationPermission();
@@ -126,11 +130,14 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             
         }else{
             // driver id not provided
-            Intent returnIntent = new Intent();
-            setResult(Activity.RESULT_OK,returnIntent);
-            finish();
+            finishAffinity();
+            Intent returnIntent = new Intent(CustomerMapsActivity.this,MainActivity.class);
+            startActivity(returnIntent);
         }
-
+    
+        btn_waiting_time = findViewById(R.id.btn_waiting_time);
+        
+       
         total_fare = findViewById(R.id.total_fare);
 //        if(currentOrder.getStatus() == Order.OrderStatusInProgress)
 //            total_fare.setText(String.valueOf(currentOrder.getTotal_fare()));
@@ -350,9 +357,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-                Intent returnIntent = new Intent();
-                setResult(Activity.RESULT_OK,returnIntent);
-                finish();
+                finishAffinity();
+                Intent returnIntent = new Intent(CustomerMapsActivity.this,MainActivity.class);
+                startActivity(returnIntent);
+                
             }
         });
         
@@ -397,9 +405,9 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if (task.isSuccessful())
                                                 Toast.makeText(CustomerMapsActivity.this, "Order Mark As Complete !", Toast.LENGTH_SHORT).show();
-                                            Intent returnIntent = new Intent();
-                                            setResult(Activity.RESULT_OK,returnIntent);
-                                            finish();
+                                            finishAffinity();
+                                            Intent returnIntent = new Intent(CustomerMapsActivity.this,MainActivity.class);
+                                            startActivity(returnIntent);
                                         }
                                     });
                                 }
@@ -422,5 +430,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         window.setBackgroundDrawableResource(R.color.colorAccent);
         window.setGravity(Gravity.CENTER);
         dialog.show();
+    }
+    
+    public void showWaitingTimeDialog(View view) {
+        Constants constants = new Constants();
+        constants.showWaitDialog(this);
     }
 }

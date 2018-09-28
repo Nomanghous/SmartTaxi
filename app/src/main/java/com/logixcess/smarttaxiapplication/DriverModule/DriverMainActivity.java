@@ -248,15 +248,15 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                     builder.show();
                 }
             })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception exception) {
-                            // Handle any errors
-                            //  Glide.with(this).setDefaultRequestOptions(requestOptions).load(url)
-                            //        .into(image);
-                            
-                        }
-                    });
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle any errors
+                    //  Glide.with(this).setDefaultRequestOptions(requestOptions).load(url)
+                    //        .into(image);
+                    
+                }
+            });
         }
         else
         {

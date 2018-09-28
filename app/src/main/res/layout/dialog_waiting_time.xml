@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) Logixcess, Inc - All Rights Reserved
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited
+  ~ Proprietary and confidential
+  ~ Written by Noman Ghous <Nomanghous@hotmail.com>, Copyright (c) 2018.
+  ~
+  -->
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="300dp"
+    android:layout_height="300dp"
+    >
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        >
+
+    <EditText
+        android:id="@+id/editText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Waiting Time (minutes)"
+        android:inputType="numberSigned"
+        tools:layout_editor_absoluteX="84dp"
+        tools:layout_editor_absoluteY="199dp" />
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:text="Set Waiting Time"
+            android:layout_marginTop="40dp"
+            tools:layout_editor_absoluteX="147dp"
+            tools:layout_editor_absoluteY="307dp" />
+
+    </LinearLayout>
+</RelativeLayout>

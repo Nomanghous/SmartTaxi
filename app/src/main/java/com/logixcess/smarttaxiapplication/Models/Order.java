@@ -23,7 +23,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     
     private String pickup, dropoff,
             user_id, user_name, scheduled_time, driver_id, driver_name, vehicle_id,
-            total_kms, waiting_time, pickup_time,pickup_date, estimated_cost;
+            total_kms, waiting_time, pickup_time,pickup_date, estimated_cost, group_id;
     
     private double total_fare;
     
@@ -66,9 +66,15 @@ public class Order extends ParcelableSparseArray implements Parcelable {
         this.passenger_status = passenger_status;
         this.isOnRide = isOnRide;
     }
-
-
-
+    
+    public String getGroup_id() {
+        return group_id;
+    }
+    
+    public void setGroup_id(String group_id) {
+        this.group_id = group_id;
+    }
+    
     public static final Creator<Order> CREATOR = new Creator<Order>() {
         @Override
         public Order createFromParcel(Parcel in) {

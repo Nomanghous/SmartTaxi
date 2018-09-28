@@ -166,6 +166,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
                         currentSharedRide.setAllJourneyPoints(mJourneyPoints);
                         mPassengerFares.put(new_order.getUser_id(),fareRecord);
                         currentSharedRide.setPassengerFares(mPassengerFares);
+                        new_order.setGroup_id(groupId);
                         updateThatSpecificOrderToAccepted(currentSharedRide.getGroup_id());
                     }
                 }
@@ -178,6 +179,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
     }
 
     private void updateThatSpecificOrderToAccepted(String group_id) {
+        
         db_ref_group.child(group_id).setValue(currentSharedRide).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
@@ -193,6 +195,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     private void updateOrderForSharedRide() {
         new_order.setStatus(Order.OrderStatusWaiting);
+        new_order.setGroup_id(Constants.group_id);
         db_ref.child(Helper.REF_ORDERS).child(new_order.getOrder_id()).setValue(new_order).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
