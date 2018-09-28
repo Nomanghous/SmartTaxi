@@ -77,7 +77,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.kunzisoft.switchdatetime.SwitchDateTimeDialogFragment;
-import com.logixcess.smarttaxiapplication.Activities.MiniMapActivity;
 import com.logixcess.smarttaxiapplication.CustomerModule.CustomerMapsActivity;
 import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
@@ -743,11 +742,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 if(dataSnapshot.exists()){
                     Order order = dataSnapshot.getValue(Order.class);
                     if(order != null){
-                        Helper.invitationLatlngs = new ArrayList<>();
-                        for(RoutePoints routePoints : order.getSelectedRoute()){
-                            Helper.invitationLatlngs.add(new LatLng(routePoints.getLatitude(),routePoints.getLongitude()));
-                        }
-                        startActivity(new Intent(getContext(),MiniMapActivity.class));
+                        CustomDialogClass customDialogClass = new CustomDialogClass(getActivity(),order);
+                        customDialogClass.show();
                     }
                 }
             }

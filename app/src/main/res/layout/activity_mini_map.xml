@@ -8,18 +8,18 @@
   -->
 
 
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="300dp"
     android:layout_height="350dp"
-    android:orientation="vertical"
-    >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical">
 
-    <com.google.android.gms.maps.MapView
+    <fragment
         android:id="@+id/map_mini"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        />
+        tools:context=".Activities.MiniMapActivity"/>
 
     <Button
         android:layout_width="match_parent"
