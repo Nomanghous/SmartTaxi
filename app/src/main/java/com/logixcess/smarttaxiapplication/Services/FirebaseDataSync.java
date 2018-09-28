@@ -448,7 +448,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         
         
         
-        double time = shortest.getDurationValue();
+        double time = shortest.getDurationValue() / 60;
         if(time < 22 && time > 18 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
