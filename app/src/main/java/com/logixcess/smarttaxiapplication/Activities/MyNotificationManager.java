@@ -48,7 +48,7 @@ public class MyNotificationManager extends BroadcastReceiver {
         String action = intent.getExtras() != null ? intent.getExtras().getString("action") : null;
         String data = intent.getExtras() != null ? intent.getExtras().getString("data") : null;
         int id = intent.getExtras() != null ? intent.getExtras().getInt("id") : -1;
-        if(action == null || data == null || id == -1)
+        if(action == null || (data == null && (!action.equals(INTENT_FILTER_READINESS_YES) && !action.equals(INTENT_FILTER_READINESS_YES))) || id == -1)
             return;
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if(notificationManager != null)
@@ -66,15 +66,17 @@ public class MyNotificationManager extends BroadcastReceiver {
                 sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
                 Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
 
-            } else if(action.equals(INTENT_FILTER_READINESS_YES)){
+            } else if(action.equals(INTENT_FILTER_CALL)){
+                callPhone(notificationPayload.getUser_id(),context);
+            }else
+                fuelUpTheBroadcastReceiver(action, data);
+        }else {
+            if(action.equals(INTENT_FILTER_READINESS_YES)){
                 Constants.userIsReady = true;
             }else if(action.equals(INTENT_FILTER_READINESS_NO)){
                 Constants.userIsReady = false;
                 sendNotificationForCall(context);
-            }else if(action.equals(INTENT_FILTER_CALL)){
-                callPhone(notificationPayload.getUser_id(),context);
-            }else
-                fuelUpTheBroadcastReceiver(action, data);
+            }
         }
 
     }

@@ -421,6 +421,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
             .withListener(this)
             .alternativeRoutes(true)
             .waypoints(points)
+                .key(getResources().getString(R.string.google_maps_api))
             .build();
         routing.execute();
     }
@@ -428,7 +429,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
     
     @Override
     public void onRoutingFailure(RouteException e) {
-    
+        e.printStackTrace();
     }
     
     @Override
@@ -444,34 +445,38 @@ public class FirebaseDataSync extends Service implements RoutingListener {
             totalDistance = distance;
         }
         currentDistance = distance;
-        
-        
-        
+    
+    
+        try {
+            checkDistanceAndNotify();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
         double time = shortest.getDurationValue() / 60;
-        if(time < 22 && time > 18 && !userIsReady){
+        if(time == 20 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time < 16 && time > 14 && !userIsReady){
+        }else if(time == 14 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time < 12 && time > 9 && !userIsReady){
-            DeviceInfoUtils.increaseDeviceSound(this);
-            playNotificationSound(this,R.raw.beep);
-            playNotificationSound(this,R.raw.beep);
-            playNotificationSound(this,R.raw.beep);
-            NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time < 6 && time > 3 && !userIsReady){
+        }else if(time == 10 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+        }else if(time == 5 && !userIsReady){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time < 1 && !userIsReady){
+        }else if(time < 1 && shortest.getDurationValue() < 10 && !userIsReady){
             DeviceInfoUtils.increaseDeviceSound(this);
             new CountDownTimer(4000, 500) {
                 @Override
