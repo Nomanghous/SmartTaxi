@@ -10,6 +10,7 @@
 package com.logixcess.smarttaxiapplication.CustomerModule;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -51,8 +52,6 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -64,47 +63,45 @@ import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.R;
-import com.logixcess.smarttaxiapplication.Services.FirebaseDataSync;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.driverLocation;
+
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentDriver;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentOrder;
-import static com.logixcess.smarttaxiapplication.Utils.Constants.userIsReady;
-
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.driverLocation;
+@SuppressLint("StaticFieldLeak")
 public class CustomerMapsActivity extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
     public static final String KEY_CURRENT_SHARED_RIDE = "key_shared_ride";
     public static GoogleMap mMap;
-
-
-    private FirebaseDatabase firebase_db;
+    
+    
     private DatabaseReference db_ref_order;
 
     private LatLng  pickup;
     private LatLng start, end;
-    private ArrayList<LatLng> waypoints;
+    private ArrayList<LatLng> wayPoints;
     private boolean IS_ROUTE_ADDED = false;
     public static final String KEY_CURRENT_ORDER = "current_order";
     public static Marker mDriverMarker;
     private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent,R.color.primary_dark_material_light};
 
-    private double totalDistance = 0, totalTime = 120; // total time in minutes
+    private double totalDistance = 0; // total time in minutes
     private double distanceRemaining = 0;
     private LatLng driver = null;
     public static TextView total_fare;
-    private Button btn_close;
     public static Button btn_waiting_time;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        firebase_db = FirebaseDatabase.getInstance();
+        FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
 
         Bundle bundle = getIntent().getExtras();
@@ -184,14 +181,14 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         }
     }
     public void addRoute() {
-        waypoints = new ArrayList<>();
+        wayPoints = new ArrayList<>();
         getRoutePoints();
-        start = waypoints.get(0);
-        end = waypoints.get(waypoints.size() - 1);
+        start = wayPoints.get(0);
+        end = wayPoints.get(wayPoints.size() - 1);
 
         CameraUpdate center = CameraUpdateFactory.newLatLngZoom(start,12);
         mMap.animateCamera(center);
-        PolylineOptions line = new PolylineOptions().addAll(waypoints);
+        PolylineOptions line = new PolylineOptions().addAll(wayPoints);
         mMap.addPolyline(line);
         MarkerOptions options = new MarkerOptions();
         options.position(new LatLng(driverLocation.getLatitude(),driverLocation.getLongitude()));
@@ -216,7 +213,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     private void getRoutePoints() {
         for (RoutePoints points : currentOrder.getSelectedRoute()){
-            waypoints.add(new LatLng(points.getLatitude(),points.getLongitude()));
+            wayPoints.add(new LatLng(points.getLatitude(),points.getLongitude()));
         }
     }
 
@@ -371,7 +368,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = inflater.inflate(R.layout.dialog_feedback, null, false);
         btn_feedback = view.findViewById(R.id.btn_feedback);
-        btn_close = view.findViewById(R.id.btn_close);
+        Button btn_close = view.findViewById(R.id.btn_close);
         rb_review1 = view.findViewById(R.id.rb_review1);
         rb_review2 = view.findViewById(R.id.rb_review2);
         rb_review3 = view.findViewById(R.id.rb_review3);
