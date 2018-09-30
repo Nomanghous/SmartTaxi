@@ -15,7 +15,6 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -41,7 +40,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -61,7 +59,6 @@ import com.logixcess.smarttaxiapplication.Utils.Helper;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -567,7 +564,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(dataSnapshot.exists()){
                         Order order = dataSnapshot.getValue(Order.class);
                         if(order != null){
-                            if(!checkIfOrderExists(order.getUser_id(),orderList)){
+                            if(checkIfOrderExists(order.getUser_id(), orderList)){
                                 orderList.add(order);
                             }else {
                                 int index = 0;
@@ -818,7 +815,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         if((order.getStatus() == Order.OrderStatusWaiting
                                 || order.getStatus() == Order.OrderStatusInProgress) &&
                                 order.getDriver_id().equals(userMe.getUid())){
-                            if(!checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
+                            if(checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
                         }
                     }

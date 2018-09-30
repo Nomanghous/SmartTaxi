@@ -104,6 +104,11 @@
             android:name=".CustomerModule.CustomerMapsActivity"
             android:parentActivityName=".MainActivity" />
         <activity android:name=".Activities.MiniMapActivity"></activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="75ae7a303314a018cc7586e35807c0c690e73b15"
+            />
+
     </application>
 
 </manifest>

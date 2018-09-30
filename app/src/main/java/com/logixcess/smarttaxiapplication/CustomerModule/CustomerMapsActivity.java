@@ -354,7 +354,6 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 //        showDataOnMap();
     }
 
-    String driver_id,order_id;
     RatingBar rb_review1,rb_review2,rb_review3;
     TextView tv_Destination,tv_Pickup,tv_driver_name;
     Button btn_feedback;
@@ -425,7 +424,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     if (task.isSuccessful())
-                                        Toast.makeText(CustomerMapsActivity.this, "Thank you for your Feeback !", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(CustomerMapsActivity.this, "Thank you for your Feedback !", Toast.LENGTH_SHORT).show();
                                     db_ref_order.child("status").setValue(Order.OrderStatusCompletedReview).addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
@@ -452,6 +451,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         ((Activity) context).getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         dialog.setContentView(view);
         final Window window = dialog.getWindow();
+        assert window != null;
         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
         window.setBackgroundDrawableResource(R.color.colorAccent);
         window.setGravity(Gravity.CENTER);

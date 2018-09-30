@@ -233,8 +233,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         fareCalculation = new FareCalculation();
-       
-       
+    
+    
     }
 
     public void user_selection_dialog() {

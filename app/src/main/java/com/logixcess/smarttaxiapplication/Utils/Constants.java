@@ -3,7 +3,6 @@ package com.logixcess.smarttaxiapplication.Utils;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.location.Location;
 import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -18,7 +17,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.R;
 

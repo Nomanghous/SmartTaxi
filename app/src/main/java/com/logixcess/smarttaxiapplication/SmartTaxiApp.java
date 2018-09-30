@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.Registry;
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.module.AppGlideModule;
+import com.crashlytics.android.Crashlytics;
 import com.firebase.client.Firebase;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.StorageReference;
@@ -17,6 +18,8 @@ import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
 
 import java.io.InputStream;
+
+import io.fabric.sdk.android.Fabric;
 
 public class SmartTaxiApp extends Application
 {
@@ -26,6 +29,7 @@ public class SmartTaxiApp extends Application
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
       //  Fabric.with(this, new Answers(), new Crashlytics());
         Firebase.setAndroidContext(getApplicationContext());
         Firebase.getDefaultConfig().setPersistenceEnabled(false);
@@ -34,7 +38,6 @@ public class SmartTaxiApp extends Application
         firebase_instance = new Firebase(Constants.Database_Path);
         mInstance = this;
         startLocationService();
-
     }
 
     private void startLocationService() {
