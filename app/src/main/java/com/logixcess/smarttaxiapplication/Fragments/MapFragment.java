@@ -427,7 +427,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             txtDestination.setText("Destination : " + new_order.getDropoff());
             txt_cost.setText(String.valueOf(total_cost));
             new_order.setEstimated_cost(String.valueOf(total_cost));
-            tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
+            tv_estimated_cost.setText("Cost: ".concat(String.valueOf(Math.round(total_cost)).concat(" Rs")));
         }
         ct_address.setVisibility(View.VISIBLE);
         btn_invites_container.setVisibility(View.VISIBLE);
@@ -1026,7 +1026,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             usa = new LatLng(MY_LOCATION.getLatitude(), MY_LOCATION.getLongitude());
             myMarker = gMap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(bitmapDescriptorFromVector(getActivity(),R.drawable.personn))).position(new LatLng(usa.latitude, usa.longitude))
                     .title("You"));
-
         }
         gMap.moveCamera(CameraUpdateFactory.newLatLng(usa));
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(usa, 12));
@@ -1413,14 +1412,19 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             }
         }
     }
-
+    // showing passengers for shared ride within the given radius
     private void addMarkersForPassenger(Passenger passenger) {
         if(mNearbyPassengers == null)
             mNearbyPassengers = new ArrayList<>();
         if(nearby_passengers_in_map == null)
             nearby_passengers_in_map = new HashMap<>();
-        if(nearby_passengers_in_map.containsKey(passenger.getFk_user_id()))
+        if(nearby_passengers_in_map.containsKey(passenger.getFk_user_id())) {
+            Marker marker = nearby_passengers_in_map.get(passenger.getFk_user_id());
+            marker.setPosition(new LatLng(passenger.getLatitude(),passenger.getLongitude()));
+            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+            nearby_passengers_in_map.put(passenger.getFk_user_id(),marker);
             return;
+        }
         for(Passenger p : mNearbyPassengers){
             if(p.getFk_user_id().equals(passenger.getFk_user_id()))
                 return;
@@ -1571,7 +1575,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         //give new user cost and discount
         total_cost = fareCalculation.getUserDiscountedPrice(passenger_count);
         new_order.setEstimated_cost(String.valueOf(total_cost));
-        tv_estimated_cost.setText("Cost: ".concat(String.valueOf(total_cost).concat(" Rs")));
+        tv_estimated_cost.setText("Cost: ".concat(String.valueOf(Math.round(total_cost)).concat(" Rs")));
         //Display Cost
         if (layout_cost_detail.getVisibility() == View.GONE) {
             layout_cost_detail.setVisibility(View.VISIBLE);

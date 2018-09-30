@@ -91,6 +91,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
             db_ref_driver = db_ref.child(Helper.REF_DRIVERS).child(selectedDriverId);
+            //fetching selected driver for the route
             db_ref_driver.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -114,7 +115,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
     }
-
     private void requestNewRoute() {
         driver = new LatLng(SELECTED_DRIVER.getLatitude(), SELECTED_DRIVER.getLongitude());
         if(pickup == null)
@@ -157,24 +157,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         addRoute();
-
-
-
-
-//        new Timer().scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//
-//
-//                        changeVehicleColorByDistance(totalDistance,  distanceRemaining = distanceRemaining - 10,mDriverMarker);
-//                    }
-//                });
-//
-//            }
-//        },5000, 5000);
     }
 
     private void askLocationPermission() {
@@ -182,8 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1001);
         }
     }
-
-
+    //vehicle color change by distance
     private void changeVehicleColorByDistance(){
         int percentageLeft = (int) ((int) distanceRemaining  / totalDistance* 100);
         LatLng markerPosition = driverMarker.getPosition();

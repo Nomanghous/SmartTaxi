@@ -97,10 +97,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     }
     
     public double getTotal_fare() {
-//        if(total_fare == 0)
-            return total_fare;
-//        String str = String.format("%.2f",String.valueOf(total_fare));
-//        return Double.valueOf(str);
+            return Math.round(total_fare);
     }
     
     public void setTotal_fare(double total_fare) {
@@ -108,7 +105,7 @@ public class Order extends ParcelableSparseArray implements Parcelable {
     }
     
     public String getEstimated_cost() {
-        return estimated_cost;
+        return String.valueOf(Math.round(Double.valueOf(estimated_cost)));
     }
 
     public void setEstimated_cost(String estimated_cost) {

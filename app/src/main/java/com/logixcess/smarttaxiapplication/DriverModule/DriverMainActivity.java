@@ -146,17 +146,20 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             case REQ_CODE_SPEECH_INPUT: {
                 if (resultCode == RESULT_OK && null != data) {
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    //if user speak accept
                     if(result.get(0).equalsIgnoreCase("accept"))
                     {
                         acceptingVoice();
                         isPromptDismissed = false;
                     }
+                    //if user speak reject
                     else if(result.get(0).equalsIgnoreCase("reject"))
                     {
                         rejectingVoice();
                         isPromptDismissed = false;
                     }
-                    else if(result.get(0).equalsIgnoreCase("open"))
+                    //if user speak open profile
+                    else if(result.get(0).equalsIgnoreCase("open")|| result.get(0).equalsIgnoreCase("open profile"))
                     {
                         openUserProfile();
                         isPromptDismissed = false;
@@ -421,10 +424,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             Log.e("TTS", "Initilization Failed!");
         }
     }
+    //For speaking a message to user
     private void speakOut(String text) {
-
-        //Notification : Request has come to <Destination> Do you want to open profile?
-        //Notification : Do you want accept or reject the request?
         HashMap<String, String> myHashAlarm = new HashMap<String, String>();
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SOME MESSAGE");

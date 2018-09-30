@@ -171,9 +171,9 @@ public class MainActivity extends BaseActivity
         navigationView.setNavigationItemSelectedListener(this);
         db_ref = FirebaseDatabase.getInstance().getReference();
         db_ref_user_general = db_ref.child(Helper.REF_PASSENGERS);
-        //Ahmads
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+        //if user login is saved then we can driectly login using this user object
         mFirebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         View hView =  navigationView.getHeaderView(0);
         if(mFirebaseUser != null)
@@ -185,8 +185,6 @@ public class MainActivity extends BaseActivity
             ImageView nav_user_image = hView.findViewById(R.id.iv_person_pic);
             if(mFirebaseUser.getPhotoUrl() != null) {
                 StorageReference storageReference = FirebaseStorage.getInstance().getReference().child(mFirebaseUser.getPhotoUrl().toString());
-                // String path_url = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).toString();//storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getPath();
-                // Uri uri = storageReference.child(mFirebaseUser.getPhotoUrl().toString()).getDownloadUrl().getResult();
                 RequestOptions requestOptions = new RequestOptions();
                 requestOptions.placeholder(R.drawable.user_placeholder);
                 requestOptions.circleCrop();
@@ -195,12 +193,12 @@ public class MainActivity extends BaseActivity
                     public void onSuccess(Uri uri) {
                         String imageURL = uri.toString();
                         try {
+                            //For loading image
                             Glide.with(MainActivity.this).setDefaultRequestOptions(requestOptions).load(imageURL)
                                     .into(nav_user_image);
                         }catch (IllegalArgumentException ignore){
                         
                         }
-                        //Glide.with(getApplicationContext()).load(imageURL).into(i1);
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -222,7 +220,6 @@ public class MainActivity extends BaseActivity
 
         navigationView.setNavigationItemSelectedListener(this);
         setUpNavigationView();
-        //change
         mRegistrationBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -403,7 +400,7 @@ AlertDialog builder;
 
 
     }*/
-
+//When vehicle dialog is clicked then openVehicles is called
     public void openVehicles(View view) {
         if(new_order == null)
             new_order = new Order();
@@ -412,7 +409,6 @@ AlertDialog builder;
         findViewById(R.id.btn_confirm).setVisibility(View.GONE);
 
     }
-
     public void openPickupActivity(View view) {
         if(new_order == null)
             new_order = new Order();
@@ -420,36 +416,6 @@ AlertDialog builder;
             Toast.makeText(this, "There is already an order in Progress.", Toast.LENGTH_SHORT).show();
             return;
         }
-        Double latitude = LocationManagerService.mLastLocation.getLatitude();
-        Double longitude = LocationManagerService.mLastLocation.getLongitude();
-//        if(gps.canGetLocation()){
-//            latitude = gps.getLatitude();
-//            longitude = gps.getLongitude();
-//        }
-//        val locationPickerIntent = LocationPickerActivity.Builder()
-//                .withLocation(41.4036299, 2.1743558)
-//                .withGeolocApiKey("<PUT API KEY HERE>")
-//                .withSearchZone("es_ES")
-//                .shouldReturnOkOnBackPressed()
-//                .withStreetHidden()
-//                .withCityHidden()
-//                .withZipCodeHidden()
-//                .withSatelliteViewHidden()
-//                .withGooglePlacesEnabled()
-//                .withGoogleTimeZoneEnabled()
-//                .withVoiceSearchHidden()
-//                .build(applicationContext)
-//        Intent intent = new LocationPickerActivity.Builder()
-//                .withLocation(latitude,longitude)
-//                .withGeolocApiKey(getResources().getString(R.string.google_maps_api))
-//                //.withSearchZone("es_ES")
-//                .withSearchZone("en-SL")
-//                .shouldReturnOkOnBackPressed()
-//                .withGooglePlacesEnabled()
-//
-//                .withSatelliteViewHidden()
-//                .build(getApplicationContext());
-
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
                 .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
                 .build();
@@ -658,23 +624,6 @@ AlertDialog builder;
     public void stopBroadcastReceiver(){
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
-
-
-
-
-    /*
-    *
-    *
-    *
-    * AHMAD's PART
-    *
-    *
-    *
-    *
-    * */
-
-
-
     /***
      * Returns respected fragment that user
      * selected from navigation menu

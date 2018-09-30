@@ -32,7 +32,7 @@ import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.curre
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentUser;
 
 public class MyNotificationManager extends BroadcastReceiver {
-
+    // Filters to check the purpose of notification.
     public static final String INTENT_FILTER_ACCEPT_ORDER = "accept_order";
     public static final String INTENT_FILTER_REJECT_ORDER = "reject_order";
     public static final String INTENT_FILTER_VIEW_ORDER = "view_order";
@@ -55,24 +55,28 @@ public class MyNotificationManager extends BroadcastReceiver {
             notificationManager.cancel(id);
         NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
         if(notificationPayload != null) {
-            if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED) {
 
+            if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_ACCEPTED) {
                 startMainActivity(data);
+                //Shared Ride Request -> driver accepted
             } else if (notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE
                     || notificationPayload.getType() == Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE) {
                 sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
                 Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
+                //Single Ride Request -> driver accepted
             }else if(notificationPayload.getType() == Helper.NOTI_TYPE_ORDER_CREATED) {
                 sendNotificationToRequestGroupRide(notificationPayload.getUser_id(), context, notificationPayload, action);
                 Toast.makeText(context, "Request Accepted", Toast.LENGTH_SHORT).show();
-
+            // driver want to call the passenger if waiting
             } else if(action.equals(INTENT_FILTER_CALL)){
                 callPhone(notificationPayload.getUser_id(),context);
             }else
                 fuelUpTheBroadcastReceiver(action, data);
         }else {
+            /// user is ready for ride
             if(action.equals(INTENT_FILTER_READINESS_YES)){
                 Constants.userIsReady = true;
+                // user isn't ready yet.
             }else if(action.equals(INTENT_FILTER_READINESS_NO)){
                 Constants.userIsReady = false;
                 sendNotificationForCall(context);
@@ -85,50 +89,13 @@ public class MyNotificationManager extends BroadcastReceiver {
         Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone));
         context.startActivity(intent);
     }
-    
+    // sending response back to passenger that user has accepted the shared ride.
     public void sendNotificationToRequestGroupRide(String passengerID, Context context, NotificationPayload payload, String action)
     {
         boolean isAccepted = action.equals(INTENT_FILTER_ACCEPT_ORDER);
         updateRequest(payload.getDriver_id(),passengerID,isAccepted ? Requests.STATUS_ACCEPTED : Requests.STATUS_REJECTED);
-//        DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
-//        db_ref_user.child(passengerID).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-//                if(dataSnapshot.exists()){
-//                    User passenger = dataSnapshot.getValue(User.class);
-//                    if(passenger == null)
-//                        return;
-//
-//                    String token = passenger.getUser_token();
-//                    NotificationPayload notificationPayload = new NotificationPayload();
-//                    notificationPayload.setType(Helper.NOTI_TYPE_ACCEPTANCE_FOR_SHARED_RIDE);
-//                    notificationPayload.setTitle("\"Request Accepted\"");
-//                    notificationPayload.setDescription("\"Your Group Ride Request is Accepted\"");
-//                    notificationPayload.setUser_id("\""+payload.getUser_id()+"\"");
-//                    notificationPayload.setDriver_id("\""+payload.getDriver_id()+"\"");
-//                    notificationPayload.setOrder_id("\""+payload.getOrder_id()+"\"");
-//                    notificationPayload.setPercentage_left("\""+-1+"\"");
-//                    String str = new Gson().toJson(notificationPayload);
-//                    try {
-//                        JSONObject json = new JSONObject(str);
-//                        new PushNotifictionHelper(context).execute(token,json);
-//                    } catch (JSONException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                else
-//                {
-//                    Toast.makeText(context,"Passenger not found!",Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//            }
-//        });
     }
-
+    // sending notification to driver for the call.
     private void sendNotificationForCall(Context context){
         DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
         db_ref_user.child(currentOrder.getDriver_id()).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -165,7 +132,7 @@ public class MyNotificationManager extends BroadcastReceiver {
             }
         });
     }
-    
+    // sending notification to driver for the waiting time.
     public static void sendNotificationForWaiting(Context context, String waitTime){
         DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
         db_ref_user.child(currentOrder.getDriver_id()).addListenerForSingleValueEvent(new ValueEventListener() {

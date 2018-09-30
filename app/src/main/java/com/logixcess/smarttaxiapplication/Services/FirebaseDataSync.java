@@ -75,11 +75,13 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         mUser = FirebaseAuth.getInstance().getCurrentUser();
         if(mUser == null)
             return;
+        // checking if the running order is not null.
         if(mRunningOrder != null) {
             currentOrder = mRunningOrder;
             setDriverUpdates();
             setOrderUpdates();
         } else {
+            //If running order is null then fetch it from firebase database
             Query query = db_order.orderByChild("user_id").equalTo(mUser.getUid());
             query.addValueEventListener(new ValueEventListener() {
                 @Override
@@ -107,7 +109,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
                 }
             });
         }
-       
+       //ping the distance api every 10 seconds to know what is the remaining distance from driver location to pickup points
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -423,14 +425,18 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         List<LatLng> points = new ArrayList<>();
         points.add(driver);
         points.add(pickup);
-        Routing routing = new Routing.Builder()
-            .travelMode(AbstractRouting.TravelMode.DRIVING)
-            .withListener(this)
-            .alternativeRoutes(true)
-            .waypoints(points)
-                .key(getResources().getString(R.string.google_maps_api))
-            .build();
-        routing.execute();
+        // If user is waiting for driver then go check the remaining distance and time
+        if(currentOrder.getStatus() == Order.OrderStatusWaiting)
+        {
+            Routing routing = new Routing.Builder()
+                .travelMode(AbstractRouting.TravelMode.DRIVING)
+                .withListener(this)
+                .alternativeRoutes(true)
+                .waypoints(points)
+                    .key(getResources().getString(R.string.google_maps_api))
+                .build();
+            routing.execute();
+        }
     }
     
     

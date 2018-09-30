@@ -132,6 +132,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     .findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
             db_ref = FirebaseDatabase.getInstance().getReference();
+            //getting current user value
             db_ref.child(Helper.REF_USERS).child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -175,13 +176,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(dataSnapshot.exists())
                     {
                         Order order = dataSnapshot.getValue(Order.class);
+                        assert order != null;
                         if(!order.getShared())
                         {
                             if(order.getStatus() == Order.OrderStatusCompleted || order.getStatus() == Order.OrderStatusCompletedReview)
                             {
                                 currentOrder = null;
                                 finishAffinity();
-                                Intent returnIntent = new Intent(MapsActivity.this,MainActivity.class);
+                                Intent returnIntent = new Intent(MapsActivity.this,DriverMainActivity.class);
                                 startActivity(returnIntent);
                             }
                         }
@@ -199,16 +201,13 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                                     currentOrder = null;
                                     ordersInSharedRide.clear();
                                     finishAffinity();
-                                    Intent returnIntent = new Intent(MapsActivity.this,MainActivity.class);
+                                    Intent returnIntent = new Intent(MapsActivity.this,DriverMainActivity.class);
                                     startActivity(returnIntent);
                                 }
                             }
                         }
                     }
-                    else
-                    {
 
-                    }
                 }
 
                 @Override
@@ -218,6 +217,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
             });
         }
     }
+    //Only adding markers of driver,pickup and destination location in the route
     private void requestNewRoute() {
         
         if(myLocation == null || IS_ROUTE_ADDED)

@@ -137,7 +137,7 @@ public class OrderDetailsActivity extends AppCompatActivity {
             }
         });
     }
-
+// group is already created and if the user wants to join then using this function the group information will be fetched.
     private void goFetchGroupByID(String groupId) {
         db_ref_group.child(groupId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -206,92 +206,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    public void sendNotificationToken()
-    {
-        DatabaseReference db_ref_user = db_ref.child(Helper.REF_USERS);
-        db_ref_user.child(new_order.getDriver_id()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    User driver = dataSnapshot.getValue(User.class);
-                    if(driver == null)
-                        return;
-                    String token = driver.getUser_token();
-                    NotificationPayload notificationPayload = new NotificationPayload();
-
-                    if(new_order.getShared()) {
-                        notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED_FOR_SHARED_RIDE);
-                        notificationPayload.setTitle("\"New Passenger Request\"");
-                        notificationPayload.setDescription("\"Do you want to accept it\"");
-                    }
-                    else {
-                        notificationPayload.setType(Helper.NOTI_TYPE_ORDER_CREATED);
-                        notificationPayload.setTitle("\"Order Created\"");
-                        notificationPayload.setDescription("\"Do you want to accept it\"");
-                    }
-                    notificationPayload.setUser_id("\""+new_order.getUser_id()+"\"");
-                    notificationPayload.setDriver_id("\""+new_order.getDriver_id()+"\"");
-                    notificationPayload.setOrder_id("\""+new_order.getOrder_id()+"\"");
-                    notificationPayload.setPercentage_left("\""+-1+"\"");
-                    String str = new Gson().toJson(notificationPayload);
-                    try {
-                        JSONObject json = new JSONObject(str);
-                        new PushNotifictionHelper(getApplicationContext()).execute(token,json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    if(new_order.getShared())
-                        goCreateGroupForSharedRide();
-                    else
-                        CloseActivity();
-                }
-                else
-                {
-                    Toast.makeText(OrderDetailsActivity.this,"Driver not found!",Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-
-
-    private void checkifgroupExist(String driver_id)
-    {
-       db_ref_group.orderByChild("driver_id").equalTo(driver_id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-           @Override
-           public void onDataChange(@NonNull DataSnapshot dataSnapshot)
-           {
-                if(dataSnapshot.exists())
-                {
-                    for(DataSnapshot snapshot:dataSnapshot.getChildren())
-                    {
-                        SharedRide sharedRide = snapshot.getValue(SharedRide.class);
-                        HashMap<String, Boolean> passengersIds_old = sharedRide.getPassengers();
-                        HashMap<String, Boolean> passengersIds_new = new HashMap<>();
-                        passengersIds_new.put(new_order.getUser_id(),false);
-                        //passengersIds_new.put(pa)
-                    }
-                }
-                else
-                {
-
-                }
-           }
-
-           @Override
-           public void onCancelled(@NonNull DatabaseError databaseError) {
-
-           }
-       });
-        //.
     }
 
     private void goCreateGroupForSharedRide() {
