@@ -62,6 +62,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
     double currentDistance;
     private CountDownTimer mCountDowntimer;
     public static User currentUser;
+    private boolean[] notificationsRecord = new boolean[5];
     
     @Override
     public void onCreate() {
@@ -73,6 +74,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         db_order = db_ref.child(Helper.REF_ORDERS);
         db_passenger = db_ref.child(Helper.REF_PASSENGERS);
         mUser = FirebaseAuth.getInstance().getCurrentUser();
+        notificationsRecord = new boolean[5];
         if(mUser == null)
             return;
         // checking if the running order is not null.
@@ -179,10 +181,11 @@ public class FirebaseDataSync extends Service implements RoutingListener {
 
     }
     private void getUserDetails() {
-        db_driver.child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
+        db_user.child(currentOrder.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 User user = dataSnapshot.getValue(User.class);
+
                 if(user != null) {
                     currentUser = user;
                 }
@@ -458,7 +461,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
             totalDistance = distance;
         }
         currentDistance = distance;
-    
+        
     
         try {
             checkDistanceAndNotify();
@@ -467,29 +470,39 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         }
         
         double time = shortest.getDurationValue() / 60;
-        if(time == 20 && !userIsReady){
+        if(time == 20 && !userIsReady && !notificationsRecord[0]){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time == 15 && !userIsReady){
+            notificationsRecord[0] = true;
+        }else if(time == 15 && !userIsReady && !notificationsRecord[1]){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time == 10 && !userIsReady){
-            DeviceInfoUtils.increaseDeviceSound(this);
-            playNotificationSound(this,R.raw.beep);
-            playNotificationSound(this,R.raw.beep);
-            playNotificationSound(this,R.raw.beep);
-            NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time == 5 && !userIsReady){
+            notificationsRecord[0] = true;
+            notificationsRecord[1] = true;
+        }else if(time == 10 && !userIsReady && !notificationsRecord[2]){
             DeviceInfoUtils.increaseDeviceSound(this);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
+            NotificationUtils.preparePendingIntentForReadiness(this);
+            notificationsRecord[0] = true;
+            notificationsRecord[1] = true;
+            notificationsRecord[2] = true;
+        }else if(time == 5 && !userIsReady && !notificationsRecord[3]){
+            DeviceInfoUtils.increaseDeviceSound(this);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
+            playNotificationSound(this,R.raw.beep);
             playNotificationSound(this,R.raw.beep);
             NotificationUtils.preparePendingIntentForReadiness(this);
-        }else if(time < 1 && shortest.getDurationValue() < 10 && !userIsReady){
+            notificationsRecord[0] = true;
+            notificationsRecord[1] = true;
+            notificationsRecord[2] = true;
+            notificationsRecord[3] = true;
+        }else if(time < 1 && shortest.getDurationValue() < 10 && !userIsReady && !notificationsRecord[4]){
             DeviceInfoUtils.increaseDeviceSound(this);
             new CountDownTimer(4000, 500) {
                 @Override
@@ -511,6 +524,11 @@ public class FirebaseDataSync extends Service implements RoutingListener {
                         btn_waiting_time.setVisibility(View.GONE);
                 }
             }
+            notificationsRecord[0] = true;
+            notificationsRecord[1] = true;
+            notificationsRecord[2] = true;
+            notificationsRecord[3] = true;
+            notificationsRecord[4] = true;
             NotificationUtils.preparePendingIntentForReadiness(this);
         }
         

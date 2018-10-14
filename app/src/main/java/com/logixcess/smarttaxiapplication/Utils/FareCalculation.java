@@ -57,42 +57,7 @@ public class FareCalculation
         return Constants.BASE_FAIR_PER_KM * Double.parseDouble(MapFragment.new_order.getTotal_kms());
     }
     
-    public double getUserDiscountedPrice(int passenger_count)
-    {
-        double discounted_price = 0;
-        double basic_fare = getCost();
-        if(passenger_count == 0)
-        {
-            discounted_price = basic_fare; // ono one is available for share ride
-        }
-        else if(passenger_count == 1)
-        {
-            discounted_price = basic_fare - ((basic_fare / 100.0f) *10 ); // 10%
-        }
-        else if(passenger_count >= 2)
-        {
-            discounted_price = basic_fare - ((basic_fare / 100.0f) *5 ); // 5%
-        }
-        return discounted_price;
-    }
-
-    public double getPassengerDiscountedPrice(double basic_fair,int passenger_count)
-    {
-        double discounted_price = 0;
-        if(passenger_count == 0)
-        {
-            discounted_price = basic_fair - ((basic_fair / 100.0f) *20 ); // 20%
-        }
-        else if(passenger_count == 1)
-        {
-            discounted_price = basic_fair - ((basic_fair / 100.0f) *10 ); // 10%
-        }
-        else if(passenger_count >= 2)
-        {
-            discounted_price = basic_fair - ((basic_fair / 100.0f) *5 ); // 5%
-        }
-        return discounted_price;
-    }
+    
     
     public double getBaseFare2(String vehicle)
     {

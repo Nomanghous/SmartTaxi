@@ -21,6 +21,7 @@ import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Requests;
 import com.logixcess.smarttaxiapplication.Models.User;
+import com.logixcess.smarttaxiapplication.Models.WaitingTime;
 import com.logixcess.smarttaxiapplication.Utils.Constants;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
 import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
@@ -28,6 +29,7 @@ import com.logixcess.smarttaxiapplication.Utils.PushNotifictionHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentOrder;
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentUser;
 
@@ -40,6 +42,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     public static final String INTENT_FILTER_READINESS_YES = "ready";
     public static final String INTENT_FILTER_READINESS_NO= "not_ready";
     public static final String INTENT_FILTER_CALL = "call";
+    public static final String INTENT_FILTER_CALL_FORCE = "force_call";
     Context mContext = null;
 
     @Override
@@ -50,9 +53,19 @@ public class MyNotificationManager extends BroadcastReceiver {
         int id = intent.getExtras() != null ? intent.getExtras().getInt("id") : -1;
         if(action == null || (data == null && (!action.equals(INTENT_FILTER_READINESS_YES) && !action.equals(INTENT_FILTER_READINESS_YES))) || id == -1)
             return;
+    
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if(notificationManager != null)
             notificationManager.cancel(id);
+        
+        
+        if(action.equals(INTENT_FILTER_CALL_FORCE)){
+            callPhone(data,context);
+            return;
+        }
+        
+        
+        
         NotificationPayload notificationPayload = new Gson().fromJson(data,NotificationPayload.class);
         if(notificationPayload != null) {
 
@@ -86,7 +99,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     }
     
     private void callPhone(String phone, Context context) {
-        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone));
+        Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phone)).addFlags(FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
     // sending response back to passenger that user has accepted the shared ride.
@@ -134,6 +147,10 @@ public class MyNotificationManager extends BroadcastReceiver {
     }
     // sending notification to driver for the waiting time.
     public static void sendNotificationForWaiting(Context context, String waitTime){
+        
+        DatabaseReference db_waiting_time = FirebaseDatabase.getInstance().getReference().child(Helper.REF_WAITING_TIME);
+        db_waiting_time.child(currentOrder.getOrder_id()).setValue(new WaitingTime(waitTime,currentUser.getPhone()));
+        
         DatabaseReference db_ref_user = FirebaseDatabase.getInstance().getReference().child(Helper.REF_USERS);
         db_ref_user.child(currentOrder.getDriver_id()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -196,7 +213,13 @@ public class MyNotificationManager extends BroadcastReceiver {
     private void startMainActivity(String payload) {
         Intent intent = new Intent(mContext, MainActivity.class);
         intent.putExtra(INTENT_FILTER_VIEW_ORDER, payload);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
     }
+    
+    
+    
+  
+    
+    
 }

@@ -17,14 +17,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.R;
 
 import static com.logixcess.smarttaxiapplication.Activities.MyNotificationManager.sendNotificationForWaiting;
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentOrder;
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentUser;
 
 public class Constants
 {
-    public static String Database_Path = "https://smarttaxi-c57c4.firebaseio.com/";
+    public static String Database_Path = "https://smarttaxi-7ebdc.firebaseio.com/";
     public static String USER_TOKEN = "";
     public static Uri FilePathUri ;
     public static Uri FilePathUri2 ;

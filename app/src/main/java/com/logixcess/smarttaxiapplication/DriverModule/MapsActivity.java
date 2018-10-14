@@ -45,16 +45,21 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
 import com.logixcess.smarttaxiapplication.MainActivity;
+import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.RoutePoints;
 import com.logixcess.smarttaxiapplication.Models.SharedRide;
 import com.logixcess.smarttaxiapplication.Models.User;
 import com.logixcess.smarttaxiapplication.Models.UserFareRecord;
+import com.logixcess.smarttaxiapplication.Models.WaitingTime;
 import com.logixcess.smarttaxiapplication.R;
 import com.logixcess.smarttaxiapplication.Services.LocationManagerService;
 import com.logixcess.smarttaxiapplication.Utils.FareCalculation;
 import com.logixcess.smarttaxiapplication.Utils.Helper;
+import com.logixcess.smarttaxiapplication.Utils.NotificationUtils;
 
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -154,6 +159,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     ordersInSharedRide = new ArrayList<>();
                     goFetchOrderById();
                 }
+                waitingTimeListener();
             }catch (NullPointerException i){}
             new Timer().schedule(new Every10Seconds(),5000,10000);
         }else{
@@ -352,8 +358,8 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 distanceRemaining = myLocation.distanceTo(pickup);
                 int counter = 0;
                 for (Order order : ordersInSharedRide) {
-                    if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusWaiting) {
-                        order = goUpdateOrderStatus(order);
+                    if (distanceRemaining < 10 && order.getStatus() == Order.OrderStatusInProgress) {
+//                        order = goUpdateOrderStatus(order);
                         orderIDs.put(order.getOrder_id(), true);
                         ordersInSharedRide.add(counter, order);
                         currentSharedRide.setOrderIDs(orderIDs);
@@ -623,13 +629,13 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     }
                 }
             });
-
-            String latitude = "latitude";
-            String longitude = "longitude";
-            double lat = Helper.roundOffDouble(myLocation.getLatitude());
-            double lng = Helper.roundOffDouble(myLocation.getLongitude());
-            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(lat);
-            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(lng);
+//
+//            String latitude = "latitude";
+//            String longitude = "longitude";
+//            double lat = Helper.roundOffDouble(myLocation.getLatitude());
+//            double lng = Helper.roundOffDouble(myLocation.getLongitude());
+//            db_ref_drivers.child(userMe.getUid()).child(latitude).setValue(lat);
+//            db_ref_drivers.child(userMe.getUid()).child(longitude).setValue(lng);
         }
     }
 
@@ -1096,6 +1102,36 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         }
     };
     
-    
+    private void waitingTimeListener(){
+        if(currentOrder == null)
+            return;
+        DatabaseReference db_waiting_time = FirebaseDatabase.getInstance().getReference().child(Helper.REF_WAITING_TIME);
+        db_waiting_time.child(currentOrder.getOrder_id()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(currentOrder.getStatus() == Order.OrderStatusWaiting){
+                    if(dataSnapshot.exists()){
+                        WaitingTime waitingTime = dataSnapshot.getValue(WaitingTime.class);
+                        if(waitingTime != null){
+                            NotificationPayload notificationPayload = new NotificationPayload();
+                            notificationPayload.setType(Helper.NOTI_TYPE_CALL);
+                            notificationPayload.setTitle("User is not ready. Waiting Time is ".concat(waitingTime.getWaiting_time()).concat("m"));
+                            notificationPayload.setDescription("Do you want to call?");
+                            notificationPayload.setUser_id(""+ waitingTime.getPhone_number() +"");
+                            String str = new Gson().toJson(notificationPayload);
+                            NotificationUtils.preparePendingIntentDriverCall(MapsActivity.this,waitingTime.getWaiting_time(),waitingTime.getPhone_number());
+                            db_waiting_time.child(currentOrder.getOrder_id()).removeValue();
+                        }
+                    }
+                    
+                }
+            }
+            
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            
+            }
+        });
+    }
     
 }

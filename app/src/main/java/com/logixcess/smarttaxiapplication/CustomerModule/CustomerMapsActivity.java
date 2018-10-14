@@ -304,8 +304,10 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
         if(requestCode == 1001){
-            if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
+
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 populateMap();
             }
         }
@@ -461,5 +463,20 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     public void showWaitingTimeDialog(View view) {
         Constants constants = new Constants();
         constants.showWaitDialog(this);
+    }
+    
+    public void startOrder(View view) {
+        
+        db_ref_order.child(currentOrder.getOrder_id()).child("status").setValue(Order.OrderStatusInProgress).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    Toast.makeText(CustomerMapsActivity.this, "Order Started", Toast.LENGTH_SHORT).show();
+                    view.setVisibility(View.GONE);
+                    findViewById(R.id.btn_mark_complete).setVisibility(View.VISIBLE);
+                }
+            }
+        });
+        
     }
 }

@@ -402,6 +402,25 @@ public class NotificationUtils {
         sendNotificationsWithPendingIntent(context, "Driver is Reaching",
                 "Are You Ready?", actions, null,id);
     }
+    
+    public static void preparePendingIntentDriverCall(Context context,String waitingTime
+            , String  number) {
+        int id = getUniqueInt();
+        Intent acceptIntent = new Intent(context, MyNotificationManager.class);
+        acceptIntent.setAction(MyNotificationManager.INTENT_FILTER_CALL_FORCE);
+        acceptIntent.putExtra("action", MyNotificationManager.INTENT_FILTER_CALL_FORCE);
+        acceptIntent.putExtra("data", number);
+        acceptIntent.putExtra("id", id);
+        PendingIntent acceptPendingIntent =
+                PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
+        
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", null));
+        
+        sendNotificationsWithPendingIntent(context, "Do You want to call?",
+                "User is not ready. Waiting Time is ".concat(waitingTime).concat("m"), actions, null,id);
+    }
 
     private static void sendNotificationsWithPendingIntent(Context context,String title,
                                                            String message, List<NotificationCompat.Action> actions

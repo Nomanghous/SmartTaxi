@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -42,7 +43,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
+import com.logixcess.smarttaxiapplication.Activities.LoginActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
+import com.logixcess.smarttaxiapplication.MainActivity;
 import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
@@ -68,6 +71,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentUser;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
 
 public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener {
@@ -436,7 +440,26 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     public void onUtteranceCompleted(String s) {
         promptSpeechInput();
     }
-
+    
+    public void logout(View view) {
+        AuthUI.getInstance()
+                .signOut(DriverMainActivity.this)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    public void onComplete(@NonNull Task<Void> task) {
+                        // user is now signed out
+                        if(task.isSuccessful())
+                        {
+                            startActivity(new Intent(DriverMainActivity.this, LoginActivity.class));
+                            finish();
+                        }
+                        else
+                        {
+                            Toast.makeText(DriverMainActivity.this,"Error "+task.getException(),Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+    
     private class TenSecondsTask extends TimerTask {
         @Override
         public void run() {
@@ -811,5 +834,15 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
         }
         super.onDestroy();
     }
+    
+    
+    
+    
+   
+    
+    
 
+    
+    
+    
 }
