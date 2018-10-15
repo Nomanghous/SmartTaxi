@@ -425,9 +425,10 @@ public class NotificationUtils {
     private static void sendNotificationsWithPendingIntent(Context context,String title,
                                                            String message, List<NotificationCompat.Action> actions
             ,PendingIntent contentIntent,int id) {
+        NotificationCompat.Builder mBuilder;
         if (Build.VERSION.SDK_INT >= 27) {
             // Call some material design APIs here
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
+            mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle(title)
                     .setContentText(message)
@@ -438,10 +439,10 @@ public class NotificationUtils {
                 for (NotificationCompat.Action action : actions) {
                     mBuilder.addAction(action);
                 }
-            mBuilder.notify();
+    
         } else {
             // Implement this feature without material design
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+            mBuilder = new NotificationCompat.Builder(context)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle(title)
                     .setContentText(message)
@@ -452,11 +453,11 @@ public class NotificationUtils {
                 for (NotificationCompat.Action action : actions) {
                     mBuilder.addAction(action);
                 }
-            NotificationManager mNotificationManager =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(id, mBuilder.build());
+           
         }
-
+        NotificationManager mNotificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(id, mBuilder.build());
     }
 
     private static boolean isAppRunning(final Context context, final String packageName) {

@@ -29,7 +29,7 @@ import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.curre
 
 public class Constants
 {
-    public static String Database_Path = "https://smarttaxi-7ebdc.firebaseio.com/";
+    public static String Database_Path = "https://smarttaxi-c57c4.firebaseio.com/";
     public static String USER_TOKEN = "";
     public static Uri FilePathUri ;
     public static Uri FilePathUri2 ;

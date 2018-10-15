@@ -73,6 +73,7 @@ import java.util.TimerTask;
 
 import static com.logixcess.smarttaxiapplication.Services.FirebaseDataSync.currentUser;
 import static com.logixcess.smarttaxiapplication.Utils.Constants.group_id;
+import static com.logixcess.smarttaxiapplication.Utils.Constants.notificationPayloadObject;
 
 public class DriverMainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener {
     protected FirebaseDatabase firebase_db;
@@ -100,7 +101,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        tts = new TextToSpeech(this, this);
+        tts = new TextToSpeech(this, this,"com.google.android.tts");
         if(!Helper.IS_FROM_CHILD) {
             setContentView(R.layout.activity_driver_main);
             setupBroadcastReceivers();
@@ -113,6 +114,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             userMe = FirebaseAuth.getInstance().getCurrentUser();
             checkAssignedSingleOrder();
             everyTenSecondsTask();
+            isPromptDismissed = true;
             listenForDriverResponse(this,userMe.getUid());
         }
     }
@@ -151,6 +153,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 if (resultCode == RESULT_OK && null != data) {
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     //if user speak accept
+                    Log.d("Speakout",result.get(0));
                     if(result.get(0).equalsIgnoreCase("accept"))
                     {
                         acceptingVoice();
@@ -163,7 +166,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                         isPromptDismissed = false;
                     }
                     //if user speak open profile
-                    else if(result.get(0).equalsIgnoreCase("open")|| result.get(0).equalsIgnoreCase("open profile"))
+                    else if(result.get(0).equalsIgnoreCase("open")
+                            || result.get(0).equalsIgnoreCase("open profile"))
                     {
                         openUserProfile();
                         isPromptDismissed = false;
@@ -179,22 +183,23 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     }
 
     private void openUserProfile() {
-        db_ref_users.child(Constants.notificationPayloadObject.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    User user = dataSnapshot.getValue(User.class);
-                    if(user != null){
-                        open_profile(user.getUser_id(),user.getName(),user.getUser_image_url(), user.getPhone());
+        if(notificationPayloadObject != null)
+            db_ref_users.child(notificationPayloadObject.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.exists()){
+                        User user = dataSnapshot.getValue(User.class);
+                        if(user != null){
+                            open_profile(user.getUser_id(),user.getName(),user.getUser_image_url(), user.getPhone());
+                        }
                     }
                 }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+    
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+    
+                }
+            });
     }
 
     private void open_profile(String user_id, String name, String url, String phone)
@@ -423,6 +428,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 ////speakOut();
             }
             tts.setOnUtteranceCompletedListener(this);
+    
         }
         else {
             Log.e("TTS", "Initilization Failed!");
@@ -430,7 +436,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
     }
     //For speaking a message to user
     private void speakOut(String text) {
-        HashMap<String, String> myHashAlarm = new HashMap<String, String>();
+        HashMap<String, String> myHashAlarm = new HashMap<>();
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
         myHashAlarm.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SOME MESSAGE");
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, myHashAlarm);
