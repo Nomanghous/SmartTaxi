@@ -40,6 +40,16 @@ public class Constants
     public static String selected_vehicle = Helper.VEHICLE_CAR;
     public static String user_image_path = "";
     public static String group_id = "";
+//    public static String notificationPayload = "{\n" +
+//            "    \"user_id\" : \"\",\n" +
+//            "    \"driver_id\" : \"\",\n" +
+//            "    \"percentage_left\" : \"\",\n" +
+//            "    \"group_id\" : \"\",\n" +
+//            "    \"order_id\" : \"\",\n" +
+//            "    \"title\" : \"\",\n" +
+//            "    \"description\" : \"\",\n" +
+//            "    \"type\" : 21,\n" +
+//            "}";
     public static String notificationPayload = "";
     public static NotificationPayload notificationPayloadObject = null;
     public static int group_radius = 0;

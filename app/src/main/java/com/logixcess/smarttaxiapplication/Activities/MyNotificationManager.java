@@ -188,7 +188,7 @@ public class MyNotificationManager extends BroadcastReceiver {
     }
     
     
-    private void updateRequest(String driverId, String userId, int status){
+    public void updateRequest(String driverId, String userId, int status){
         Requests requests = new Requests(driverId,userId,status);
         String res_id = Helper.getConcatenatedID(userId,driverId);
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
@@ -196,7 +196,6 @@ public class MyNotificationManager extends BroadcastReceiver {
         db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-
             }
         });
     }
@@ -208,14 +207,14 @@ public class MyNotificationManager extends BroadcastReceiver {
         intent.putExtra("action", action);
         intent.putExtra("data", data);
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-
     }
-    private void startMainActivity(String payload) {
+    public void startMainActivity(String payload) {
         Intent intent = new Intent(mContext, MainActivity.class);
         intent.putExtra(INTENT_FILTER_VIEW_ORDER, payload);
         intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
     }
+
     
     
     
