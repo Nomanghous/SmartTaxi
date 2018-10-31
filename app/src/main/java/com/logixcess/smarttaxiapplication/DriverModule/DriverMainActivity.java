@@ -583,10 +583,7 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                             goGetOrdersForGroup();
                         }else if(TextUtils.isEmpty(CURRENT_ORDER_ID)) {
                             openOrderActivity();
-                        }else{
-                            Toast.makeText(DriverMainActivity.this, "No Order in Progress", Toast.LENGTH_SHORT).show();
                         }
-
                     }
                 }
             }

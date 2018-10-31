@@ -1,5 +1,6 @@
 package com.logixcess.smarttaxiapplication.Utils;
 
+import android.app.NotificationChannel;
 import android.content.Context;
 import android.app.ActivityManager;
 import android.app.Notification;
@@ -14,6 +15,7 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.Html;
@@ -355,9 +357,9 @@ public class NotificationUtils {
         viewIntent.putExtra("id", id);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
-        List<NotificationCompat.Action> actions = new ArrayList<>();
-        actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
-        actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
+        List<Notification.Action> actions = new ArrayList<>();
+        actions.add(new Notification.Action(0, "Accept", acceptPendingIntent));
+        actions.add(new Notification.Action(0, "Reject", rejectPendingIntent));
         Constants.notificationPayload = payload;
         
         sendNotificationsWithPendingIntent(context, userData.getTitle(),
@@ -378,9 +380,9 @@ public class NotificationUtils {
         PendingIntent rejectPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
         
-        List<NotificationCompat.Action> actions = new ArrayList<>();
-        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new NotificationCompat.Action(0, "No", rejectPendingIntent));
+        List<Notification.Action> actions = new ArrayList<>();
+        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new Notification.Action(0, "No", rejectPendingIntent));
         
         sendNotificationsWithPendingIntent(context, "Driver is Reaching",
                 "Are You Ready?", actions, null,id);
@@ -395,9 +397,9 @@ public class NotificationUtils {
         PendingIntent acceptPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
         
-        List<NotificationCompat.Action> actions = new ArrayList<>();
-        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new NotificationCompat.Action(0, "No", null));
+        List<Notification.Action> actions = new ArrayList<>();
+        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new Notification.Action(0, "No", null));
         
         sendNotificationsWithPendingIntent(context, "Driver is Reaching",
                 "Are You Ready?", actions, null,id);
@@ -414,50 +416,53 @@ public class NotificationUtils {
         PendingIntent acceptPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
         
-        List<NotificationCompat.Action> actions = new ArrayList<>();
-        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new NotificationCompat.Action(0, "No", null));
+        List<Notification.Action> actions = new ArrayList<>();
+        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new Notification.Action(0, "No", null));
         
         sendNotificationsWithPendingIntent(context, "Do You want to call?",
                 "User is not ready. Waiting Time is ".concat(waitingTime).concat("m"), actions, null,id);
     }
 
     private static void sendNotificationsWithPendingIntent(Context context,String title,
-                                                           String message, List<NotificationCompat.Action> actions
+                                                           String message, List<Notification.Action> actions
             ,PendingIntent contentIntent,int id) {
-        NotificationCompat.Builder mBuilder;
-        if (Build.VERSION.SDK_INT >= 27) {
-            // Call some material design APIs here
-            mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER)
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(title)
-                    .setContentText(message)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setAutoCancel(true)
-                    .setContentIntent(contentIntent);
-            if(actions != null)
-                for (NotificationCompat.Action action : actions) {
-                    mBuilder.addAction(action);
-                }
     
+    
+    
+        if (Build.VERSION.SDK_INT >= 26) {
+            Notification.Builder mBuilder = new Notification.Builder(context, CHANNEL_ID_ORDER);
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID_ORDER, "Distance Notification", NotificationManager.IMPORTANCE_HIGH);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(context.getColor(R.color.colorPrimary));
+            notificationChannel.enableVibration(true);
+            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            mBuilder.setChannelId(CHANNEL_ID_ORDER);
+            notificationManager.createNotificationChannel(notificationChannel);
+            mBuilder.setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title).setContentText(message).setPriority(Notification.PRIORITY_MAX).setAutoCancel(true).setContentIntent(contentIntent);
+            if(actions != null)
+                for (Notification.Action act : actions) {
+                    mBuilder.addAction(act);
+                }
+            try {
+                notificationManager.notify(id, mBuilder.build());
+            } catch (IllegalMonitorStateException ignored) {
+            }
         } else {
             // Implement this feature without material design
-            mBuilder = new NotificationCompat.Builder(context)
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setContentIntent(contentIntent);
-            if(actions != null)
-                for (NotificationCompat.Action action : actions) {
-                    mBuilder.addAction(action);
-                }
-           
+            NotificationManager mNotificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(id, mBuilder.build());
         }
-        NotificationManager mNotificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(id, mBuilder.build());
+        
     }
 
     private static boolean isAppRunning(final Context context, final String packageName) {
