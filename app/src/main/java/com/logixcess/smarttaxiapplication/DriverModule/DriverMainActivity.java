@@ -45,6 +45,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
 import com.logixcess.smarttaxiapplication.Activities.LoginActivity;
 import com.logixcess.smarttaxiapplication.Activities.MyNotificationManager;
+import com.logixcess.smarttaxiapplication.Models.Driver;
 import com.logixcess.smarttaxiapplication.Models.NotificationPayload;
 import com.logixcess.smarttaxiapplication.Models.Order;
 import com.logixcess.smarttaxiapplication.Models.Requests;
@@ -151,28 +152,55 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
-                if (resultCode == RESULT_OK && null != data) {
+                if (resultCode == RESULT_OK && null != data)
+                {
                     ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    //if user speak accept
-                    Log.d("Speakout",result.get(0));
-                    if(result.get(0).contains("accept"))
+                    for(String request : result)
                     {
-                        acceptingVoice();
-                        ////isPromptDismissed = false;
+                        //if user speak accept
+                        Log.d("Speakout",result.get(0));
+                        if(request.equalsIgnoreCase("accept"))
+                        {
+                            acceptingVoice();
+                            break;
+                            ////isPromptDismissed = false;
+                        }
+                        //if user speak reject
+                        else if(request.equalsIgnoreCase("reject"))
+                        {
+                            rejectingVoice();
+                            break;
+                            ////isPromptDismissed = false;
+                        }
+                        //if user speak open profile
+                        else if(request.equalsIgnoreCase("open")
+                                || request.equalsIgnoreCase("open profile"))
+                        {
+                            openUserProfile();
+                            break;
+                            ////isPromptDismissed = false;
+                        }
                     }
-                    //if user speak reject
-                    else if(result.get(0).contains("reject"))
-                    {
-                        rejectingVoice();
-                        ////isPromptDismissed = false;
-                    }
-                    //if user speak open profile
-                    else if(result.get(0).contains("open")
-                            || result.get(0).contains("open profile"))
-                    {
-                        openUserProfile();
-                        ////isPromptDismissed = false;
-                    }
+//                    //if user speak accept
+//                    Log.d("Speakout",result.get(0));
+//                    if(result.get(0).contains("accept"))
+//                    {
+//                        acceptingVoice();
+//                        ////isPromptDismissed = false;
+//                    }
+//                    //if user speak reject
+//                    else if(result.get(0).contains("reject"))
+//                    {
+//                        rejectingVoice();
+//                        ////isPromptDismissed = false;
+//                    }
+//                    //if user speak open profile
+//                    else if(result.get(0).contains("open")
+//                            || result.get(0).contains("open profile"))
+//                    {
+//                        openUserProfile();
+//                        ////isPromptDismissed = false;
+//                    }
 
 
                     //mVoiceInputTv.setText(result.get(0));
@@ -185,6 +213,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
 
     private void openUserProfile() {
         if(notificationPayloadObject != null)
+        {
+            Toast.makeText(DriverMainActivity.this,"Opening Profile",Toast.LENGTH_SHORT).show();
             db_ref_users.child(notificationPayloadObject.getUser_id()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -202,7 +232,8 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                 }
             });
     }
-
+    }
+AlertDialog alertDialog = null;
     private void open_profile(String user_id, String name, String url, String phone)
     {
         if(tts.isSpeaking())
@@ -261,7 +292,9 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
                             public void onClick(DialogInterface dialog, int item)
                             {
                             }
-                        }).show();
+                        });
+                        alertDialog = builder.show();
+
                        /// isPromptDismissed = false;
                         speakOut("Do you want to accept or reject the request");
                         //builder.show();
@@ -790,31 +823,26 @@ public class DriverMainActivity extends AppCompatActivity implements TextToSpeec
             return;
         NotificationPayload payload = new Gson().fromJson(notificationPayload, NotificationPayload.class);
         new MyNotificationManager().updateRequest(payload.getDriver_id(),payload.getUser_id(), Requests.STATUS_ACCEPTED);
-//        Intent intent = new Intent(DriverMainActivity.this,MyNotificationManager.class);//"mAcceptOrderReceiver");
-        //IntentFilter intentFilter = new IntentFilter();
-//        intentFilter.addAction("HELLO1");
-//        intent.setAction(MyNotificationManager.INTENT_FILTER_ACCEPT_ORDER);
-//        intent.putExtra("data",Constants.notificationPayload);
-//        localBroadcastManager_accept.sendBroadcast(intent);
-        //intent.addFlags(intentFilter);
-        // Put the random number to intent to broadcast it
-        //intent.putExtra("RandomNumber",randomNumber);
-        // Send the broadcast
-
+        Toast.makeText(DriverMainActivity.this,"Request Accepted!",Toast.LENGTH_SHORT).show();
+        if(alertDialog != null)
+            alertDialog.dismiss();
     }
     public void rejectingVoice()
     {
         if(TextUtils.isEmpty(Constants.notificationPayload))
             return;
-        Intent intent = new Intent(DriverMainActivity.this,MyNotificationManager.class);//"mAcceptOrderReceiver");
-        //IntentFilter intentFilter = new IntentFilter();
-        //intentFilter.addAction("HELLO1");
-        intent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
-        //intent.addFlags(intentFilter);
-        // Put the random number to intent to broadcast it
-        //intent.putExtra("RandomNumber",randomNumber);
+        //Intent intent = new Intent(DriverMainActivity.this,MyNotificationManager.class);//"mAcceptOrderReceiver");
+        //intent.setAction(MyNotificationManager.INTENT_FILTER_REJECT_ORDER);
         // Send the broadcast
-        localBroadcastManager_reject.sendBroadcast(intent);
+        //localBroadcastManager_reject.sendBroadcast(intent);
+
+        if(TextUtils.isEmpty(Constants.notificationPayload))
+            return;
+        NotificationPayload payload = new Gson().fromJson(notificationPayload, NotificationPayload.class);
+        new MyNotificationManager().updateRequest(payload.getDriver_id(),payload.getUser_id(), Requests.STATUS_REJECTED);
+        Toast.makeText(DriverMainActivity.this,"Request Rejected!",Toast.LENGTH_SHORT).show();
+        if(alertDialog != null)
+            alertDialog.dismiss();
 
     }
 

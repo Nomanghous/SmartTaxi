@@ -323,10 +323,16 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 return;
             }
         }
-        mMap.setMyLocationEnabled(false);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        if(!currentOrder.getShared())
-            addRoute();
+        if(mMap!=null)
+        {
+            mMap.setMyLocationEnabled(false);
+            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+            if(!currentOrder.getShared())
+                addRoute();
+        }
+
+//        if(!currentOrder.getShared())
+//            addRoute();
     }
 
     private void askLocationPermission() {

@@ -1301,7 +1301,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         progressDialog.setCancelable(false);
         progressDialog.show();
         isTimeoutForPassenger = false;
-        new CountDownTimer(30000, 5000) {
+//        new CountDownTimer(30000, 5000) {
+        new CountDownTimer(80000, 5000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 checkForResponseOfPassenger(progressDialog,this,otherId);
@@ -1478,6 +1479,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         }else if(isOrderAccepted){
             progressDialog.dismiss();
             timer.cancel();
+            Toast.makeText(getContext(), "Your request is Accepted", Toast.LENGTH_SHORT).show();
         }
         else if (isDriverResponded ||isTimeout) {
             progressDialog.dismiss();
@@ -1697,7 +1699,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                             isDriverResponded = true;
                             isOrderAccepted = true;
                             new_order.setDriver_id(driverId);
-                            goRemoveRequest(request.getReceiverId(),userId);
+                            //change
+                            ////goRemoveRequest(request.getReceiverId(),userId);
                             checkForResponse(dialog,timer);
                         } else if (request.getStatus() == Requests.STATUS_REJECTED) {
                             isDriverResponded = true;

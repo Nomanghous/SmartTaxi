@@ -193,11 +193,25 @@ public class MyNotificationManager extends BroadcastReceiver {
         String res_id = Helper.getConcatenatedID(userId,driverId);
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
         DatabaseReference db_ref_requests = firebase_db.getReference().child(Helper.REF_REQUESTS);
-        db_ref_requests.child(res_id).setValue(requests).addOnCompleteListener(new OnCompleteListener<Void>() {
+        db_ref_requests.child(res_id).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onComplete(@NonNull Task<Void> task) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists())
+                {
+                    db_ref_requests.child(res_id).child("status").setValue(status).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
+
     }
 
 
