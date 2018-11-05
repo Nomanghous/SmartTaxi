@@ -63,6 +63,7 @@ public class FirebaseDataSync extends Service implements RoutingListener {
     private CountDownTimer mCountDowntimer;
     public static User currentUser;
     private boolean[] notificationsRecord = new boolean[5];
+    private Timer mTimer;
     
     @Override
     public void onCreate() {
@@ -112,14 +113,13 @@ public class FirebaseDataSync extends Service implements RoutingListener {
             });
         }
        //ping the distance api every 10 seconds to know what is the remaining distance from driver location to pickup points
-        new Timer().schedule(new TimerTask() {
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 pingDistanceAPI();
             }
         }, 0, 10000);
-        
-        
     }
     
     private void setOrderUpdates() {
@@ -400,6 +400,9 @@ public class FirebaseDataSync extends Service implements RoutingListener {
         mCountDowntimer = null;
         currentOrder = null;
         currentDriver = null;
+        if(mTimer != null)
+            mTimer.cancel();
+        mTimer = null;
         return super.stopService(name);
     }
     

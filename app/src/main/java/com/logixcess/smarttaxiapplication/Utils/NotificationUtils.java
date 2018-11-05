@@ -357,9 +357,9 @@ public class NotificationUtils {
         viewIntent.putExtra("id", id);
         PendingIntent viewPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), viewIntent, 0);
-        List<Notification.Action> actions = new ArrayList<>();
-        actions.add(new Notification.Action(0, "Accept", acceptPendingIntent));
-        actions.add(new Notification.Action(0, "Reject", rejectPendingIntent));
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Accept", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "Reject", rejectPendingIntent));
         Constants.notificationPayload = payload;
         
         sendNotificationsWithPendingIntent(context, userData.getTitle(),
@@ -380,9 +380,9 @@ public class NotificationUtils {
         PendingIntent rejectPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), rejectIntent, 0);
         
-        List<Notification.Action> actions = new ArrayList<>();
-        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new Notification.Action(0, "No", rejectPendingIntent));
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", rejectPendingIntent));
         
         sendNotificationsWithPendingIntent(context, "Driver is Reaching",
                 "Are You Ready?", actions, null,id);
@@ -397,9 +397,9 @@ public class NotificationUtils {
         PendingIntent acceptPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
         
-        List<Notification.Action> actions = new ArrayList<>();
-        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new Notification.Action(0, "No", null));
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", null));
         
         sendNotificationsWithPendingIntent(context, "Driver is Reaching",
                 "Are You Ready?", actions, null,id);
@@ -416,22 +416,18 @@ public class NotificationUtils {
         PendingIntent acceptPendingIntent =
                 PendingIntent.getBroadcast(context, getUniqueInt(), acceptIntent, 0);
         
-        List<Notification.Action> actions = new ArrayList<>();
-        actions.add(new Notification.Action(0, "Yes", acceptPendingIntent));
-        actions.add(new Notification.Action(0, "No", null));
+        List<NotificationCompat.Action> actions = new ArrayList<>();
+        actions.add(new NotificationCompat.Action(0, "Yes", acceptPendingIntent));
+        actions.add(new NotificationCompat.Action(0, "No", null));
         
         sendNotificationsWithPendingIntent(context, "Do You want to call?",
                 "User is not ready. Waiting Time is ".concat(waitingTime).concat("m"), actions, null,id);
     }
 
     private static void sendNotificationsWithPendingIntent(Context context,String title,
-                                                           String message, List<Notification.Action> actions
-            ,PendingIntent contentIntent,int id) {
-    
-    
-    
+                                                           String message, List<NotificationCompat.Action> actions,PendingIntent contentIntent,int id) {
         if (Build.VERSION.SDK_INT >= 26) {
-            Notification.Builder mBuilder = new Notification.Builder(context, CHANNEL_ID_ORDER);
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID_ORDER);
             NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID_ORDER, "Distance Notification", NotificationManager.IMPORTANCE_HIGH);
             notificationChannel.enableLights(true);
@@ -442,9 +438,9 @@ public class NotificationUtils {
             notificationManager.createNotificationChannel(notificationChannel);
             mBuilder.setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title).setContentText(message).setPriority(Notification.PRIORITY_MAX).setAutoCancel(true).setContentIntent(contentIntent);
             if(actions != null)
-                for (Notification.Action act : actions) {
-                    mBuilder.addAction(act);
-                }
+                for (NotificationCompat.Action act : actions) {
+                mBuilder.addAction(act);
+            }
             try {
                 notificationManager.notify(id, mBuilder.build());
             } catch (IllegalMonitorStateException ignored) {
@@ -458,6 +454,10 @@ public class NotificationUtils {
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setContentIntent(contentIntent);
+            if(actions != null)
+                for (NotificationCompat.Action act : actions) {
+                    mBuilder.addAction(act);
+                }
             NotificationManager mNotificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             mNotificationManager.notify(id, mBuilder.build());
