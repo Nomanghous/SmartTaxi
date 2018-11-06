@@ -206,7 +206,6 @@ public class NotificationUtils {
                 isInBackground = false;
             }
         }
-
         return isInBackground;
     }
 

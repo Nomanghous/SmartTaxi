@@ -835,6 +835,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
             String driverId = (String) marker.getTag();
             if (driverId != null && !driverId.isEmpty()) {
                 // do whatever with driver id.
+                dialog_already_showing = false;
                 if(isJoiningOtherSharedRide){
                     showToast("You are joining with Other user Please Create order Directly.");
                     return true;
@@ -1919,7 +1920,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
                 String distance = route_details.get(i + 1).split("--")[0];
                 String duration = route_details.get(i + 1).split("--")[1];
 
-                distance = distance.replaceAll("\\D+\\.\\D+", "");
+                distance = distance.replaceAll("\\D+\\.\\D+", "").replace(",","");
                 if (distance.contains("mi"))
                     distance = String.valueOf(Double.valueOf(distance.replace("mi", "")) * 1.609344);
                 else if (distance.contains(("km")))

@@ -7,7 +7,6 @@ import android.location.Location;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 

@@ -97,6 +97,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     private Marker pmarker;
     private ArrayList<LatLng> mPassengerPoints;
     Boolean isSharedRideCompleted =  true;
+    private Timer mTimer;
     
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -161,13 +162,24 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 }
                 waitingTimeListener();
             }catch (NullPointerException i){}
-            new Timer().schedule(new Every10Seconds(),5000,10000);
+            mTimer = new Timer();
+            mTimer.schedule(new Every10Seconds(),5000,10000);
         }else{
             finish();
         }
         //adding order status listener
         checkOrderStatus();
     }
+    
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mTimer != null)
+            mTimer.cancel();
+        mTimer = null;
+    }
+    
     private void checkOrderStatus()
     {
         if(currentOrder != null)
@@ -241,27 +253,21 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                 mPassengerPoints.add(pickup);
                 if(!order.getOrder_id().equals(currentOrder.getOrder_id()))
                     mPassengerPoints.add(dropoff);
-                
-                
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        MarkerOptions options = new MarkerOptions();
-                        options.position(pickup);
-                        options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
-                        options.title(order.getPickup());
-                        if(PickupMarkers == null)
-                            PickupMarkers = new HashMap<>();
-                        if(!PickupMarkers.containsKey(order.getUser_id()))
-                            PickupMarkers.put(order.getUser_id(),mMap.addMarker(options));
-                        // End marker
-                        options = new MarkerOptions();
-                        options.position(dropoff);
-                        options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
-                        mMap.addMarker(options);
-                    }
+                runOnUiThread(() -> {
+                    MarkerOptions options = new MarkerOptions();
+                    options.position(pickup);
+                    options.icon(BitmapDescriptorFactory.fromBitmap(pickupPin));
+                    options.title(order.getPickup());
+                    if(PickupMarkers == null)
+                        PickupMarkers = new HashMap<>();
+                    if(!PickupMarkers.containsKey(order.getUser_id()))
+                        PickupMarkers.put(order.getUser_id(),mMap.addMarker(options));
+                    // End marker
+                    options = new MarkerOptions();
+                    options.position(dropoff);
+                    options.icon(BitmapDescriptorFactory.fromBitmap(dropoffPin));
+                    mMap.addMarker(options);
                 });
-                
             }
         }else{
             mPassengerPoints.add(pickup);
@@ -576,7 +582,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                     if(dataSnapshot.exists()){
                         Order order = dataSnapshot.getValue(Order.class);
                         if(order != null){
-                            if(checkIfOrderExists(order.getUser_id(), orderList)){
+                            if(!checkIfOrderExists(order.getUser_id(), orderList)){
                                 orderList.add(order);
                             }else {
                                 int index = 0;
@@ -589,7 +595,11 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                                 }
                             }
                             ordersInSharedRide = orderList;
-                            getTheNextNearestDropOff();
+                            if(currentOrder != null){
+                                if(orderList.size() > 0)
+                                    getTheNextNearestDropOff();
+                            }
+                            
                         }
                     }
                 }
@@ -679,7 +689,9 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
         @Override
         public void run() {
             updateUserLocation();
-            if(!IS_ROUTE_ADDED ) {
+            if(currentOrder == null)
+                return;
+            if(!IS_ROUTE_ADDED) {
                 if(!currentOrder.getShared())
                     requestNewRoute();
                 else{
@@ -701,12 +713,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         driver = new LatLng(myLocation.getLatitude(),myLocation.getLongitude());
 //                        if(distanceRemaining > totalDistance)
 //                            return;
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                calculatePickupDistance(ordersInSharedRide);
-                            }
-                        });
+                        runOnUiThread(() -> calculatePickupDistance(ordersInSharedRide));
 
                     }
                 } catch (Exception e) {
@@ -734,20 +741,18 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
     
     private void getTheNextNearestDropOff(){
         double totalDistance = 0;
-        boolean isAllOrdersCompleted = true;
+        boolean isAllOrdersCompleted = currentOrder != null;
         if(userMe == null)
             userMe = FirebaseAuth.getInstance().getCurrentUser();
         if(db_ref_order_to_driver == null)
             db_ref_order_to_driver = firebase_db.getReference().child(Helper.REF_ORDER_TO_DRIVER);
         
-        
         if(currentSharedRide == null) {
             if(currentOrder.getStatus() == Order.OrderStatusCompleted)
                 if(db_ref_order_to_driver == null)
                     return;
-                db_ref_order_to_driver.child(userMe.getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
+                db_ref_order_to_driver.child(userMe.getUid()).removeValue()
+                    .addOnCompleteListener(task -> {
                         Toast.makeText(MapsActivity.this, "Your Order has been Completed", Toast.LENGTH_SHORT).show();
                         currentOrder = null;
                         ordersInSharedRide = null;
@@ -755,8 +760,7 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         currentSharedRide = null;
                         currentPassengers = null;
                         finish();
-                    }
-                });
+                    });
         }
         else{
             
@@ -827,14 +831,14 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                         if((order.getStatus() == Order.OrderStatusWaiting
                                 || order.getStatus() == Order.OrderStatusInProgress) &&
                                 order.getDriver_id().equals(userMe.getUid())){
-                            if(checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
+                            if(!checkIfOrderExists(order.getUser_id(), ordersInSharedRide))
                                 ordersInSharedRide.add(order);
                         }
                     }
                     if(orderIDs.size() == ordersInSharedRide.size()) {
                         addMarkersForNewRiders();
                         requestNewRoute();
-    
+                        
                     }
                 }
             

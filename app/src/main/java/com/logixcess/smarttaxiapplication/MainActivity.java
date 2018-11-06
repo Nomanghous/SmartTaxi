@@ -867,80 +867,75 @@ AlertDialog builder;
 
     public void openOrderDetailsActivity(View view) {
         if(mapFragment.validateAll())
-            startActivityForResult(new Intent(this, OrderDetailsActivity.class),REQUEST_CODE_ORDER_CREATION);
+            startActivityForResult(new Intent(this, OrderDetailsActivity.class), REQUEST_CODE_ORDER_CREATION);
     }
     private void setUpNavigationView()
     {
         //Setting Navigation View Item Selected Listener to handle the item click of the navigation menu
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener()
-        {
+        // This method will trigger on item Click of navigation menu
+        navigationView.setNavigationItemSelectedListener(menuItem -> {
 
-            // This method will trigger on item Click of navigation menu
-            @Override
-            public boolean onNavigationItemSelected(MenuItem menuItem) {
-
-                //Check to see which item was being clicked and perform appropriate action
-                switch (menuItem.getItemId()) {
-                    //Replacing the main content with ContentFragment Which is our Inbox View
-                    case R.id.nav_add_ride:
-                        navItemIndex = 0;
-                        CURRENT_TAG = TAG_ADD_RIDE;
-                        break;
-                    case R.id.nav_ride_history:
-                        navItemIndex = 1;
-                        CURRENT_TAG = TAG_RIDE_HISTORY;
-                        break;
-                    case R.id.nav_user_profile:
-                        navItemIndex = 2;
-                        CURRENT_TAG = TAG_USER_PROFILE;
-                        break;
-                    case R.id.nav_notifications:
-                        navItemIndex = 3;
-                        CURRENT_TAG = TAG_NOTIFICATIONS;
-                        break;
-                    case R.id.nav_feedback:
-                        navItemIndex = 4;
-                        CURRENT_TAG = TAG_FEEDBACK;
-                        break;
-                    case R.id.nav_find_user:
-                        navItemIndex = 5;
-                        CURRENT_TAG = TAG_FIND_USER;
-                        break;
-                    case R.id.nav_current_ride:
-                        navItemIndex = 6;
-                        CURRENT_TAG = "current_ride";
-                        getCurrentOrderId(false);
-                        break;
-                    case R.id.nav_logout:
-                        AuthUI.getInstance()
-                                .signOut(MainActivity.this)
-                                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        // user is now signed out
-                                        if(task.isSuccessful())
-                                        {
-                                            startActivity(new Intent(MainActivity.this, LoginActivity.class));
-                                            finish();
-                                        }
-                                        else
-                                        {
-                                            Toast.makeText(MainActivity.this,"Error"+task.getException(),Toast.LENGTH_SHORT).show();
-                                        }
+            //Check to see which item was being clicked and perform appropriate action
+            switch (menuItem.getItemId()) {
+                //Replacing the main content with ContentFragment Which is our Inbox View
+                case R.id.nav_add_ride:
+                    navItemIndex = 0;
+                    CURRENT_TAG = TAG_ADD_RIDE;
+                    break;
+                case R.id.nav_ride_history:
+                    navItemIndex = 1;
+                    CURRENT_TAG = TAG_RIDE_HISTORY;
+                    break;
+                case R.id.nav_user_profile:
+                    navItemIndex = 2;
+                    CURRENT_TAG = TAG_USER_PROFILE;
+                    break;
+                case R.id.nav_notifications:
+                    navItemIndex = 3;
+                    CURRENT_TAG = TAG_NOTIFICATIONS;
+                    break;
+                case R.id.nav_feedback:
+                    navItemIndex = 4;
+                    CURRENT_TAG = TAG_FEEDBACK;
+                    break;
+                case R.id.nav_find_user:
+                    navItemIndex = 5;
+                    CURRENT_TAG = TAG_FIND_USER;
+                    break;
+                case R.id.nav_current_ride:
+                    navItemIndex = 6;
+                    CURRENT_TAG = "current_ride";
+                    getCurrentOrderId(false);
+                    break;
+                case R.id.nav_logout:
+                    AuthUI.getInstance()
+                            .signOut(MainActivity.this)
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    // user is now signed out
+                                    if(task.isSuccessful())
+                                    {
+                                        startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                                        finish();
                                     }
-                                });
-                    default:
-                        navItemIndex = 0;
+                                    else
+                                    {
+                                        Toast.makeText(MainActivity.this,"Error"+task.getException(),Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                default:
+                    navItemIndex = 0;
 
-                        //Checking if the item is in checked state or not, if not make it in checked state
+                    //Checking if the item is in checked state or not, if not make it in checked state
 //                        menuItem.setChecked(!menuItem.isChecked());
 //                        loadHomeFragment();
-                }
-                menuItem.setChecked(!menuItem.isChecked());
-                loadHomeFragment();
-
-
-                return true;
             }
+            menuItem.setChecked(!menuItem.isChecked());
+            loadHomeFragment();
+
+
+            return true;
         });
         loadHomeFragment();//by default
     }
