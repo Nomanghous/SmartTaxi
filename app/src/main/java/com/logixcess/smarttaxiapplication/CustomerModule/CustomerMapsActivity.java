@@ -81,7 +81,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     public static GoogleMap mMap;
     
     
-    private DatabaseReference db_ref_order;
+    private DatabaseReference db_ref_order, db_ref_group;
 
     private LatLng  pickup;
     private LatLng start, end;
@@ -103,6 +103,7 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
         super.onCreate(savedInstanceState);
         FirebaseDatabase firebase_db = FirebaseDatabase.getInstance();
         db_ref_order = firebase_db.getReference().child(Helper.REF_ORDERS);
+        db_ref_group = firebase_db.getReference().child(Helper.REF_GROUPS);
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null && bundle.containsKey(KEY_CURRENT_ORDER)){
@@ -466,7 +467,8 @@ public class CustomerMapsActivity extends FragmentActivity implements OnMapReady
     }
     
     public void startOrder(View view) {
-        
+        String group_id = currentOrder.getGroup_id();
+        db_ref_group.child(group_id).child("orderIDs").child(currentOrder.getOrder_id()).setValue(true);
         db_ref_order.child(currentOrder.getOrder_id()).child("status").setValue(Order.OrderStatusInProgress).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

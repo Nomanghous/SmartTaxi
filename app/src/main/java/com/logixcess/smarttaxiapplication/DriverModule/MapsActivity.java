@@ -1002,12 +1002,13 @@ public class MapsActivity extends DriverMainActivity implements OnMapReadyCallba
                                         // if 1000m fare => basefare then 100 m fare => basefare * .1
                                         //basefare * (rp.getDistanceinmeters() / 1000)
                                         rp.setTotalKmSofar(totalDistanceTravelled / 1000);
-                                        total = total + getFareThing((rp.getDistanceinmeters() / 1000), basefare,rp);
+                                        total = total + getFareThing((rp.getDistanceinmeters() / 1000), basefare, rp);
                                     }
                                 }
                                 setUserFareSoFar(total,key,ordersInSharedRide);
                             }
                         }
+                        
                         db_ref_group.child(currentSharedRide.getGroup_id()).setValue(currentSharedRide);
                     }
                 }

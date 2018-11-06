@@ -1098,7 +1098,8 @@ AlertDialog builder;
     
     private void goFetchGroup(Order order) {
         DatabaseReference db_ref_order = FirebaseDatabase.getInstance().getReference().child(Helper.REF_GROUPS).child(order.getGroup_id());
-        db_ref_order.child("radius_constraint").setValue(Constants.group_radius);
+        if(Constants.group_id != null)
+            db_ref_order.child("radius_constraint").setValue(Constants.group_radius);
         db_ref_order.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
